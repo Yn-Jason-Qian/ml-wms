@@ -1,1 +1,71 @@
-node_modules/\ndist/\ntarget/\n.idea/\n*.log
+# =======================
+# Dependencies
+# =======================
+node_modules/
+.pnp/
+.pnp.js
+
+# =======================
+# Build Output
+# =======================
+target/
+dist/
+*.class
+*.jar
+*.war
+
+# =======================
+# IDE & Editors
+# =======================
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+*.swp
+*.swo
+*~
+
+# =======================
+# OS Files
+# =======================
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# =======================
+# Environment / Secrets
+# =======================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# =======================
+# Logs
+# =======================
+*.log
+logs/
+
+# =======================
+# Superpowers (local dev tracking)
+# =======================
+.superpowers/
+PLAN.md
+PROGRESS.md
+docs/superpowers/
+
+# =======================
+# Claude Code (local overrides)
+# =======================
+.claude/settings.local.json
+
+# =======================
+# Misc
+# =======================
+*.tmp
+*.bak
+*.orig

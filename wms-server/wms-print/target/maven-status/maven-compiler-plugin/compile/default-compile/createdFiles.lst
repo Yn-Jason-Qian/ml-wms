@@ -1,5 +1,0 @@
-com\wms\print\domain\entity\PrintTemplate.class
-com\wms\print\domain\entity\PrintRecord.class
-com\wms\print\infrastructure\mapper\PrintRecordMapper.class
-com\wms\print\infrastructure\mapper\PrintTemplateMapper.class
-com\wms\print\interfaces\rest\PrintController.class

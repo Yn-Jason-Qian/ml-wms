@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.wms.strategy.domain.service.StrategyEngineTest
--------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.402 s -- in com.wms.strategy.domain.service.StrategyEngineTest

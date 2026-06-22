@@ -1,6 +1,0 @@
-com\wms\task\application\dto\TaskPageQuery.class
-com\wms\task\domain\entity\TaskHeader.class
-com\wms\task\infrastructure\mapper\TaskLineMapper.class
-com\wms\task\domain\entity\TaskLine.class
-com\wms\task\infrastructure\mapper\TaskHeaderMapper.class
-com\wms\task\interfaces\rest\TaskController.class
