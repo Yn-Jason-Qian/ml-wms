@@ -1,0 +1,16 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+
+// Element Plus 菜单样式覆盖
+.el-menu { border-right: none !important; }
+.el-menu--collapse { width: 64px; }
+
+// 页面通用样式
+.page-container {
+  .page-header {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+}
+
+// 表格操作列
+.el-table .el-button--small { padding: 4px 8px; }
