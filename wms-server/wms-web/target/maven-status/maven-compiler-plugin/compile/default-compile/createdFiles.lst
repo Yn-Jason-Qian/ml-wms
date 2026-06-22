@@ -1,5 +1,8 @@
+com\wms\web\controller\ImportController.class
 com\wms\web\WmsApplication.class
 com\wms\web\dto\DashboardStatsDTO.class
 com\wms\web\controller\DashboardController.class
+com\wms\web\controller\SearchController.class
 com\wms\web\dto\TrendItemDTO.class
+com\wms\web\controller\ReportController.class
 com\wms\web\dto\TrendRequest.class

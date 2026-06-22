@@ -106,6 +106,12 @@ const routes: RouteRecordRaw[] = [
         name: 'Task',
         component: () => import('@/views/task/index.vue'),
         meta: { title: '任务管理', icon: 'List' }
+      },
+      {
+        path: 'report',
+        name: 'Report',
+        component: () => import('@/views/report/index.vue'),
+        meta: { title: '报表中心', icon: 'Document' }
       }
     ]
   }
@@ -118,12 +124,15 @@ const router = createRouter({
 
 // 路由守卫 —— 未登录跳转到登录页
 router.beforeEach((to, _from, next) => {
-  if (to.meta.noAuth) {
-    next()
-  } else if (getToken()) {
-    next()
-  } else {
-    next('/login')
+  if (to.meta.noAuth) { next() }
+  else if (getToken()) { next() }
+  else { next('/login') }
+})
+
+// Tab tracking via afterEach
+router.afterEach((to) => {
+  if (!to.meta.noAuth && to.name) {
+    import('@/stores/tabs').then(m => m.useTabsStore().addView(to as any)).catch(()=>{})
   }
 })
 

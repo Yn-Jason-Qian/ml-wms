@@ -49,15 +49,21 @@
             </el-breadcrumb>
           </div>
           <div class="header-right">
+            <GlobalSearch style="margin-right:16px" />
             <span class="user-info">{{ authStore.realName || authStore.username }}</span>
             <span class="tenant-tag">{{ authStore.tenantName }}</span>
             <el-button type="danger" link @click="handleLogout">退出</el-button>
           </div>
         </el-header>
 
+        <TagsView />
         <!-- 主内容区 -->
         <el-main class="app-main">
-          <router-view />
+          <router-view v-slot="{ Component }">
+            <keep-alive :include="tabsStore.cachedViews">
+              <component :is="Component" :key="$route.path" />
+            </keep-alive>
+          </router-view>
         </el-main>
       </el-container>
     </el-container>
@@ -65,15 +71,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import { useTabsStore } from '@/stores/tabs'
+import TagsView from './components/TagsView.vue'
+import GlobalSearch from '@/components/common/GlobalSearch.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
+const tabsStore = useTabsStore()
 
 const isCollapse = computed(() => appStore.sidebarCollapsed)
 const activeMenu = computed(() => route.path)
@@ -95,9 +105,13 @@ function toggleSidebar() {
   appStore.toggleSidebar()
 }
 
-function handleLogout() {
-  authStore.logout()
+function handleLogout() { authStore.logout() }
+
+function onKeydown(e: KeyboardEvent) {
+  if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); (document.querySelector('.global-search input') as HTMLInputElement)?.focus() }
 }
+onMounted(() => document.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <style scoped>
