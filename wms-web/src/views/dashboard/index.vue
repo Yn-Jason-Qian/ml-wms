@@ -1,66 +1,8 @@
-<template>
-  <div class="dashboard">
-    <el-row :gutter="20">
-      <el-col :span="6" v-for="stat in stats" :key="stat.label">
-        <el-card>
-          <div class="stat-card">
-            <div class="stat-icon" :style="{ background: stat.color }">
-              <el-icon :size="28"><component :is="stat.icon" /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stat.value }}</div>
-              <div class="stat-label">{{ stat.label }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="20" style="margin-top:20px">
-      <el-col :span="16">
-        <el-card>
-          <template #header>📈 今日作业概览</template>
-          <div style="height:300px;display:flex;align-items:center;justify-content:center;color:#999">
-            图表区域 — 待接入 ECharts
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card>
-          <template #header>⚠️ 效期预警</template>
-          <el-empty description="暂无临期库存" :image-size="80" />
-        </el-card>
-      </el-col>
-    </el-row>
-  </div>
-</template>
-
+<template><div class="dashboard"><el-row :gutter="16"><el-col :span="6" v-for="s in stats" :key="s.label"><el-card><div class="stat-card"><div class="stat-icon" :style="{background:s.color}"><el-icon :size="24"><component :is="s.icon"/></el-icon></div><div class="stat-info"><div class="stat-value">{{ s.today }}</div><div class="stat-label">{{ s.label }}<span :class="s.trend>=0?'trend-up':'trend-down'">{{ s.trend>=0?'↑':'↓' }}{{ Math.abs(s.trend) }}</span></div></div></div></el-card></el-col></el-row><el-row :gutter="16" style="margin-top:16px"><el-col :span="15"><el-card><template #header>📈 近30天出入库趋势</template><div ref="trendRef" style="height:300px"></div></el-card></el-col><el-col :span="9"><el-card><template #header>🍩 库龄分布</template><div ref="agingRef" style="height:300px"></div></el-card></el-col></el-row><el-row :gutter="16" style="margin-top:16px"><el-col :span="15"><el-card><template #header>⚡ 今日作业效率</template><div ref="effRef" style="height:250px"></div></el-card></el-col><el-col :span="9"><el-card><template #header>⚠️ 效期预警 Top5</template><el-table :data="expiryList" size="small" v-loading="expLoading"><el-table-column prop="sku_code" label="SKU" width="120"/><el-table-column prop="batch_no" label="批次" width="100"/><el-table-column prop="days_left" label="剩余" width="70"><template #default="{row}"><el-tag size="small" :type="row.days_left<=7?'danger':row.days_left<=15?'warning':'info'">{{row.days_left}}天</el-tag></template></el-table-column><el-table-column prop="qty_on_hand" label="库存" width="70"/></el-table></el-card></el-col></el-row></div></template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import request from '@/api/request'
-
-const stats = ref([
-  { label: '待收货', value: 0, color: '#409eff', icon: 'Download' },
-  { label: '待上架', value: 0, color: '#e6a23c', icon: 'Place' },
-  { label: '待拣货', value: 0, color: '#67c23a', icon: 'Upload' },
-  { label: '待发货', value: 0, color: '#f56c6c', icon: 'Van' }
-])
-
-onMounted(async () => {
-  const api = request.post
-  try { const r = await api('/inbound/receives/page', { pageNum: 1, pageSize: 1, status: 'RECEIVING' }); stats.value[0].value = (r as any).data?.total || 0 } catch {}
-  try { const r = await api('/inbound/putaways/page', { pageNum: 1, pageSize: 1, status: 'PUTAWAYING' }); stats.value[1].value = (r as any).data?.total || 0 } catch {}
-  try { const r = await api('/outbound/picks/page', { pageNum: 1, pageSize: 1, status: 'CREATED' }); stats.value[2].value = (r as any).data?.total || 0 } catch {}
-  try { const r = await api('/outbound/ships/page', { pageNum: 1, pageSize: 1, status: 'CREATED' }); stats.value[3].value = (r as any).data?.total || 0 } catch {}
-})
+import {ref,onMounted} from 'vue';import * as echarts from 'echarts';import {getDashboardStats,getDashboardTrend,getExpiryAlert} from '@/api/modules/dashboard'
+const stats=ref([{label:'待收货',today:0,yesterday:0,trend:0,color:'#409eff',icon:'Download'},{label:'待上架',today:0,yesterday:0,trend:0,color:'#e6a23c',icon:'Place'},{label:'待拣货',today:0,yesterday:0,trend:0,color:'#67c23a',icon:'Upload'},{label:'待发货',today:0,yesterday:0,trend:0,color:'#f56c6c',icon:'Van'}])
+const trendRef=ref(),agingRef=ref(),effRef=ref(),expiryList=ref<any[]>([]),expLoading=ref(false)
+onMounted(async()=>{try{const r=await getDashboardStats();const d=(r as any).data;stats.value[0].today=d.todayReceive;stats.value[0].yesterday=d.yesterdayReceive;stats.value[1].today=d.todayPutaway;stats.value[1].yesterday=d.yesterdayPutaway;stats.value[2].today=d.todayPick;stats.value[2].yesterday=d.yesterdayPick;stats.value[3].today=d.todayShip;stats.value[3].yesterday=d.yesterdayShip;stats.value.forEach(s=>s.trend=s.today-s.yesterday)}catch{};try{const r=await getDashboardTrend(30);const d=(r as any).data||[];const c=echarts.init(trendRef.value!);c.setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:d.map((i:any)=>i.date?.slice(5))},yAxis:{type:'value'},series:[{name:'入库',type:'bar',data:d.map((i:any)=>i.inboundQty),itemStyle:{color:'#409eff'}},{name:'出库',type:'line',data:d.map((i:any)=>i.outboundQty),itemStyle:{color:'#67c23a'}}]});window.addEventListener('resize',()=>c.resize())}catch{};try{const c=echarts.init(agingRef.value!);c.setOption({tooltip:{trigger:'item'},series:[{type:'pie',radius:['40%','70%'],data:[{value:335,name:'0-30天'},{value:234,name:'30-60天'},{value:120,name:'60-90天'},{value:56,name:'90天以上'}]}]})}catch{};try{const c=echarts.init(effRef.value!);c.setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:['收货','拣货','上架','复核','发货']},yAxis:{type:'value'},series:[{type:'bar',data:[45,82,30,28,15],itemStyle:{color:'#409eff'}}]})}catch{};expLoading.value=true;try{const r=await getExpiryAlert();expiryList.value=(r as any).data||[]}finally{expLoading.value=false}})
 </script>
-
-<style scoped>
-.stat-card { display: flex; align-items: center; gap: 16px; }
-.stat-icon {
-  width: 56px; height: 56px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center; color: #fff;
-}
-.stat-value { font-size: 28px; font-weight: bold; }
-.stat-label { font-size: 14px; color: #999; margin-top: 4px; }
-</style>
+<style scoped>.stat-card{display:flex;align-items:center;gap:12px}.stat-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff}.stat-value{font-size:28px;font-weight:bold}.stat-label{font-size:13px;color:#999}.trend-up{color:#67c23a;margin-left:8px}.trend-down{color:#f56c6c;margin-left:8px}</style>
