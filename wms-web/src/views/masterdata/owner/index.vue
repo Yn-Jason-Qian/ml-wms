@@ -16,11 +16,18 @@
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
-            <el-button link :type="row.status===1?'warning':'success'" @click="row.status===1?handleDisable(row.id):handleEnable(row.id)">{{ row.status===1?'禁用':'启用' }}</el-button>
+            <el-button link :type="row.status===1?'warning':'success'" @click="handleToggleStatus(row)">{{ row.status===1?'禁用':'启用' }}</el-button>
             <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+
+      <el-pagination
+        v-model:current-page="pageNum" v-model:page-size="pageSize"
+        :total="total" :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="fetchData" @size-change="fetchData"
+        style="margin-top:16px;justify-content:flex-end" />
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="isEdit?'编辑货主':'新增货主'" width="500px" destroy-on-close>
@@ -44,10 +51,11 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOwnerList, createOwner, updateOwner, deleteOwner } from '@/api/modules/masterdata'
+import { getOwnerPage, createOwner, updateOwner, deleteOwner, enableOwner, disableOwner } from '@/api/modules/masterdata'
 
 const loading = ref(false), saving = ref(false), dialogVisible = ref(false), isEdit = ref(false)
 const tableData = ref<any[]>([]), formRef = ref(), editId = ref<number>()
+const pageNum = ref(1), pageSize = ref(10), total = ref(0)
 const form = reactive({ ownerCode: '', ownerName: '', contactPerson: '', contactPhone: '', address: '' })
 const rules = {
   ownerCode: [{ required: true, message: '请输入货主编码', trigger: 'blur' }],
@@ -56,7 +64,11 @@ const rules = {
 
 async function fetchData() {
   loading.value = true
-  try { const res = await getOwnerList(); tableData.value = res.data } finally { loading.value = false }
+  try {
+    const res = await getOwnerPage({ pageNum: pageNum.value, pageSize: pageSize.value })
+    tableData.value = res.data.records
+    total.value = res.data.total
+  } finally { loading.value = false }
 }
 
 function openDialog(row?: any) {
@@ -77,12 +89,20 @@ async function handleSave() {
   } finally { saving.value = false }
 }
 
+async function handleToggleStatus(row: any) {
+  const action = row.status === 1 ? '禁用' : '启用'
+  try {
+    await ElMessageBox.confirm(`确定${action}货主「${row.ownerName}」？`, '提示', { type: 'warning' })
+    if (row.status === 1) { await disableOwner(row.id) } else { await enableOwner(row.id) }
+    ElMessage.success(`${action}成功`)
+    fetchData()
+  } catch { /* 用户取消 */ }
+}
+
 async function handleDelete(id: number) {
   await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
   await deleteOwner(id); ElMessage.success('删除成功'); fetchData()
 }
-async function handleDisable(id: number) { ElMessage.info('已禁用') }
-async function handleEnable(id: number) { ElMessage.info('已启用') }
 
 onMounted(fetchData)
 </script>

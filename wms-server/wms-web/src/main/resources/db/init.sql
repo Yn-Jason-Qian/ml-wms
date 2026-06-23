@@ -155,6 +155,17 @@ CREATE TABLE wms_masterdata_unit (
     UNIQUE KEY uk_tenant_unit_code (tenant_id, unit_code)
 ) COMMENT '计量单位表';
 
+INSERT INTO wms_masterdata_unit (id, tenant_id, unit_code, unit_name, unit_type) VALUES
+(9001, 1, 'EA', '个', 'QUANTITY'),
+(9002, 1, 'CASE', '箱', 'QUANTITY'),
+(9003, 1, 'PALLET', '托盘', 'QUANTITY'),
+(9004, 1, 'KG', '千克', 'WEIGHT'),
+(9005, 1, 'G', '克', 'WEIGHT'),
+(9006, 1, 'M', '米', 'LENGTH'),
+(9007, 1, 'CM', '厘米', 'LENGTH'),
+(9008, 1, 'L', '升', 'VOLUME'),
+(9009, 1, 'ML', '毫升', 'VOLUME');
+
 -- 仓库表
 CREATE TABLE wms_masterdata_warehouse (
     id BIGINT NOT NULL,

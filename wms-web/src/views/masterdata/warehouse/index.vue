@@ -26,13 +26,23 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
+            <el-button link type="warning" @click="handleToggleStatus(row)">
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
             <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+
+      <el-pagination
+        v-model:current-page="pageNum" v-model:page-size="pageSize"
+        :total="total" :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="fetchData" @size-change="fetchData"
+        style="margin-top:16px;justify-content:flex-end" />
     </el-card>
 
     <!-- 新增/编辑弹窗 -->
@@ -71,7 +81,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWarehouseList, createWarehouse, updateWarehouse, deleteWarehouse } from '@/api/modules/masterdata'
+import { getWarehousePage, createWarehouse, updateWarehouse, deleteWarehouse, enableWarehouse, disableWarehouse } from '@/api/modules/masterdata'
 
 const whTypeMap: Record<string, string> = {
   STANDARD: '标准仓', COLD: '冷库', HAZARDOUS: '危化品仓', BONDED: '保税仓'
@@ -84,6 +94,9 @@ const isEdit = ref(false)
 const tableData = ref([])
 const formRef = ref()
 const editId = ref<number>()
+const pageNum = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const form = reactive({
   whCode: '', whName: '', whType: 'STANDARD', address: '', contactPerson: '', contactPhone: ''
@@ -98,8 +111,9 @@ const rules = {
 async function fetchData() {
   loading.value = true
   try {
-    const res = await getWarehouseList()
-    tableData.value = res.data
+    const res = await getWarehousePage({ pageNum: pageNum.value, pageSize: pageSize.value })
+    tableData.value = res.data.records
+    total.value = res.data.total
   } finally {
     loading.value = false
   }
@@ -135,6 +149,22 @@ async function handleSave() {
     fetchData()
   } finally {
     saving.value = false
+  }
+}
+
+async function handleToggleStatus(row: any) {
+  const action = row.status === 1 ? '禁用' : '启用'
+  try {
+    await ElMessageBox.confirm(`确定${action}仓库「${row.whName}」？`, '提示', { type: 'warning' })
+    if (row.status === 1) {
+      await disableWarehouse(row.id)
+    } else {
+      await enableWarehouse(row.id)
+    }
+    ElMessage.success(`${action}成功`)
+    fetchData()
+  } catch {
+    // 用户取消
   }
 }
 

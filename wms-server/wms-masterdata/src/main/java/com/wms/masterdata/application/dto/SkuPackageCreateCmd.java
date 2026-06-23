@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 @Data
 public class SkuPackageCreateCmd {
-    @NotNull private Long skuId;
+    private Long skuId;
     @NotBlank private String packageLevel;
     @NotBlank private String packageName;
     @NotNull private Long unitId;

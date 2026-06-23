@@ -38,8 +38,11 @@ request.interceptors.response.use(
     if (error.response?.status === 401) {
       removeToken()
       window.location.href = '/login'
+      return Promise.reject(error)
     }
-    ElMessage.error(error.message || '网络错误')
+    // 优先展示后端返回的错误消息，比 Axios 默认的 "Request failed with status code xxx" 更友好
+    const serverMsg = error.response?.data?.message
+    ElMessage.error(serverMsg || error.message || '网络错误')
     return Promise.reject(error)
   }
 )

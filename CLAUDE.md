@@ -133,6 +133,10 @@ npm run dev:android              # Android 标准基座调试
 npm run build:android            # Android 打包
 ```
 
+## 修复任务验证流程
+
+使用 `/验证`（或 `/verify`）skill。Claude 会自动检测改动范围，按分层策略验证（基础设施 → 增量编译 → API 检查 → 浏览器 UI），只通过后才邀请用户检查。详见 `.claude/skills/verify/SKILL.md`。
+
 ## API Conventions
 
 - REST 路径格式：`/api/v1/{domain}/{resource}`

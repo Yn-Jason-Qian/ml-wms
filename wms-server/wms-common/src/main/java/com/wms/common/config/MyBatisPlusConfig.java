@@ -55,6 +55,9 @@ public class MyBatisPlusConfig {
                 });
         interceptor.addInnerInterceptor(tenantInterceptor);
 
+        // 乐观锁插件（配合 @Version 注解，更新时自动校验版本号）
+        interceptor.addInnerInterceptor(new com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor());
+
         // 分页插件
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
 

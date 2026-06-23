@@ -12,16 +12,26 @@
       </template>
 
       <div class="filter-bar">
-        <el-select v-model="filterWarehouseId" placeholder="按仓库筛选" clearable style="width:180px">
+        <el-select v-model="filterWarehouseId" placeholder="按仓库筛选" clearable @change="onFilterWarehouseChange" style="width:180px">
           <el-option v-for="w in warehouses" :key="w.id" :label="w.whName" :value="w.id" />
         </el-select>
-        <el-select v-model="filterAreaId" placeholder="按库区筛选" clearable @change="fetchData" style="width:180px;margin-left:8px">
+        <el-select v-model="filterAreaId" placeholder="按库区筛选" clearable @change="onAreaChange" style="width:180px;margin-left:8px">
           <el-option v-for="a in areas" :key="a.id" :label="a.areaName" :value="a.id" />
         </el-select>
-        <el-button type="primary" @click="fetchData" style="margin-left:8px">查询</el-button>
+        <el-button type="primary" @click="onSearch" style="margin-left:8px">查询</el-button>
       </div>
 
       <el-table :data="tableData" v-loading="loading" border stripe size="small">
+        <el-table-column label="所属仓库" width="160">
+          <template #default="{ row }">
+            {{ getWarehouseName(row.warehouseId) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="所属库区" width="120">
+          <template #default="{ row }">
+            {{ getAreaName(row.areaId) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="locationCode" label="库位编码" width="160" />
         <el-table-column prop="locationName" label="库位名称" width="140" />
         <el-table-column prop="locationType" label="类型" width="90">
@@ -40,13 +50,22 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+            <el-button v-if="row.status===1" link type="warning" size="small" @click="handleDisable(row.id)">禁用</el-button>
+            <el-button v-if="row.status===0" link type="success" size="small" @click="handleEnable(row.id)">启用</el-button>
             <el-button link type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+
+      <el-pagination
+        v-model:current-page="pageNum" v-model:page-size="pageSize"
+        :total="total" :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="fetchData" @size-change="fetchData"
+        style="margin-top:16px;justify-content:flex-end" />
     </el-card>
 
     <!-- 单个新增/编辑弹窗 -->
@@ -142,16 +161,19 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWarehouseList, getAreasByWarehouse, createLocation, batchCreateLocations, updateLocation, deleteLocation } from '@/api/modules/masterdata'
+import { getWarehouseList, getAreasByWarehouse, getAreaPage, getLocationPage, createLocation, batchCreateLocations, updateLocation, deleteLocation, enableLocation, disableLocation } from '@/api/modules/masterdata'
 
 const locTypeMap: Record<string, string> = { FLOOR: '地堆位', RACK: '货架位', SHELF: '隔板位', BIN: '周转箱位' }
 
 const loading = ref(false), saving = ref(false), batchSaving = ref(false)
 const dialogVisible = ref(false), batchDialogVisible = ref(false), isEdit = ref(false)
-const tableData = ref<any[]>([]), warehouses = ref<any[]>([]), areas = ref<any[]>([])
+const tableData = ref<any[]>([]), warehouses = ref<any[]>([]), areas = ref<any[]>([]), allAreas = ref<any[]>([])
 const filterWarehouseId = ref<number>(), filterAreaId = ref<number>()
 const formRef = ref(), batchFormRef = ref()
 const editId = ref<number>(), areaOptions = ref<any[]>([]), batchAreaOptions = ref<any[]>([])
+const pageNum = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const form = reactive({ warehouseId: null as any, areaId: null as any, locationCode: '', locationName: '', locationType: 'RACK', aisle: '', shelf: '', tier: '', depthPos: '', maxWeight: '', maxQty: '' })
 const rules = {
@@ -174,18 +196,33 @@ const batchPreviewCount = computed(() => {
 async function fetchData() {
   loading.value = true
   try {
-    if (filterAreaId.value) {
-      const res = await getAreasByWarehouse(filterAreaId.value)
-      tableData.value = res.data
-    } else {
-      tableData.value = []
-    }
+    const res = await getLocationPage({
+      pageNum: pageNum.value, pageSize: pageSize.value,
+      warehouseId: filterWarehouseId.value,
+      areaId: filterAreaId.value
+    })
+    tableData.value = res.data.records
+    total.value = res.data.total
   } finally { loading.value = false }
+}
+
+async function loadAllAreas() {
+  const res = await getAreaPage({ pageNum: 1, pageSize: 200 })
+  allAreas.value = res.data.records || []
 }
 
 async function loadWarehouses() {
   const res = await getWarehouseList()
   warehouses.value = res.data || []
+}
+
+function getWarehouseName(id: number) {
+  const w = warehouses.value.find((w: any) => w.id === id || String(w.id) === String(id))
+  return w ? `${w.whCode} ${w.whName}` : ''
+}
+function getAreaName(id: number) {
+  const a = allAreas.value.find((a: any) => a.id === id || String(a.id) === String(id))
+  return a ? `${a.areaCode} ${a.areaName}` : ''
 }
 
 async function loadAreas() {
@@ -199,6 +236,25 @@ async function loadBatchAreas() {
     const res = await getAreasByWarehouse(batchForm.warehouseId)
     batchAreaOptions.value = res.data || []
   }
+}
+
+async function onFilterWarehouseChange() {
+  filterAreaId.value = undefined
+  if (filterWarehouseId.value) {
+    const res = await getAreasByWarehouse(filterWarehouseId.value)
+    areas.value = res.data || []
+  } else {
+    areas.value = allAreas.value
+  }
+}
+
+function onAreaChange() {
+  pageNum.value = 1
+}
+
+function onSearch() {
+  pageNum.value = 1
+  fetchData()
 }
 
 function openDialog(row?: any) {
@@ -219,6 +275,21 @@ async function handleSave() {
   } finally { saving.value = false }
 }
 
+async function handleDisable(id: number) {
+  try {
+    await ElMessageBox.confirm('确定禁用该库位？', '提示', { type: 'warning' })
+    await disableLocation(id)
+    ElMessage.success('禁用成功'); fetchData()
+  } catch { /* 用户取消 */ }
+}
+async function handleEnable(id: number) {
+  try {
+    await ElMessageBox.confirm('确定启用该库位？', '提示', { type: 'warning' })
+    await enableLocation(id)
+    ElMessage.success('启用成功'); fetchData()
+  } catch { /* 用户取消 */ }
+}
+
 async function handleDelete(id: number) {
   await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
   await deleteLocation(id)
@@ -233,11 +304,22 @@ async function handleBatchCreate() {
   try {
     await batchCreateLocations(batchForm)
     ElMessage.success(`成功生成 ${batchPreviewCount.value} 个库位`)
-    batchDialogVisible.value = false; filterAreaId.value = batchForm.areaId; fetchData()
+    batchDialogVisible.value = false
+    filterAreaId.value = batchForm.areaId
+    filterWarehouseId.value = batchForm.warehouseId
+    // Load areas for the filter
+    if (filterWarehouseId.value) {
+      const res = await getAreasByWarehouse(filterWarehouseId.value)
+      areas.value = res.data || []
+    }
+    onSearch()
   } finally { batchSaving.value = false }
 }
 
-onMounted(() => { loadWarehouses() })
+onMounted(async () => {
+  await Promise.all([loadWarehouses(), loadAllAreas()])
+  fetchData()
+})
 </script>
 
 <style scoped>

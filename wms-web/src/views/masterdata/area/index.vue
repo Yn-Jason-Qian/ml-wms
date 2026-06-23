@@ -10,12 +10,17 @@
 
       <div class="filter-bar">
         <el-select v-model="filterWarehouseId" placeholder="按仓库筛选" clearable
-                   @change="fetchData" style="width:200px">
+                   @change="onWarehouseChange" style="width:200px">
           <el-option v-for="w in warehouses" :key="w.id" :label="w.whName" :value="w.id" />
         </el-select>
       </div>
 
       <el-table :data="tableData" v-loading="loading" border stripe>
+        <el-table-column label="所属仓库" width="180">
+          <template #default="{ row }">
+            {{ getWarehouseInfo(row.warehouseId) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="areaCode" label="库区编码" width="150" />
         <el-table-column prop="areaName" label="库区名称" />
         <el-table-column prop="areaType" label="库区类型" width="120">
@@ -41,6 +46,13 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <el-pagination
+        v-model:current-page="pageNum" v-model:page-size="pageSize"
+        :total="total" :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="fetchData" @size-change="fetchData"
+        style="margin-top:16px;justify-content:flex-end" />
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑库区' : '新增库区'" width="550px" destroy-on-close>
@@ -77,7 +89,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWarehouseList, getAreasByWarehouse, createArea, updateArea, deleteArea } from '@/api/modules/masterdata'
+import { getWarehouseList, getAreaPage, createArea, updateArea, deleteArea, enableArea, disableArea } from '@/api/modules/masterdata'
 
 const areaTypeMap: Record<string, string> = {
   RECEIVE: '收货区', SHIPPING: '发货区', STORAGE: '存储区', PICKING: '拣货区', RETURN: '退货区', QC: '质检区'
@@ -93,6 +105,9 @@ const warehouses = ref<any[]>([])
 const filterWarehouseId = ref<number>()
 const formRef = ref()
 const editId = ref<number>()
+const pageNum = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const form = reactive({ warehouseId: null as any, areaCode: '', areaName: '', areaType: 'STORAGE', temperatureMin: '', temperatureMax: '' })
 const rules = {
@@ -105,19 +120,28 @@ const rules = {
 async function fetchData() {
   loading.value = true
   try {
-    const wid = filterWarehouseId.value
-    if (wid) {
-      const res = await getAreasByWarehouse(wid)
-      tableData.value = res.data
-    } else {
-      tableData.value = []
-    }
+    const res = await getAreaPage({
+      pageNum: pageNum.value, pageSize: pageSize.value,
+      warehouseId: filterWarehouseId.value
+    })
+    tableData.value = res.data.records
+    total.value = res.data.total
   } finally { loading.value = false }
 }
 
 async function loadWarehouses() {
   const res = await getWarehouseList()
   warehouses.value = res.data || []
+}
+
+function getWarehouseInfo(id: number) {
+  const w = warehouses.value.find((w: any) => w.id === id || String(w.id) === String(id))
+  return w ? `${w.whCode} ${w.whName}` : ''
+}
+
+function onWarehouseChange() {
+  pageNum.value = 1
+  fetchData()
 }
 
 function openDialog(row?: any) {
@@ -150,19 +174,29 @@ async function handleSave() {
   } finally { saving.value = false }
 }
 
+async function handleDisable(id: number) {
+  try {
+    await ElMessageBox.confirm('确定禁用该库区？', '提示', { type: 'warning' })
+    await disableArea(id)
+    ElMessage.success('禁用成功')
+    fetchData()
+  } catch { /* 用户取消 */ }
+}
+async function handleEnable(id: number) {
+  try {
+    await ElMessageBox.confirm('确定启用该库区？', '提示', { type: 'warning' })
+    await enableArea(id)
+    ElMessage.success('启用成功')
+    fetchData()
+  } catch { /* 用户取消 */ }
+}
+
 async function handleDelete(id: number) {
   await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
   await deleteArea(id)
   ElMessage.success('删除成功')
   fetchData()
 }
-
-async function handleDisable(id: number) {
-  await ElMessageBox.confirm('确定禁用？', '提示', { type: 'warning' })
-  ElMessage.info('已禁用')
-  fetchData()
-}
-async function handleEnable(id: number) { ElMessage.info('已启用'); fetchData() }
 
 onMounted(() => { loadWarehouses(); fetchData() })
 </script>

@@ -104,10 +104,11 @@
 
       <div v-if="pkgFormVisible" style="margin-top:12px;padding:12px;background:#f5f7fa;border-radius:4px">
         <el-row :gutter="10">
-          <el-col :span="6"><el-select v-model="pkgForm.packageLevel" placeholder="层级" style="width:100%"><el-option v-for="(v,k) in pkgLevelMap" :key="k" :label="v" :value="k" /></el-select></el-col>
-          <el-col :span="6"><el-input v-model="pkgForm.packageName" placeholder="名称" /></el-col>
-          <el-col :span="6"><el-input-number v-model="pkgForm.qtyPerParent" :min="1" placeholder="含基础件数" controls-position="right" style="width:100%" /></el-col>
-          <el-col :span="6"><el-button type="primary" @click="handleSavePkg" :loading="pkgSaving">保存</el-button></el-col>
+          <el-col :span="5"><el-select v-model="pkgForm.packageLevel" placeholder="层级" style="width:100%"><el-option v-for="(v,k) in pkgLevelMap" :key="k" :label="v" :value="k" /></el-select></el-col>
+          <el-col :span="5"><el-input v-model="pkgForm.packageName" placeholder="名称" /></el-col>
+          <el-col :span="5"><el-select v-model="pkgForm.unitId" placeholder="单位" style="width:100%"><el-option v-for="u in units" :key="u.id" :label="u.unitName" :value="u.id" /></el-select></el-col>
+          <el-col :span="5"><el-input-number v-model="pkgForm.qtyPerParent" :min="1" placeholder="含基础件数" controls-position="right" style="width:100%" /></el-col>
+          <el-col :span="4"><el-button type="primary" @click="handleSavePkg" :loading="pkgSaving">保存</el-button></el-col>
         </el-row>
       </div>
     </el-dialog>
@@ -117,19 +118,19 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOwnerList, getSkuPage, createSku, updateSku, deleteSku, getSkuPackages, createSkuPackage, deleteSkuPackage } from '@/api/modules/masterdata'
+import { getOwnerList, getUnitList, getSkuPage, createSku, updateSku, deleteSku, getSkuPackages, createSkuPackage, deleteSkuPackage } from '@/api/modules/masterdata'
 
 const pkgLevelMap: Record<string, string> = { EA: '件(each)', CASE: '箱(case)', PALLET: '托盘(pallet)' }
 
 const loading = ref(false), saving = ref(false), pkgSaving = ref(false)
 const dialogVisible = ref(false), pkgDialogVisible = ref(false), pkgFormVisible = ref(false), isEdit = ref(false)
-const tableData = ref<any[]>([]), owners = ref<any[]>([]), pkgList = ref<any[]>([])
+const tableData = ref<any[]>([]), owners = ref<any[]>([]), pkgList = ref<any[]>([]), units = ref<any[]>([])
 const formRef = ref(), editId = ref<number>(), pkgSkuId = ref<number>(), pkgSkuName = ref('')
 const pageNum = ref(1), pageSize = ref(10), total = ref(0)
 const filterOwnerId = ref<number>(), filterSkuCode = ref(''), filterSkuName = ref('')
 
 const form = reactive({ ownerId: null as any, skuCode: '', skuName: '', category: '', brand: '', spec: '', shelfLife: 0, batchManaged: 0, snManaged: 0 })
-const pkgForm = reactive({ packageLevel: 'CASE', packageName: '', qtyPerParent: 1 })
+const pkgForm = reactive({ packageLevel: 'CASE', packageName: '', qtyPerParent: 1, unitId: null as any })
 const rules = {
   ownerId: [{ required: true, message: '请选择货主', trigger: 'change' }],
   skuCode: [{ required: true, message: '请输入SKU编码', trigger: 'blur' }],
@@ -139,7 +140,11 @@ const rules = {
 async function fetchData() {
   loading.value = true
   try {
-    const res = await getSkuPage({ pageNum: pageNum.value, pageSize: pageSize.value, ownerId: filterOwnerId.value, skuCode: filterSkuCode.value, skuName: filterSkuName.value })
+    const params: any = { pageNum: pageNum.value, pageSize: pageSize.value }
+    if (filterOwnerId.value) params.ownerId = filterOwnerId.value
+    if (filterSkuCode.value) params.skuCode = filterSkuCode.value
+    if (filterSkuName.value) params.skuName = filterSkuName.value
+    const res = await getSkuPage(params)
     tableData.value = res.data.records; total.value = res.data.total
   } finally { loading.value = false }
 }
@@ -173,7 +178,9 @@ async function handleDelete(id: number) {
 
 async function openPkgDialog(row: any) {
   pkgSkuId.value = row.id; pkgSkuName.value = row.skuName; pkgFormVisible.value = false
-  const res = await getSkuPackages(row.id); pkgList.value = res.data || []
+  const [pkgRes, unitRes] = await Promise.all([getSkuPackages(row.id), getUnitList()])
+  pkgList.value = pkgRes.data || []
+  units.value = unitRes.data || []
   pkgDialogVisible.value = true
 }
 
@@ -183,7 +190,7 @@ async function handleSavePkg() {
   try {
     await createSkuPackage(pkgSkuId.value!, pkgForm)
     ElMessage.success('添加成功'); pkgFormVisible.value = false
-    Object.assign(pkgForm, { packageLevel: 'CASE', packageName: '', qtyPerParent: 1 })
+    Object.assign(pkgForm, { packageLevel: 'CASE', packageName: '', qtyPerParent: 1, unitId: null })
     const res = await getSkuPackages(pkgSkuId.value!); pkgList.value = res.data || []
   } finally { pkgSaving.value = false }
 }

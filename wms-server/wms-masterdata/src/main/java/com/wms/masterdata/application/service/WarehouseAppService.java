@@ -45,7 +45,7 @@ public class WarehouseAppService {
 
     public List<WarehouseDTO> findAll() {
 Long tenantId = UserContext.getTenantId();
-        return warehouseRepository.findByStatus(tenantId, 1).stream()
+        return warehouseRepository.findAll(tenantId).stream()
                 .map(assembler::toDTO)
                 .collect(Collectors.toList());
     }
