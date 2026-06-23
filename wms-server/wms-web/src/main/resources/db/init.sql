@@ -802,6 +802,11 @@ CREATE TABLE wms_outbound_ship_line (
     sku_name VARCHAR(256) NOT NULL,
     ship_qty DECIMAL(18,4) NOT NULL COMMENT '发货数量',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+    version INT NOT NULL DEFAULT 0,
+    is_deleted TINYINT NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
     KEY idx_ship_header (ship_header_id)
 ) COMMENT '发货单行表';
@@ -1168,6 +1173,12 @@ CREATE TABLE wms_print_record (
     ref_id BIGINT COMMENT '关联单据ID',
     print_by BIGINT COMMENT '打印人',
     print_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '打印时间',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+    version INT NOT NULL DEFAULT 0,
+    is_deleted TINYINT NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
     KEY idx_template (template_id),
     KEY idx_ref (ref_type, ref_id)

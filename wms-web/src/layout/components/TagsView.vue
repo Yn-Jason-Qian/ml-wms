@@ -1,6 +1,6 @@
 <template>
   <div class="tags-view">
-    <el-tag v-for="tab in tabs.visitedViews" :key="tab.path" :type="route.path===tab.path?'':'info'"
+    <el-tag v-for="tab in tabs.visitedViews" :key="tab.path" :type="route.path===tab.path?undefined:'info'"
             :closable="tab.path!=='/dashboard'" :effect="route.path===tab.path?'dark':'plain'"
             class="tag-item" size="default" @click="router.push(tab.path)" @close="closeTab(tab.path)">
       {{ tab.title }}

@@ -56,7 +56,7 @@ logs/
 .superpowers/
 PLAN.md
 PROGRESS.md
-docs/superpowers/
+docs/
 
 # =======================
 # Claude Code (local overrides)
@@ -69,3 +69,8 @@ docs/superpowers/
 *.tmp
 *.bak
 *.orig
+
+# =======================
+# MCP
+# =======================
+/.playwright-mcp/
