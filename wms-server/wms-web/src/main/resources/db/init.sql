@@ -1229,3 +1229,58 @@ INSERT INTO wms_masterdata_dictionary (id, tenant_id, dict_type, dict_code, dict
 (17, 1, 'ORDER_TYPE', 'SALE', '销售订单', 1),
 (18, 1, 'ORDER_TYPE', 'TRANSFER', '调拨订单', 2),
 (19, 1, 'ORDER_TYPE', 'RETURN_SUPPLIER', '退货供应商', 3);
+
+-- ============================================================
+-- Performance Indexes (high-frequency query columns)
+-- ============================================================
+
+-- 库存查询 (高频: 按仓库+库位+SKU+批次 查库存)
+CREATE INDEX idx_inventory_warehouse ON wms_inventory(warehouse_id);
+CREATE INDEX idx_inventory_location ON wms_inventory(location_id);
+CREATE INDEX idx_inventory_sku ON wms_inventory(sku_id);
+CREATE INDEX idx_inventory_batch ON wms_inventory(batch_no);
+
+-- 库存流水审计 (按单据追溯)
+CREATE INDEX idx_stock_txn_ref ON wms_inventory_stock_transaction(ref_type, ref_id);
+CREATE INDEX idx_stock_txn_created ON wms_inventory_stock_transaction(created_at);
+
+-- ASN/收货/上架 状态过滤
+CREATE INDEX idx_asn_status ON wms_inbound_asn_header(status);
+CREATE INDEX idx_asn_warehouse ON wms_inbound_asn_header(warehouse_id);
+CREATE INDEX idx_receive_status ON wms_inbound_receive_header(status);
+CREATE INDEX idx_receive_warehouse ON wms_inbound_receive_header(warehouse_id);
+CREATE INDEX idx_putaway_status ON wms_inbound_putaway_header(status);
+CREATE INDEX idx_putaway_warehouse ON wms_inbound_putaway_header(warehouse_id);
+CREATE INDEX idx_putaway_line_header ON wms_inbound_putaway_line(putaway_header_id);
+
+-- 订单/波次/拣货/复核/发货 状态过滤
+CREATE INDEX idx_order_status ON wms_outbound_order_header(status);
+CREATE INDEX idx_order_warehouse ON wms_outbound_order_header(warehouse_id);
+CREATE INDEX idx_wave_status ON wms_outbound_wave_header(wave_status);
+CREATE INDEX idx_wave_warehouse ON wms_outbound_wave_header(warehouse_id);
+CREATE INDEX idx_pick_status ON wms_outbound_pick_header(status);
+CREATE INDEX idx_pick_warehouse ON wms_outbound_pick_header(warehouse_id);
+CREATE INDEX idx_pick_line_header ON wms_outbound_pick_line(pick_header_id);
+CREATE INDEX idx_check_status ON wms_outbound_check_header(status);
+CREATE INDEX idx_check_warehouse ON wms_outbound_check_header(warehouse_id);
+CREATE INDEX idx_ship_status ON wms_outbound_ship_header(status);
+CREATE INDEX idx_ship_warehouse ON wms_outbound_ship_header(warehouse_id);
+
+-- 任务管理
+CREATE INDEX idx_task_status ON wms_task_header(status);
+CREATE INDEX idx_task_warehouse ON wms_task_header(warehouse_id);
+CREATE INDEX idx_task_assign ON wms_task_header(assign_to);
+
+-- 盘点/移库/冻结
+CREATE INDEX idx_stocktake_status ON wms_inventory_stocktake_header(status);
+CREATE INDEX idx_stocktake_warehouse ON wms_inventory_stocktake_header(warehouse_id);
+CREATE INDEX idx_move_status ON wms_inventory_move_header(status);
+CREATE INDEX idx_move_warehouse ON wms_inventory_move_header(warehouse_id);
+CREATE INDEX idx_freeze_warehouse ON wms_inventory_freeze(warehouse_id);
+
+-- 策略
+CREATE INDEX idx_strategy_type ON wms_strategy_config(strategy_type, status);
+
+-- 打印
+CREATE INDEX idx_print_template_type ON wms_print_template(template_type, status);
+CREATE INDEX idx_print_record_ref ON wms_print_record(ref_type, ref_id);

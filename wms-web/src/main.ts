@@ -23,4 +23,23 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
+// 全局 Vue 错误处理器
+app.config.errorHandler = (err, instance, info) => {
+  console.error('[GlobalError]', err, 'Component:', instance, 'Info:', info)
+  // 生产环境可上报到监控系统
+}
+
+// 全局 Loading (路由切换时)
+router.beforeEach((_to, _from, next) => {
+  const appEl = document.getElementById('app')
+  if (appEl) {
+    const loader = document.createElement('div')
+    loader.id = 'global-loader'
+    loader.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:3px;z-index:9999;background:linear-gradient(90deg,#1677ff,#69b1ff);animation:loading-bar 1.5s ease infinite;'
+    appEl.appendChild(loader)
+    setTimeout(() => loader.remove(), 300)
+  }
+  next()
+})
+
 app.mount('#app')
