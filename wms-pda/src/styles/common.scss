@@ -1,0 +1,123 @@
+/* ── PDA 全局样式 ── */
+
+page {
+  background-color: #f5f5f5;
+  font-size: 28rpx;
+  color: #303133;
+  min-height: 100vh;
+}
+
+/* 通用页面容器 */
+.page-container {
+  padding: 24rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 卡片样式 */
+.card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+/* 操作栏 */
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+/* 大按钮 */
+.btn-primary {
+  width: 100%;
+  height: 88rpx;
+  background: #1677ff;
+  color: #fff;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary:active {
+  opacity: 0.85;
+}
+
+/* 扫码输入框（大号、居中、虚线边框） */
+.scan-input {
+  height: 96rpx;
+  background: #fafafa;
+  border: 2rpx dashed #d9d9d9;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 36rpx;
+  text-align: center;
+  letter-spacing: 4rpx;
+}
+
+/* 标签行 */
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.label-row .label {
+  color: #909399;
+  font-size: 28rpx;
+  min-width: 140rpx;
+}
+
+.label-row .value {
+  color: #303133;
+  font-size: 28rpx;
+  text-align: right;
+  flex: 1;
+}
+
+/* 数字标记 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40rpx;
+  height: 40rpx;
+  padding: 0 12rpx;
+  background: #ff4d4f;
+  color: #fff;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+/* 列表项单元格 */
+.cell-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.cell-item:last-child {
+  border-bottom: none;
+}
+
+/* 安全区底部占位 */
+.safe-bottom {
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
+}
