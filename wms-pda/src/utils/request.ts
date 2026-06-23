@@ -24,6 +24,11 @@ export interface PageResponse<T> {
 const BASE_URL = '/api/v1'
 const TIMEOUT = 30000
 
+/** 确保 url 以 / 开头 */
+function normalizeUrl(url: string): string {
+  return url.startsWith('/') ? url : '/' + url
+}
+
 // ── 内部请求方法 ──
 function request<T = unknown>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -33,7 +38,7 @@ function request<T = unknown>(
 ): Promise<ApiResponse<T>> {
   return new Promise((resolve, reject) => {
     // 构建完整 URL
-    let fullUrl = BASE_URL + url
+    let fullUrl = BASE_URL + normalizeUrl(url)
     if (params) {
       const query = Object.entries(params)
         .filter(([, v]) => v !== undefined && v !== null)
@@ -54,10 +59,16 @@ function request<T = unknown>(
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       success: (res) => {
+        // 空响应体守卫
+        if (!res.data) {
+          reject(new Error('Empty response body'))
+          return
+        }
         const body = res.data as ApiResponse<T>
-        if (res.statusCode === 200 && body.code === 200) {
+        const isSuccess = res.statusCode >= 200 && res.statusCode < 300 && body.code === 200
+        if (isSuccess) {
           resolve(body)
-        } else if (res.statusCode === 401 || body.code === 401) {
+        } else if (res.statusCode === 401 || (body && body.code === 401)) {
           removeToken()
           uni.reLaunch({ url: '/pages/login/index' })
           reject(new Error(body.message || '登录已过期'))
@@ -71,8 +82,9 @@ function request<T = unknown>(
         }
       },
       fail: (err) => {
+        const errMsg = err.errMsg || '网络连接失败'
         uni.showToast({
-          title: '网络连接失败，请检查网络',
+          title: errMsg,
           icon: 'none',
           duration: 2500
         })

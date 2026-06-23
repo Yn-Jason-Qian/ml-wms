@@ -49,14 +49,17 @@ export const useAuthStore = defineStore('auth', () => {
     realName.value = ''
     tenantId.value = 0
     tenantName.value = ''
+    warehouseId.value = 0
+    warehouseName.value = ''
     removeToken()
     uni.reLaunch({ url: '/pages/login/index' })
   }
 
-  /** 恢复会话（App 启动时） */
+  /** 恢复会话（App 启动时）— 同步 Pinia persist 恢复的 token 到 uni.storage */
   function restoreSession(): void {
-    // Pinia persist 已恢复 token 等字段，无需额外操作
-    // 如果 token 存在但已过期，由 request 拦截器处理 401
+    if (token.value) {
+      setToken(token.value)
+    }
   }
 
   /** 是否已登录 */

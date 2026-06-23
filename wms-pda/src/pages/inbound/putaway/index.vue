@@ -231,11 +231,16 @@ async function onScanClick(target: string) {
 }
 
 // ── 选择任务 ──
+let selectTaskSeq = 0  // 竞态守卫：递增序列号
+
 async function selectTask(task: any) {
+  const seq = ++selectTaskSeq
   currentTask.value = task
   // 加载上架行
   try {
     const res = await request.get(`/inbound/putaways/${task.id}/lines`)
+    // 竞态守卫：如果用户已切换到其他任务，丢弃此响应
+    if (seq !== selectTaskSeq) return
     const lines = (res.data?.records || res.data || []).map((l: any) => ({
       ...l,
       done: l.status === 'DONE' || l.doneQty >= l.putawayQty
@@ -246,6 +251,7 @@ async function selectTask(task: any) {
     lineIndex.value = firstPending >= 0 ? firstPending : 0
     targetLocation.value = ''
   } catch {
+    if (seq !== selectTaskSeq) return
     // 如果 /lines 接口不存在，使用模拟数据
     putawayLines.value = [{ id: task.id + '_1', lineNo: 1, skuCode: '-', skuName: '-', putawayQty: 0, fromLocationCode: '-', done: false }]
   }

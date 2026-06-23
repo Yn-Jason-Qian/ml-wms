@@ -370,26 +370,39 @@ function removeItem(idx: number) {
 async function submitReceive() {
   submitting.value = true
   try {
-    for (const item of receivedItems.value) {
-      await request.post('/inbound/receives', {
-        warehouseId: authStore.warehouseId,
-        ownerId: authStore.tenantId,
-        asnHeaderId: asnInfo.value?.id || null,
-        receiveType: form.receiveType,
-        // PDA 盲收：不关联 ASN line
-        skuId: item.skuId,
-        receiveQty: item.receiveQty,
-        receiveLocationId: null, // TODO: 库位码 → ID 转换
-        receiveLocationCode: item.locationCode,
-        batchNo: item.batchNo || undefined,
-        productionDate: item.productionDate || undefined,
-        expiryDate: item.expiryDate || undefined
+    // 并行提交所有行，使用 Promise.allSettled 追踪每行状态
+    const results = await Promise.allSettled(
+      receivedItems.value.map(item =>
+        request.post('/inbound/receives', {
+          warehouseId: authStore.warehouseId,
+          ownerId: authStore.tenantId,
+          asnHeaderId: asnInfo.value?.id || null,
+          receiveType: form.receiveType,
+          skuId: item.skuId,
+          receiveQty: item.receiveQty,
+          receiveLocationId: null,
+          receiveLocationCode: item.locationCode,
+          batchNo: item.batchNo || undefined,
+          productionDate: item.productionDate || undefined,
+          expiryDate: item.expiryDate || undefined
+        })
+      )
+    )
+
+    // 统计失败行
+    const failed = results.filter(r => r.status === 'rejected').length
+    const succeeded = results.length - failed
+
+    if (failed === 0) {
+      showResult.value = true
+      resultReceiveNo.value = `共 ${succeeded} 行, ${totalQty.value} 件`
+    } else {
+      uni.showModal({
+        title: '部分提交失败',
+        content: `成功 ${succeeded} 行，失败 ${failed} 行。请检查网络后重试。`,
+        showCancel: false
       })
     }
-
-    // 显示结果
-    showResult.value = true
-    resultReceiveNo.value = `共 ${receivedItems.value.length} 行, ${totalQty.value} 件`
   } catch {
     // handled by interceptor
   } finally {

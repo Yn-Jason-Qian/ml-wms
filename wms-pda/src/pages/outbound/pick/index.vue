@@ -196,10 +196,10 @@
       </view>
 
       <!-- 行导航条（底部） -->
-      <view class="line-nav" v-if="putawayLines.length > 1">
+      <view class="line-nav" v-if="pickLines.length > 1">
         <view
           class="nav-dot"
-          v-for="(line, idx) in putawayLines"
+          v-for="(line, idx) in pickLines"
           :key="idx"
           :class="{ current: idx === lineIndex, done: line.done, skip: line.skip }"
           @click="selectLine(idx)"
@@ -248,7 +248,7 @@ const filteredTasks = computed(() => {
 
 // ── 拣货操作 ──
 const currentTask = ref<any>(null)
-const putawayLines = ref<any[]>([])
+const pickLines = ref<any[]>([])
 const lineIndex = ref(0)
 const confirming = ref(false)
 
@@ -260,9 +260,9 @@ const locationVerified = ref(false)
 const skuVerified = ref(false)
 const containerVerified = ref(false)
 
-const currentLine = computed(() => putawayLines.value[lineIndex.value] || null)
-const totalLines = computed(() => putawayLines.value.length)
-const completedLines = computed(() => putawayLines.value.filter(l => l.done).length)
+const currentLine = computed(() => pickLines.value[lineIndex.value] || null)
+const totalLines = computed(() => pickLines.value.length)
+const completedLines = computed(() => pickLines.value.filter(l => l.done).length)
 
 const canConfirm = computed(() => {
   if (!currentLine.value) return false
@@ -332,7 +332,7 @@ async function selectTask(task: any) {
     }))
     // 按库位排序（优化路径）
     lines.sort((a: any, b: any) => (a.locationCode || '').localeCompare(b.locationCode || ''))
-    putawayLines.value = lines
+    pickLines.value = lines
 
     // 跳到第一个未完成行
     const firstPending = lines.findIndex((l: any) => !l.done)
@@ -340,7 +340,7 @@ async function selectTask(task: any) {
     resetLineInputs()
   } catch {
     // fallback
-    putawayLines.value = [{
+    pickLines.value = [{
       id: task.id + '_1', lineNo: 1,
       skuCode: '-', skuName: '-', pickQty: 0,
       locationCode: '-', locationId: 0, done: false
@@ -459,7 +459,7 @@ async function confirmPick() {
     }
 
     // 自动跳到下一个未完成行
-    const nextPending = putawayLines.value.findIndex(l => !l.done)
+    const nextPending = pickLines.value.findIndex(l => !l.done)
     if (nextPending >= 0) {
       lineIndex.value = nextPending
       resetLineInputs()
@@ -480,7 +480,7 @@ function markException() {
         currentLine.value.skip = true
       }
       // 跳到下一行
-      const nextPending = putawayLines.value.findIndex(l => !l.done && !l.skip)
+      const nextPending = pickLines.value.findIndex(l => !l.done && !l.skip)
       if (nextPending >= 0) {
         lineIndex.value = nextPending
         resetLineInputs()

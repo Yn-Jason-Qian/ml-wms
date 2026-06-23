@@ -68,6 +68,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
 
 interface TaskItem {
   id: number
@@ -137,7 +140,7 @@ function handleStart(task: TaskItem) {
 
 async function loadTasks() {
   try {
-    const res = await request.get<any>('/tasks', { pageNum: 1, pageSize: 50 })
+    const res = await request.get<any>('/tasks', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId })
     tasks.value = (res.data?.records || []).map((t: any) => ({
       ...t,
       statusType: statusTypeMap(t.status)

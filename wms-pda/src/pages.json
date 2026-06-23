@@ -40,6 +40,12 @@
       }
     },
     {
+      "path": "pages/outbound/ship/index",
+      "style": {
+        "navigationBarTitleText": "发货扫描"
+      }
+    },
+    {
       "path": "pages/inventory/stocktake/index",
       "style": {
         "navigationBarTitleText": "盘点扫描"
