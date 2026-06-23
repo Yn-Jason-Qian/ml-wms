@@ -37,4 +37,5 @@ public class TaskHeader extends BaseEntity {
     public void assign(Long userId) { this.status = STATUS_ASSIGNED; this.assignTo = userId; }
     public void start() { this.status = STATUS_EXECUTING; this.startTime = LocalDateTime.now(); }
     public void complete() { this.status = STATUS_DONE; this.endTime = LocalDateTime.now(); }
+    public void cancel() { this.status = STATUS_CANCELLED; this.endTime = LocalDateTime.now(); }
 }

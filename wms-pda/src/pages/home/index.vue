@@ -1,6 +1,6 @@
 <template>
   <view class="page-container">
-    <!-- 用户信息栏 -->
+    <!-- 用户信息栏 + WebSocket状态 -->
     <view class="card user-card">
       <view class="user-info">
         <up-icon name="account-fill" size="44" color="#1677ff" />
@@ -9,8 +9,14 @@
           <text class="tenant-name">{{ authStore.tenantName }}</text>
         </view>
       </view>
-      <view class="warehouse-info" v-if="authStore.warehouseName">
-        <up-tag :text="authStore.warehouseName" type="primary" plain />
+      <view class="header-right">
+        <view class="ws-indicator" :class="{ online: wsConnected }">
+          <view class="ws-dot" />
+          <text class="ws-text">{{ wsConnected ? '实时' : '离线' }}</text>
+        </view>
+        <view class="warehouse-info" v-if="authStore.warehouseName">
+          <up-tag :text="authStore.warehouseName" type="primary" plain />
+        </view>
       </view>
     </view>
 
@@ -78,10 +84,31 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useWebSocket } from '@/composables/useWebSocket'
 
 const authStore = useAuthStore()
+const { connected: wsConnected, lastNotification, onNotification } = useWebSocket()
+
+// WebSocket 实时通知 → 更新任务统计
+const unsub = onNotification((n) => {
+  if (n.eventType === 'NEW') {
+    switch (n.taskType) {
+      case 'INBOUND': case 'RECEIVE': stats.pendingReceive++; break
+      case 'PUTAWAY': stats.pendingPutaway++; break
+      case 'PICK': stats.pendingPick++; break
+      case 'STOCKTAKE': stats.pendingStocktake++; break
+    }
+  } else if (n.eventType === 'COMPLETED') {
+    switch (n.taskType) {
+      case 'INBOUND': case 'RECEIVE': stats.pendingReceive = Math.max(0, stats.pendingReceive - 1); break
+      case 'PUTAWAY': stats.pendingPutaway = Math.max(0, stats.pendingPutaway - 1); break
+      case 'PICK': stats.pendingPick = Math.max(0, stats.pendingPick - 1); break
+      case 'STOCKTAKE': stats.pendingStocktake = Math.max(0, stats.pendingStocktake - 1); break
+    }
+  }
+})
 
 const stats = reactive({
   pendingReceive: 0,
@@ -127,6 +154,46 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+}
+
+.ws-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 4rpx 12rpx;
+  background: #fff2f0;
+  border-radius: 16rpx;
+}
+
+.ws-indicator.online {
+  background: #f6ffed;
+}
+
+.ws-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #ff4d4f;
+}
+
+.ws-indicator.online .ws-dot {
+  background: #52c41a;
+}
+
+.ws-text {
+  font-size: 20rpx;
+  color: #ff4d4f;
+}
+
+.ws-indicator.online .ws-text {
+  color: #52c41a;
 }
 
 .user-info {
