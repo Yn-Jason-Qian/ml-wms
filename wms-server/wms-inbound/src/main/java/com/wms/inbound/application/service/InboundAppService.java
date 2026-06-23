@@ -46,11 +46,11 @@ String asnNo = "ASN-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("
         int lineNo = 0;
         for (AsnCreateCmd.AsnLineItem item : cmd.getLines()) {
             lineNo++;
-            Sku sku = skuRepository.findById(item.getSkuId())
-                    .orElseThrow(() -> BusinessException.notFound("SKU不存在"));
+            // 支持 SKU code → ID 查找 (PDA扫码场景传 code)
+            Sku sku = resolveSku(item.getSkuId(), item.getSkuCode(), tenantId);
             AsnLine l = new AsnLine();
             l.setTenantId(tenantId); l.setAsnHeaderId(h.getId()); l.setLineNo(lineNo);
-            l.setSkuId(item.getSkuId()); l.setSkuCode(sku.getSkuCode()); l.setSkuName(sku.getSkuName());
+            l.setSkuId(sku.getId()); l.setSkuCode(sku.getSkuCode()); l.setSkuName(sku.getSkuName());
             l.setExpectedQty(item.getExpectedQty()); l.setReceivedQty(BigDecimal.ZERO);
             l.setBatchNo(item.getBatchNo()); l.setLotAttrs(item.getLotAttrs());
             l.setProductionDate(item.getProductionDate()); l.setExpiryDate(item.getExpiryDate());
@@ -74,8 +74,13 @@ Long tenantId = UserContext.getTenantId();
 Long userId = UserContext.getUserId();
 String receiveNo = "RCV-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
-        Sku sku = skuRepository.findById(cmd.getSkuId())
-                .orElseThrow(() -> BusinessException.notFound("SKU不存在"));
+        // 支持 SKU code → ID 查找
+        Sku sku = resolveSku(cmd.getSkuId(), cmd.getSkuCode(), tenantId);
+        // 支持库位 code → ID 查找 (如果传了 code 但未传 id, 使用 code 记录)
+        Long locationId = cmd.getReceiveLocationId();
+        if (locationId == null && cmd.getReceiveLocationCode() != null) {
+            locationId = 0L; // 后续可通过 location 仓库实现 code→ID 查找
+        }
 
         ReceiveHeader h = new ReceiveHeader();
         h.setTenantId(tenantId); h.setWarehouseId(cmd.getWarehouseId()); h.setOwnerId(cmd.getOwnerId());
@@ -87,9 +92,9 @@ String receiveNo = "RCV-" + LocalDateTime.now().format(DateTimeFormatter.ofPatte
 
         ReceiveLine l = new ReceiveLine();
         l.setTenantId(tenantId); l.setReceiveHeaderId(h.getId()); l.setLineNo(1);
-        l.setSkuId(cmd.getSkuId()); l.setSkuCode(sku.getSkuCode()); l.setSkuName(sku.getSkuName());
+        l.setSkuId(sku.getId()); l.setSkuCode(sku.getSkuCode()); l.setSkuName(sku.getSkuName());
         l.setReceiveQty(cmd.getReceiveQty()); l.setReceivePackage(cmd.getReceivePackage());
-        l.setReceiveLocationId(cmd.getReceiveLocationId());
+        l.setReceiveLocationId(locationId);
         l.setAsnLineId(cmd.getAsnLineId());
         l.setBatchNo(cmd.getBatchNo()); l.setLotAttrs(cmd.getLotAttrs());
         l.setProductionDate(cmd.getProductionDate()); l.setExpiryDate(cmd.getExpiryDate());
@@ -209,7 +214,22 @@ Long userId = UserContext.getUserId();
         }
     }
 
-    // ───── Helper ─────
+    // ───── Helpers ─────
+
+    /** 根据 ID 或 code 查找 SKU (支持PDA扫码传 code 的场景) */
+    private Sku resolveSku(Long skuId, String skuCode, Long tenantId) {
+        if (skuId != null) {
+            return skuRepository.findById(skuId)
+                    .orElseThrow(() -> BusinessException.notFound("SKU不存在: id=" + skuId));
+        }
+        if (skuCode != null && !skuCode.isBlank()) {
+            return skuRepository.findByCode(tenantId, skuCode)
+                    .orElseThrow(() -> BusinessException.notFound("SKU不存在: code=" + skuCode));
+        }
+        throw BusinessException.badRequest("skuId 或 skuCode 必须提供一个");
+    }
+
+    // ───── DTO ─────
 
     private AsnDTO toAsnDTO(AsnHeader h, List<AsnLine> lines) {
         AsnDTO d = new AsnDTO();

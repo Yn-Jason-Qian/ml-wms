@@ -37,6 +37,7 @@ public class OutboundRepositoryImpl implements OutboundRepository {
     @Override public List<WaveLine> findWaveLines(Long wId) { return waveLineMapper.selectList(new LambdaQueryWrapper<WaveLine>().eq(WaveLine::getWaveHeaderId, wId)); }
 
     @Override public Optional<PickHeader> findPickById(Long id) { return Optional.ofNullable(pickMapper.selectById(id)); }
+    @Override public Optional<PickHeader> findPickByWave(Long waveId) { return Optional.ofNullable(pickMapper.selectOne(new LambdaQueryWrapper<PickHeader>().eq(PickHeader::getWaveHeaderId, waveId).orderByDesc(PickHeader::getCreatedAt).last("LIMIT 1"))); }
     @Override public void savePickHeader(PickHeader h) { pickMapper.insert(h); }
     @Override public void savePickLine(PickLine l) { pickLineMapper.insert(l); }
     @Override public void updatePickLine(PickLine l) { pickLineMapper.updateById(l); }

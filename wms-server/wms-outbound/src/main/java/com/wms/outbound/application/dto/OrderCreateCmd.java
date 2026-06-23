@@ -21,7 +21,8 @@ public class OrderCreateCmd {
 
     @Data
     public static class LineItem {
-        @NotNull private Long skuId;
+        private Long skuId;             // 可选: SKU ID
+        private String skuCode;         // 可选: SKU 编码 (PDA扫码场景)
         @NotNull private BigDecimal orderQty;
         private String batchNo;
         private String lotAttrs;

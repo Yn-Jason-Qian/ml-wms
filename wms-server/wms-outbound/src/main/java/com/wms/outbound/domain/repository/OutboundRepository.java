@@ -22,6 +22,7 @@ public interface OutboundRepository {
 
     // Pick
     Optional<PickHeader> findPickById(Long id);
+    Optional<PickHeader> findPickByWave(Long waveId);
     void savePickHeader(PickHeader h);
     void savePickLine(PickLine l);
     void updatePickLine(PickLine l);

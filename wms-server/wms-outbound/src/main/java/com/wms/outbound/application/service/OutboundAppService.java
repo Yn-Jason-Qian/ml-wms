@@ -44,10 +44,11 @@ String orderNo = "ORD-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern
         int lineNo = 0;
         for (OrderCreateCmd.LineItem item : cmd.getLines()) {
             lineNo++;
-            Sku sku = skuRepository.findById(item.getSkuId()).orElseThrow(() -> BusinessException.notFound("SKU不存在"));
+            // 支持 SKU code → ID 查找
+            Sku sku = resolveSku(item.getSkuId(), item.getSkuCode(), tenantId);
             OrderLine l = new OrderLine();
             l.setTenantId(tenantId); l.setOrderHeaderId(h.getId()); l.setLineNo(lineNo);
-            l.setSkuId(item.getSkuId()); l.setSkuCode(sku.getSkuCode()); l.setSkuName(sku.getSkuName());
+            l.setSkuId(sku.getId()); l.setSkuCode(sku.getSkuCode()); l.setSkuName(sku.getSkuName());
             l.setOrderQty(item.getOrderQty()); l.setAllocatedQty(BigDecimal.ZERO);
             l.setPickedQty(BigDecimal.ZERO); l.setShippedQty(BigDecimal.ZERO);
             l.setBatchNo(item.getBatchNo()); l.setLotAttrs(item.getLotAttrs());
@@ -183,7 +184,20 @@ String shipNo = "SHP-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern(
     }
 
     private PickHeader findPickByWave(Long waveId) {
-        // 简化实现：查找第一个关联的拣货单
-        return null; // 实际应根据业务逻辑查找
+        // 查找关联的拣货单 (简化: 返回最新创建的)
+        return outboundRepo.findPickByWave(waveId).orElse(null);
+    }
+
+    /** 根据 ID 或 code 查找 SKU */
+    private Sku resolveSku(Long skuId, String skuCode, Long tenantId) {
+        if (skuId != null) {
+            return skuRepository.findById(skuId)
+                    .orElseThrow(() -> BusinessException.notFound("SKU不存在: id=" + skuId));
+        }
+        if (skuCode != null && !skuCode.isBlank()) {
+            return skuRepository.findByCode(tenantId, skuCode)
+                    .orElseThrow(() -> BusinessException.notFound("SKU不存在: code=" + skuCode));
+        }
+        throw BusinessException.badRequest("skuId 或 skuCode 必须提供一个");
     }
 }
