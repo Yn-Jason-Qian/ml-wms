@@ -3,14 +3,15 @@
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/ml_wms?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/ml_wms?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&tinyInt1isBit=false}
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:root}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
       idle-timeout: 300000
-      connection-timeout: 20000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
 
   data:
     redis:
@@ -27,5 +28,6 @@ spring:
 logging:
   level:
     com.wms: INFO
+    com.zaxxer.hikari: DEBUG
     org.springframework.web: WARN
     org.springframework.security: WARN
