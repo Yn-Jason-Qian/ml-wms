@@ -15,7 +15,7 @@ COPY wms-web/pom.xml wms-web/
 # Download dependencies (cache layer)
 RUN mvn dependency:go-offline -q -B
 COPY . .
-RUN mvn clean package -pl wms-web -DskipTests -q
+RUN mvn clean package -DskipTests -q
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
