@@ -3,14 +3,16 @@
     <el-row :gutter="16">
       <el-col :span="6">
         <el-card header="字典类型">
-          <div v-for="t in dictTypes" :key="t" class="dict-type-item"
-               :class="{ active: currentType === t }" @click="selectType(t)">
-            {{ t }}
+          <div v-for="t in dictTypes" :key="t.typeCode" class="dict-type-item"
+               :class="{ active: currentType === t.typeCode }" @click="selectType(t.typeCode)">
+            <div class="dict-type-name">{{ t.typeName }}</div>
+            <div class="dict-type-code">{{ t.typeCode }}</div>
           </div>
           <el-empty v-if="!dictTypes.length" description="暂无" :image-size="60" />
           <div style="margin-top:12px">
-            <el-input v-model="newType" placeholder="新类型名" size="small" style="width:calc(100% - 60px)" />
-            <el-button size="small" @click="addType" style="margin-left:4px">+</el-button>
+            <el-input v-model="newTypeCode" placeholder="类型编码" size="small" style="width:100%;margin-bottom:4px" />
+            <el-input v-model="newTypeName" placeholder="类型名称（中文）" size="small" style="width:calc(100% - 60px)" />
+            <el-button size="small" @click="addType" style="margin-left:4px" :disabled="!newTypeCode||!newTypeName">+</el-button>
           </div>
         </el-card>
       </el-col>
@@ -18,11 +20,11 @@
         <el-card>
           <template #header>
             <div class="page-header">
-              <span>{{ currentType || '请选择字典类型' }}</span>
+              <span>{{ currentTypeName || '请选择字典类型' }}</span>
               <el-button v-if="currentType" type="primary" size="small" @click="openDialog()">新增字典项</el-button>
             </div>
           </template>
-          <el-table :data="items" border stripe size="small" v-if="currentType">
+          <el-table :data="pagedItems" border stripe size="small" v-if="currentType">
             <el-table-column prop="dictCode" label="编码" width="150" />
             <el-table-column prop="dictName" label="名称" />
             <el-table-column prop="sortOrder" label="排序" width="80" />
@@ -30,13 +32,21 @@
             <el-table-column label="状态" width="80">
               <template #default="{ row }"><el-tag size="small" :type="row.status===1?'success':'danger'">{{ row.status===1?'启用':'禁用' }}</el-tag></template>
             </el-table-column>
-            <el-table-column label="操作" width="140">
+            <el-table-column label="操作" width="220">
               <template #default="{ row }">
                 <el-button link type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+                <el-button v-if="row.status===1" link type="warning" size="small" @click="handleDisable(row)">禁用</el-button>
+                <el-button v-if="row.status===0" link type="success" size="small" @click="handleEnable(row)">启用</el-button>
                 <el-button link type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
+          <el-pagination
+            v-if="currentType"
+            v-model:current-page="pageNum" v-model:page-size="pageSize"
+            :total="total" :page-sizes="[10, 20, 50]"
+            layout="total, sizes, prev, pager, next"
+            style="margin-top:16px;justify-content:flex-end" />
           <el-empty v-else description="请从左侧选择字典类型" :image-size="80" />
         </el-card>
       </el-col>
@@ -58,37 +68,70 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/api/request'
 
-const dictTypes = ref<string[]>([])
+const dictTypes = ref<{ typeCode: string; typeName: string; status: number }[]>([])
 const currentType = ref('')
 const items = ref<any[]>([])
-const newType = ref('')
+const newTypeCode = ref('')
+const newTypeName = ref('')
 const loading = ref(false), saving = ref(false), dialogVisible = ref(false), isEdit = ref(false)
 const formRef = ref(), editId = ref<number>()
+const pageNum = ref(1), pageSize = ref(10)
 const form = reactive({ dictType: '', dictCode: '', dictName: '', parentCode: '0', sortOrder: 0 })
 const rules = {
   dictCode: [{ required: true, message: '请输入编码', trigger: 'blur' }],
   dictName: [{ required: true, message: '请输入名称', trigger: 'blur' }]
 }
 
+const currentTypeName = computed(() => {
+  const t = dictTypes.value.find(d => d.typeCode === currentType.value)
+  return t ? t.typeName : currentType.value
+})
+const total = computed(() => items.value.length)
+const pagedItems = computed(() => {
+  const start = (pageNum.value - 1) * pageSize.value
+  return items.value.slice(start, start + pageSize.value)
+})
+
 async function loadTypes() {
   const res = await request.get('/masterdata/dict/types')
   dictTypes.value = res.data || []
 }
 
-async function selectType(type: string) {
-  currentType.value = type
-  const res = await request.get(`/masterdata/dict/items/${type}`)
+async function selectType(typeCode: string) {
+  currentType.value = typeCode
+  pageNum.value = 1
+  const res = await request.get(`/masterdata/dict/items/${typeCode}`)
   items.value = res.data || []
 }
 
+async function handleDisable(row: any) {
+  try {
+    await ElMessageBox.confirm(`确定禁用字典项「${row.dictName}」？`, '提示', { type: 'warning' })
+    await request.post(`/masterdata/dict/${row.id}/disable`)
+    ElMessage.success('禁用成功')
+    selectType(currentType.value)
+  } catch { /* 用户取消 */ }
+}
+async function handleEnable(row: any) {
+  try {
+    await ElMessageBox.confirm(`确定启用字典项「${row.dictName}」？`, '提示', { type: 'warning' })
+    await request.post(`/masterdata/dict/${row.id}/enable`)
+    ElMessage.success('启用成功')
+    selectType(currentType.value)
+  } catch { /* 用户取消 */ }
+}
+
 async function addType() {
-  if (!newType.value) return
-  await request.post('/masterdata/dict', { dictType: newType.value, dictCode: 'START', dictName: '初始项', sortOrder: 0 })
-  ElMessage.success('添加成功'); loadTypes(); currentType.value = newType.value; newType.value = ''
+  if (!newTypeCode.value || !newTypeName.value) return
+  await request.post('/masterdata/dict/types', { typeCode: newTypeCode.value, typeName: newTypeName.value })
+  ElMessage.success('字典类型添加成功')
+  await loadTypes()
+  newTypeCode.value = ''
+  newTypeName.value = ''
 }
 
 function openDialog(row?: any) {
@@ -122,8 +165,11 @@ onMounted(loadTypes)
 </script>
 
 <style scoped>
-.dict-type-item { padding: 8px 12px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; }
+.dict-type-item { padding: 6px 12px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; }
 .dict-type-item:hover { background: #f0f2f5; }
 .dict-type-item.active { background: #ecf5ff; color: #409eff; font-weight: bold; }
+.dict-type-item.active .dict-type-code { color: #79bbff; }
+.dict-type-name { font-size: 14px; }
+.dict-type-code { font-size: 11px; color: #999; }
 .page-header { display: flex; justify-content: space-between; align-items: center; }
 </style>

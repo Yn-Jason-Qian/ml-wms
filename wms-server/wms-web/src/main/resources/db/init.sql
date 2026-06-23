@@ -348,6 +348,30 @@ CREATE TABLE wms_masterdata_dictionary (
     UNIQUE KEY uk_tenant_dict (tenant_id, dict_type, dict_code)
 ) COMMENT '字典表';
 
+-- 字典类型表（存放类型的显示名称）
+CREATE TABLE wms_masterdata_dict_type (
+    id BIGINT NOT NULL,
+    tenant_id BIGINT NOT NULL,
+    type_code VARCHAR(64) NOT NULL COMMENT '类型编码',
+    type_name VARCHAR(128) NOT NULL COMMENT '类型名称',
+    status TINYINT NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+    version INT NOT NULL DEFAULT 0,
+    is_deleted TINYINT NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_tenant_type_code (tenant_id, type_code)
+) COMMENT '字典类型表';
+
+INSERT INTO wms_masterdata_dict_type (id, tenant_id, type_code, type_name) VALUES
+(3001, 1, 'WH_TYPE', '仓库类型'),
+(3002, 1, 'AREA_TYPE', '库区类型'),
+(3003, 1, 'LOCATION_TYPE', '库位类型'),
+(3004, 1, 'ORDER_TYPE', '订单类型'),
+(3005, 1, 'PACKAGE_LEVEL', '包装层级');
+
 -- ============================================================
 -- 3. 入库模块 (Inbound)
 -- ============================================================

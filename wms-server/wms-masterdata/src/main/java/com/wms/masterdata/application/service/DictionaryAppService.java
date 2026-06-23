@@ -54,5 +54,23 @@ public class DictionaryAppService {
     }
 
     @Transactional
+    public void enable(Long id) {
+        Dictionary dict = dictRepository.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("字典项不存在"));
+        dict.enable();
+        dict.setUpdatedBy(UserContext.getUserId());
+        dictRepository.update(dict);
+    }
+
+    @Transactional
+    public void disable(Long id) {
+        Dictionary dict = dictRepository.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("字典项不存在"));
+        dict.disable();
+        dict.setUpdatedBy(UserContext.getUserId());
+        dictRepository.update(dict);
+    }
+
+    @Transactional
     public void delete(Long id) { dictRepository.deleteById(id); }
 }
