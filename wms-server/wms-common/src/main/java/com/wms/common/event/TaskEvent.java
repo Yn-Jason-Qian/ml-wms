@@ -1,15 +1,13 @@
 package com.wms.common.event;
 
 import lombok.Getter;
+
 import org.springframework.context.ApplicationEvent;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 任务状态变更事件 — 驱动 WebSocket 实时推送
- * 放在 wms-common 以便所有模块都能访问
- */
+/** 任务状态变更事件 — 驱动 WebSocket 实时推送 放在 wms-common 以便所有模块都能访问 */
 @Getter
 public class TaskEvent extends ApplicationEvent {
 
@@ -20,8 +18,14 @@ public class TaskEvent extends ApplicationEvent {
     private final Long warehouseId;
     private final Long assignTo;
 
-    public TaskEvent(Object source, String eventType, Long taskId, String taskNo,
-                     String taskType, Long warehouseId, Long assignTo) {
+    public TaskEvent(
+            Object source,
+            String eventType,
+            Long taskId,
+            String taskNo,
+            String taskType,
+            Long warehouseId,
+            Long assignTo) {
         super(source);
         this.eventType = eventType;
         this.taskId = taskId;

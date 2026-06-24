@@ -1,6 +1,5 @@
 package com.wms.inbound.domain.service;
 
-import cn.hutool.core.date.LocalDateTimeUtil;
 import com.wms.common.exception.BusinessException;
 import com.wms.inbound.domain.entity.*;
 import com.wms.inbound.domain.repository.*;
@@ -11,8 +10,10 @@ import com.wms.inventory.domain.repository.StockTransactionRepository;
 import com.wms.strategy.domain.entity.StrategyConfig;
 import com.wms.strategy.domain.repository.StrategyRepository;
 import com.wms.strategy.domain.service.StrategyEngine;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -38,14 +39,16 @@ public class InboundDomainService {
             return null;
         }
 
-        AsnLine asnLine = inboundRepo.findAsnLineById(receiveLine.getAsnLineId())
-                .orElseThrow(() -> BusinessException.notFound("ASN行不存在"));
+        AsnLine asnLine =
+                inboundRepo
+                        .findAsnLineById(receiveLine.getAsnLineId())
+                        .orElseThrow(() -> BusinessException.notFound("ASN行不存在"));
 
         // 校验是否超收
         BigDecimal remaining = asnLine.getRemainingQty();
         if (receiveLine.getReceiveQty().compareTo(remaining) > 0) {
-            throw new BusinessException("收货数量 [" + receiveLine.getReceiveQty()
-                    + "] 超过剩余可收数量 [" + remaining + "]");
+            throw new BusinessException(
+                    "收货数量 [" + receiveLine.getReceiveQty() + "] 超过剩余可收数量 [" + remaining + "]");
         }
 
         // 更新ASN行已收数量
@@ -64,10 +67,10 @@ public class InboundDomainService {
 
     private void updateAsnStatus(AsnHeader asnHeader, Long userId) {
         List<AsnLine> lines = inboundRepo.findAsnLinesByHeader(asnHeader.getId());
-        boolean allReceived = lines.stream().allMatch(l ->
-                l.getReceivedQty().compareTo(l.getExpectedQty()) >= 0);
-        boolean anyReceived = lines.stream().anyMatch(l ->
-                l.getReceivedQty().compareTo(BigDecimal.ZERO) > 0);
+        boolean allReceived =
+                lines.stream().allMatch(l -> l.getReceivedQty().compareTo(l.getExpectedQty()) >= 0);
+        boolean anyReceived =
+                lines.stream().anyMatch(l -> l.getReceivedQty().compareTo(BigDecimal.ZERO) > 0);
 
         if (allReceived) asnHeader.setStatus(AsnHeader.STATUS_RECEIVED);
         else if (anyReceived) asnHeader.setStatus(AsnHeader.STATUS_PARTIAL_RECEIVED);
@@ -83,16 +86,23 @@ public class InboundDomainService {
             Map<String, Object> context = new HashMap<>();
             context.put("sku", Map.of("code", line.getSkuCode()));
             context.put("putaway", Map.of("fromLocationId", line.getFromLocationId()));
-            StrategyEngine.MatchResult result = strategyEngine.match(
-                    StrategyConfig.TYPE_PUTAWAY, context,
-                    type -> {
-                        List<StrategyConfig> configs = strategyRepository.findByType(
-                                line.getTenantId(), type);
-                        configs.forEach(c -> c.setRules(strategyRepository.findRulesByStrategy(c.getId())));
-                        return configs;
-                    });
+            StrategyEngine.MatchResult result =
+                    strategyEngine.match(
+                            StrategyConfig.TYPE_PUTAWAY,
+                            context,
+                            type -> {
+                                List<StrategyConfig> configs =
+                                        strategyRepository.findByType(line.getTenantId(), type);
+                                configs.forEach(
+                                        c ->
+                                                c.setRules(
+                                                        strategyRepository.findRulesByStrategy(
+                                                                c.getId())));
+                                return configs;
+                            });
             if (result != null && result.getActionParams().containsKey("locationId")) {
-                line.setToLocationId(Long.valueOf(result.getActionParams().get("locationId").toString()));
+                line.setToLocationId(
+                        Long.valueOf(result.getActionParams().get("locationId").toString()));
             }
         }
 
@@ -101,9 +111,16 @@ public class InboundDomainService {
         }
 
         // 查找或创建库存记录
-Long tenantId = line.getTenantId();
-        Stock stock = stockRepository.findByKey(tenantId, null /*warehouse*/, line.getToLocationId(),
-                line.getSkuId(), line.getBatchNo()).orElse(null);
+        Long tenantId = line.getTenantId();
+        Stock stock =
+                stockRepository
+                        .findByKey(
+                                tenantId,
+                                null /*warehouse*/,
+                                line.getToLocationId(),
+                                line.getSkuId(),
+                                line.getBatchNo())
+                        .orElse(null);
 
         if (stock == null) {
             stock = new Stock();
@@ -127,12 +144,24 @@ Long tenantId = line.getTenantId();
         stockRepository.updateWithVersion(stock);
 
         // 写库存流水
-        writeTransaction(stock, "PUTAWAY", "IN", line.getPutawayQty(),
-                line.getPutawayHeaderId().toString(), line.getPutawayHeaderId(), userId);
+        writeTransaction(
+                stock,
+                "PUTAWAY",
+                "IN",
+                line.getPutawayQty(),
+                line.getPutawayHeaderId().toString(),
+                line.getPutawayHeaderId(),
+                userId);
     }
 
-    private void writeTransaction(Stock stock, String txnType, String direction, BigDecimal qty,
-String refNo, Long refId, Long operator) {
+    private void writeTransaction(
+            Stock stock,
+            String txnType,
+            String direction,
+            BigDecimal qty,
+            String refNo,
+            Long refId,
+            Long operator) {
         StockTransaction txn = new StockTransaction();
         txn.setWarehouseId(stock.getWarehouseId());
         txn.setTenantId(stock.getTenantId());

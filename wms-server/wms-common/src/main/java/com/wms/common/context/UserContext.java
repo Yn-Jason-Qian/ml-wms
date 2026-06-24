@@ -3,9 +3,7 @@ package com.wms.common.context;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-/**
- * 用户上下文（ThreadLocal），存储当前请求的用户信息。
- */
+/** 用户上下文（ThreadLocal），存储当前请求的用户信息。 */
 public final class UserContext {
 
     private static final ThreadLocal<UserInfo> USER_HOLDER = new ThreadLocal<>();

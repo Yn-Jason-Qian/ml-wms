@@ -6,9 +6,13 @@ import com.wms.common.base.PageResponse;
 import com.wms.common.log.OperationLog;
 import com.wms.masterdata.application.dto.*;
 import com.wms.masterdata.application.service.SkuAppService;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -25,8 +29,12 @@ public class SkuController {
     @PostMapping("/page")
     public ApiResponse<PageResponse<SkuDTO>> page(@Valid @RequestBody SkuPageQuery query) {
         IPage<SkuDTO> result = skuAppService.page(query);
-        return ApiResponse.ok(PageResponse.of(result.getRecords(), result.getTotal(),
-                (int) result.getCurrent(), (int) result.getSize()));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @GetMapping("/{id}")
@@ -42,7 +50,8 @@ public class SkuController {
 
     @PutMapping("/{id}")
     @OperationLog(module = "基础数据", action = "更新SKU")
-    public ApiResponse<SkuDTO> update(@PathVariable("id") Long id, @Valid @RequestBody SkuUpdateCmd cmd) {
+    public ApiResponse<SkuDTO> update(
+            @PathVariable("id") Long id, @Valid @RequestBody SkuUpdateCmd cmd) {
         cmd.setId(id);
         return ApiResponse.ok(skuAppService.update(cmd));
     }
@@ -75,8 +84,8 @@ public class SkuController {
 
     @PostMapping("/{skuId}/packages")
     @OperationLog(module = "基础数据", action = "添加SKU包装规格")
-    public ApiResponse<SkuPackageDTO> createPackage(@PathVariable("skuId") Long skuId,
-                                                     @Valid @RequestBody SkuPackageCreateCmd cmd) {
+    public ApiResponse<SkuPackageDTO> createPackage(
+            @PathVariable("skuId") Long skuId, @Valid @RequestBody SkuPackageCreateCmd cmd) {
         cmd.setSkuId(skuId);
         return ApiResponse.ok(skuAppService.createPackage(cmd));
     }

@@ -1,17 +1,16 @@
 package com.wms.common.event;
 
-import org.junit.jupiter.api.Test;
-import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 class TaskEventTest {
 
     @Test
     void testEventCreation() {
-        TaskEvent event = new TaskEvent(
-            this, "COMPLETED", 100L, "TASK-001",
-            "PICK", 1L, 42L
-        );
+        TaskEvent event = new TaskEvent(this, "COMPLETED", 100L, "TASK-001", "PICK", 1L, 42L);
 
         assertEquals("COMPLETED", event.getEventType());
         assertEquals(100L, event.getTaskId());
@@ -23,10 +22,7 @@ class TaskEventTest {
 
     @Test
     void testToMap() {
-        TaskEvent event = new TaskEvent(
-            this, "CLAIMED", 200L, "TASK-002",
-            "PUTAWAY", 3L, 99L
-        );
+        TaskEvent event = new TaskEvent(this, "CLAIMED", 200L, "TASK-002", "PUTAWAY", 3L, 99L);
 
         Map<String, Object> map = event.toMap();
 
@@ -41,9 +37,7 @@ class TaskEventTest {
 
     @Test
     void testToMapWithNulls() {
-        TaskEvent event = new TaskEvent(
-            this, "NEW", 1L, null, null, null, null
-        );
+        TaskEvent event = new TaskEvent(this, "NEW", 1L, null, null, null, null);
 
         Map<String, Object> map = event.toMap();
 

@@ -6,9 +6,13 @@ import com.wms.common.base.PageResponse;
 import com.wms.common.log.OperationLog;
 import com.wms.masterdata.application.dto.*;
 import com.wms.masterdata.application.service.LocationAppService;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -23,10 +27,15 @@ public class LocationController {
     }
 
     @PostMapping("/page")
-    public ApiResponse<PageResponse<LocationDTO>> page(@Valid @RequestBody LocationPageQuery query) {
+    public ApiResponse<PageResponse<LocationDTO>> page(
+            @Valid @RequestBody LocationPageQuery query) {
         IPage<LocationDTO> result = locationAppService.page(query);
-        return ApiResponse.ok(PageResponse.of(result.getRecords(), result.getTotal(),
-                (int) result.getCurrent(), (int) result.getSize()));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @GetMapping("/{id}")
@@ -42,13 +51,15 @@ public class LocationController {
 
     @PostMapping("/batch")
     @OperationLog(module = "基础数据", action = "批量生成库位")
-    public ApiResponse<List<LocationDTO>> batchCreate(@Valid @RequestBody LocationBatchCreateCmd cmd) {
+    public ApiResponse<List<LocationDTO>> batchCreate(
+            @Valid @RequestBody LocationBatchCreateCmd cmd) {
         return ApiResponse.ok(locationAppService.batchCreate(cmd));
     }
 
     @PutMapping("/{id}")
     @OperationLog(module = "基础数据", action = "更新库位")
-    public ApiResponse<LocationDTO> update(@PathVariable("id") Long id, @Valid @RequestBody LocationUpdateCmd cmd) {
+    public ApiResponse<LocationDTO> update(
+            @PathVariable("id") Long id, @Valid @RequestBody LocationUpdateCmd cmd) {
         cmd.setId(id);
         return ApiResponse.ok(locationAppService.update(cmd));
     }

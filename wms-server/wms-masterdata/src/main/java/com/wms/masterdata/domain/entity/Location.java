@@ -1,9 +1,10 @@
 package com.wms.masterdata.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.wms.common.base.BaseEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.math.BigDecimal;
 
@@ -39,13 +40,21 @@ public class Location extends BaseEntity {
     public static final int STATUS_IDLE = 1;
     public static final int STATUS_OCCUPIED = 2;
 
-    public void disable() { this.status = STATUS_DISABLED; }
-    public void enable() { this.status = STATUS_IDLE; }
-    public boolean isEnabled() { return status != null && status != STATUS_DISABLED; }
+    public void disable() {
+        this.status = STATUS_DISABLED;
+    }
+
+    public void enable() {
+        this.status = STATUS_IDLE;
+    }
+
+    public boolean isEnabled() {
+        return status != null && status != STATUS_DISABLED;
+    }
 
     /** 按规则自动生成库位编码：WH-01-01-01-01 (巷道-货架-层-位) */
-    public static String generateCode(String warehousePrefix, String aisle, String shelf,
-String tier, String depth) {
+    public static String generateCode(
+            String warehousePrefix, String aisle, String shelf, String tier, String depth) {
         return String.format("%s-%s-%s-%s-%s", warehousePrefix, aisle, shelf, tier, depth);
     }
 }

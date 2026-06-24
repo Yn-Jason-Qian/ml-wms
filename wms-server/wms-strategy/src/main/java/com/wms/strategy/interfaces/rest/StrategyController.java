@@ -4,9 +4,13 @@ import com.wms.common.base.ApiResponse;
 import com.wms.common.log.OperationLog;
 import com.wms.strategy.application.dto.*;
 import com.wms.strategy.application.service.StrategyAppService;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -32,7 +36,8 @@ public class StrategyController {
 
     @PostMapping("/configs")
     @OperationLog(module = "策略管理", action = "创建策略")
-    public ApiResponse<StrategyConfigDTO> createConfig(@Valid @RequestBody StrategyConfigCreateCmd cmd) {
+    public ApiResponse<StrategyConfigDTO> createConfig(
+            @Valid @RequestBody StrategyConfigCreateCmd cmd) {
         return ApiResponse.ok(strategyAppService.createConfig(cmd));
     }
 
@@ -51,7 +56,8 @@ public class StrategyController {
 
     @PutMapping("/rules/{id}")
     @OperationLog(module = "策略管理", action = "更新规则")
-    public ApiResponse<Void> updateRule(@PathVariable("id") Long id, @Valid @RequestBody StrategyRuleCreateCmd cmd) {
+    public ApiResponse<Void> updateRule(
+            @PathVariable("id") Long id, @Valid @RequestBody StrategyRuleCreateCmd cmd) {
         strategyAppService.updateRule(id, cmd);
         return ApiResponse.ok();
     }
@@ -64,7 +70,8 @@ public class StrategyController {
     }
 
     @PostMapping("/match")
-    public ApiResponse<StrategyMatchResultDTO> match(@Valid @RequestBody StrategyMatchRequest request) {
+    public ApiResponse<StrategyMatchResultDTO> match(
+            @Valid @RequestBody StrategyMatchRequest request) {
         return ApiResponse.ok(strategyAppService.match(request));
     }
 }

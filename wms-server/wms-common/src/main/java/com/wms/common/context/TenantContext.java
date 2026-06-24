@@ -1,8 +1,6 @@
 package com.wms.common.context;
 
-/**
- * 租户上下文（ThreadLocal），由 JWT 过滤器解析后设置，MyBatis-Plus 拦截器自动注入 SQL。
- */
+/** 租户上下文（ThreadLocal），由 JWT 过滤器解析后设置，MyBatis-Plus 拦截器自动注入 SQL。 */
 public final class TenantContext {
 
     private static final ThreadLocal<Long> TENANT_HOLDER = new ThreadLocal<>();

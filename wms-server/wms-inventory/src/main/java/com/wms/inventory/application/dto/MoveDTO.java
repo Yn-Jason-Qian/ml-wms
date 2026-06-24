@@ -1,6 +1,7 @@
 package com.wms.inventory.application.dto;
 
 import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.List;
 

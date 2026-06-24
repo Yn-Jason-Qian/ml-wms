@@ -1,9 +1,11 @@
 package com.wms.inbound.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.wms.common.base.BaseEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -28,7 +30,15 @@ public class AsnHeader extends BaseEntity {
     public static final String STATUS_CANCELLED = "CANCELLED";
     public static final String STATUS_CLOSED = "CLOSED";
 
-    public void startReceiving() { this.status = STATUS_RECEIVING; }
-    public void cancel() { this.status = STATUS_CANCELLED; }
-    public void close() { this.status = STATUS_CLOSED; }
+    public void startReceiving() {
+        this.status = STATUS_RECEIVING;
+    }
+
+    public void cancel() {
+        this.status = STATUS_CANCELLED;
+    }
+
+    public void close() {
+        this.status = STATUS_CLOSED;
+    }
 }

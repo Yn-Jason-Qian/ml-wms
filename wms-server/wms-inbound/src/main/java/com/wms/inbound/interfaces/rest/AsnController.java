@@ -12,8 +12,11 @@ import com.wms.inbound.application.dto.AsnPageQuery;
 import com.wms.inbound.application.service.InboundAppService;
 import com.wms.inbound.domain.entity.AsnHeader;
 import com.wms.inbound.infrastructure.mapper.AsnHeaderMapper;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,19 +28,42 @@ public class AsnController {
 
     @PostMapping("/page")
     public ApiResponse<PageResponse<AsnDTO>> page(@Valid @RequestBody AsnPageQuery query) {
-        IPage<AsnHeader> result = asnHeaderMapper.selectPage(
-                new Page<>(query.getPageNum(), query.getPageSize()),
-                new LambdaQueryWrapper<AsnHeader>()
-                        .eq(query.getWarehouseId() != null, AsnHeader::getWarehouseId, query.getWarehouseId())
-                        .eq(query.getStatus() != null, AsnHeader::getStatus, query.getStatus())
-                        .like(query.getAsnNo() != null, AsnHeader::getAsnNo, query.getAsnNo())
-                        .orderByDesc(AsnHeader::getCreatedAt));
-        return ApiResponse.ok(PageResponse.of(result.getRecords().stream().map(h -> {
-            AsnDTO d = new AsnDTO(); d.setId(h.getId()); d.setAsnNo(h.getAsnNo());
-            d.setWarehouseId(h.getWarehouseId()); d.setOwnerId(h.getOwnerId());
-            d.setAsnType(h.getAsnType()); d.setStatus(h.getStatus());
-            d.setCreatedAt(h.getCreatedAt()); return d;
-        }).toList(), result.getTotal(), (int) result.getCurrent(), (int) result.getSize()));
+        IPage<AsnHeader> result =
+                asnHeaderMapper.selectPage(
+                        new Page<>(query.getPageNum(), query.getPageSize()),
+                        new LambdaQueryWrapper<AsnHeader>()
+                                .eq(
+                                        query.getWarehouseId() != null,
+                                        AsnHeader::getWarehouseId,
+                                        query.getWarehouseId())
+                                .eq(
+                                        query.getStatus() != null,
+                                        AsnHeader::getStatus,
+                                        query.getStatus())
+                                .like(
+                                        query.getAsnNo() != null,
+                                        AsnHeader::getAsnNo,
+                                        query.getAsnNo())
+                                .orderByDesc(AsnHeader::getCreatedAt));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords().stream()
+                                .map(
+                                        h -> {
+                                            AsnDTO d = new AsnDTO();
+                                            d.setId(h.getId());
+                                            d.setAsnNo(h.getAsnNo());
+                                            d.setWarehouseId(h.getWarehouseId());
+                                            d.setOwnerId(h.getOwnerId());
+                                            d.setAsnType(h.getAsnType());
+                                            d.setStatus(h.getStatus());
+                                            d.setCreatedAt(h.getCreatedAt());
+                                            return d;
+                                        })
+                                .toList(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @PostMapping

@@ -1,9 +1,11 @@
 package com.wms.inventory.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.wms.common.base.BaseEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -33,9 +35,25 @@ public class StocktakeHeader extends BaseEntity {
     public static final String STATUS_ADJUSTED = "ADJUSTED";
     public static final String STATUS_DONE = "DONE";
 
-    public void start() { this.status = STATUS_COUNTING; this.startTime = LocalDateTime.now(); }
-    public void finish() { this.status = STATUS_COUNTED; this.endTime = LocalDateTime.now(); }
-    public void reviewDiffs() { this.status = STATUS_DIFF_REVIEW; }
-    public void adjust() { this.status = STATUS_ADJUSTED; }
-    public void done() { this.status = STATUS_DONE; }
+    public void start() {
+        this.status = STATUS_COUNTING;
+        this.startTime = LocalDateTime.now();
+    }
+
+    public void finish() {
+        this.status = STATUS_COUNTED;
+        this.endTime = LocalDateTime.now();
+    }
+
+    public void reviewDiffs() {
+        this.status = STATUS_DIFF_REVIEW;
+    }
+
+    public void adjust() {
+        this.status = STATUS_ADJUSTED;
+    }
+
+    public void done() {
+        this.status = STATUS_DONE;
+    }
 }

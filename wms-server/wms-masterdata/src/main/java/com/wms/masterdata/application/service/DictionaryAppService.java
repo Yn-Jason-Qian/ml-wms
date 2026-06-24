@@ -7,9 +7,12 @@ import com.wms.masterdata.application.dto.*;
 import com.wms.masterdata.domain.entity.Dictionary;
 import com.wms.masterdata.domain.repository.DictionaryRepository;
 import com.wms.masterdata.domain.service.DictionaryDomainService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,8 +25,9 @@ public class DictionaryAppService {
 
     /** 按类型查询字典项列表 */
     public List<DictionaryDTO> listByType(String dictType) {
-        return dictRepository.findByType(UserContext.getTenantId(), dictType)
-                .stream().map(assembler::toDTO).collect(Collectors.toList());
+        return dictRepository.findByType(UserContext.getTenantId(), dictType).stream()
+                .map(assembler::toDTO)
+                .collect(Collectors.toList());
     }
 
     /** 查询所有字典类型 */
@@ -44,8 +48,10 @@ public class DictionaryAppService {
 
     @Transactional
     public DictionaryDTO update(DictionaryUpdateCmd cmd) {
-        Dictionary dict = dictRepository.findById(cmd.getId())
-                .orElseThrow(() -> BusinessException.notFound("字典项不存在"));
+        Dictionary dict =
+                dictRepository
+                        .findById(cmd.getId())
+                        .orElseThrow(() -> BusinessException.notFound("字典项不存在"));
         assembler.mergeToEntity(cmd, dict);
         dict.setUpdatedBy(UserContext.getUserId());
         domainService.validateUpdate(dict);
@@ -55,8 +61,8 @@ public class DictionaryAppService {
 
     @Transactional
     public void enable(Long id) {
-        Dictionary dict = dictRepository.findById(id)
-                .orElseThrow(() -> BusinessException.notFound("字典项不存在"));
+        Dictionary dict =
+                dictRepository.findById(id).orElseThrow(() -> BusinessException.notFound("字典项不存在"));
         dict.enable();
         dict.setUpdatedBy(UserContext.getUserId());
         dictRepository.update(dict);
@@ -64,13 +70,15 @@ public class DictionaryAppService {
 
     @Transactional
     public void disable(Long id) {
-        Dictionary dict = dictRepository.findById(id)
-                .orElseThrow(() -> BusinessException.notFound("字典项不存在"));
+        Dictionary dict =
+                dictRepository.findById(id).orElseThrow(() -> BusinessException.notFound("字典项不存在"));
         dict.disable();
         dict.setUpdatedBy(UserContext.getUserId());
         dictRepository.update(dict);
     }
 
     @Transactional
-    public void delete(Long id) { dictRepository.deleteById(id); }
+    public void delete(Long id) {
+        dictRepository.deleteById(id);
+    }
 }

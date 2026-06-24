@@ -2,8 +2,10 @@ package com.wms.common.security;
 
 import com.wms.common.exception.BusinessException;
 import com.wms.common.util.JwtUtil;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,7 +22,8 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     public LoginUser login(LoginRequest request) {
-        String sql = """
+        String sql =
+                """
             SELECT u.id, u.username, u.password, u.real_name, u.tenant_id, u.status,
                    t.tenant_code, t.tenant_name
             FROM wms_sys_user u
@@ -37,9 +40,10 @@ public class AuthService {
         }
 
         // 兼容 MySQL JDBC tinyInt1isBit: TINYINT(1) 可能返回 Boolean 或 Integer
-        int status = row.get("status") instanceof Boolean
-            ? (((Boolean) row.get("status")) ? 1 : 0)
-            : ((Number) row.get("status")).intValue();
+        int status =
+                row.get("status") instanceof Boolean
+                        ? (((Boolean) row.get("status")) ? 1 : 0)
+                        : ((Number) row.get("status")).intValue();
         if (status == 0) {
             throw new BusinessException("用户已被禁用");
         }
@@ -50,7 +54,8 @@ public class AuthService {
         }
 
         Long userId = ((Number) row.get("id")).longValue();
-        Long tenantId = row.get("tenant_id") != null ? ((Number) row.get("tenant_id")).longValue() : 0L;
+        Long tenantId =
+                row.get("tenant_id") != null ? ((Number) row.get("tenant_id")).longValue() : 0L;
         String username = (String) row.get("username");
         String realName = (String) row.get("real_name");
         String tenantName = (String) row.get("tenant_name");

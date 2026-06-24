@@ -2,7 +2,9 @@ package com.wms.inbound.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
 import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,8 +22,8 @@ public class AsnCreateCmd {
 
     @Data
     public static class AsnLineItem {
-        private Long skuId;           // 可选: SKU ID
-        private String skuCode;       // 可选: SKU 编码 (PDA扫码场景)
+        private Long skuId; // 可选: SKU ID
+        private String skuCode; // 可选: SKU 编码 (PDA扫码场景)
         @NotNull private java.math.BigDecimal expectedQty;
         private String batchNo;
         private String lotAttrs;

@@ -1,6 +1,7 @@
 package com.wms.common.base;
 
 import com.baomidou.mybatisplus.annotation.*;
+
 import lombok.Data;
 
 import java.io.Serializable;
@@ -24,11 +25,9 @@ public abstract class BaseEntity implements Serializable {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Long updatedBy;
 
-    @Version
-    private Integer version;
+    @Version private Integer version;
 
-    @TableLogic
-    private Integer isDeleted;
+    @TableLogic private Integer isDeleted;
 
     private Long tenantId;
 }

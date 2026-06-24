@@ -3,8 +3,8 @@ package com.wms.masterdata.application.assembler;
 import com.wms.masterdata.application.dto.*;
 import com.wms.masterdata.domain.entity.Sku;
 import com.wms.masterdata.domain.entity.SkuPackage;
+
 import org.springframework.stereotype.Component;
-import java.util.stream.Collectors;
 
 @Component
 public class SkuAssembler {
@@ -56,18 +56,29 @@ public class SkuAssembler {
 
     public SkuDTO toDTO(Sku s) {
         SkuDTO dto = new SkuDTO();
-        dto.setId(s.getId()); dto.setOwnerId(s.getOwnerId());
-        dto.setSkuCode(s.getSkuCode()); dto.setSkuName(s.getSkuName());
-        dto.setSkuDesc(s.getSkuDesc()); dto.setBarcode(s.getBarcode());
-        dto.setCategory(s.getCategory()); dto.setBrand(s.getBrand());
-        dto.setSpec(s.getSpec()); dto.setBaseUnitId(s.getBaseUnitId());
-        dto.setBaseLength(s.getBaseLength()); dto.setBaseWidth(s.getBaseWidth());
-        dto.setBaseHeight(s.getBaseHeight()); dto.setBaseWeight(s.getBaseWeight());
-        dto.setBaseVolume(s.getBaseVolume()); dto.setShelfLife(s.getShelfLife());
+        dto.setId(s.getId());
+        dto.setOwnerId(s.getOwnerId());
+        dto.setSkuCode(s.getSkuCode());
+        dto.setSkuName(s.getSkuName());
+        dto.setSkuDesc(s.getSkuDesc());
+        dto.setBarcode(s.getBarcode());
+        dto.setCategory(s.getCategory());
+        dto.setBrand(s.getBrand());
+        dto.setSpec(s.getSpec());
+        dto.setBaseUnitId(s.getBaseUnitId());
+        dto.setBaseLength(s.getBaseLength());
+        dto.setBaseWidth(s.getBaseWidth());
+        dto.setBaseHeight(s.getBaseHeight());
+        dto.setBaseWeight(s.getBaseWeight());
+        dto.setBaseVolume(s.getBaseVolume());
+        dto.setShelfLife(s.getShelfLife());
         dto.setShelfLifeType(s.getShelfLifeType());
-        dto.setBatchManaged(s.getBatchManaged()); dto.setSnManaged(s.getSnManaged());
-        dto.setLotAttrs(s.getLotAttrs()); dto.setStatus(s.getStatus());
-        dto.setCreatedAt(s.getCreatedAt()); dto.setUpdatedAt(s.getUpdatedAt());
+        dto.setBatchManaged(s.getBatchManaged());
+        dto.setSnManaged(s.getSnManaged());
+        dto.setLotAttrs(s.getLotAttrs());
+        dto.setStatus(s.getStatus());
+        dto.setCreatedAt(s.getCreatedAt());
+        dto.setUpdatedAt(s.getUpdatedAt());
         return dto;
     }
 
@@ -81,7 +92,9 @@ public class SkuAssembler {
         p.setUnitId(cmd.getUnitId());
         p.setQtyPerParent(cmd.getQtyPerParent());
         p.setBarcode(cmd.getBarcode());
-        p.setLength(cmd.getLength()); p.setWidth(cmd.getWidth()); p.setHeight(cmd.getHeight());
+        p.setLength(cmd.getLength());
+        p.setWidth(cmd.getWidth());
+        p.setHeight(cmd.getHeight());
         p.setWeight(cmd.getWeight());
         p.setIsDefaultReceive(cmd.getIsDefaultReceive() != null ? cmd.getIsDefaultReceive() : 0);
         p.setIsDefaultPick(cmd.getIsDefaultPick() != null ? cmd.getIsDefaultPick() : 0);
@@ -91,11 +104,16 @@ public class SkuAssembler {
 
     public SkuPackageDTO toPackageDTO(SkuPackage p) {
         SkuPackageDTO dto = new SkuPackageDTO();
-        dto.setId(p.getId()); dto.setSkuId(p.getSkuId());
-        dto.setPackageLevel(p.getPackageLevel()); dto.setPackageName(p.getPackageName());
-        dto.setUnitId(p.getUnitId()); dto.setQtyPerParent(p.getQtyPerParent());
+        dto.setId(p.getId());
+        dto.setSkuId(p.getSkuId());
+        dto.setPackageLevel(p.getPackageLevel());
+        dto.setPackageName(p.getPackageName());
+        dto.setUnitId(p.getUnitId());
+        dto.setQtyPerParent(p.getQtyPerParent());
         dto.setBarcode(p.getBarcode());
-        dto.setLength(p.getLength()); dto.setWidth(p.getWidth()); dto.setHeight(p.getHeight());
+        dto.setLength(p.getLength());
+        dto.setWidth(p.getWidth());
+        dto.setHeight(p.getHeight());
         dto.setWeight(p.getWeight());
         dto.setIsDefaultReceive(p.getIsDefaultReceive());
         dto.setIsDefaultPick(p.getIsDefaultPick());

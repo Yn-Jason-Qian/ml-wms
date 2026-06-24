@@ -13,9 +13,12 @@ import com.wms.masterdata.domain.repository.SkuPackageRepository;
 import com.wms.masterdata.domain.repository.SkuRepository;
 import com.wms.masterdata.domain.service.SkuDomainService;
 import com.wms.masterdata.infrastructure.mapper.SkuMapper;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,19 +41,32 @@ public class SkuAppService {
     }
 
     public List<SkuDTO> findByOwner(Long ownerId) {
-        return skuRepository.findByOwner(UserContext.getTenantId(), ownerId)
-                .stream().map(assembler::toDTO).collect(Collectors.toList());
+        return skuRepository.findByOwner(UserContext.getTenantId(), ownerId).stream()
+                .map(assembler::toDTO)
+                .collect(Collectors.toList());
     }
 
     public IPage<SkuDTO> page(SkuPageQuery query) {
         Page<Sku> page = new Page<>(query.getPageNum(), query.getPageSize());
-        IPage<Sku> result = skuMapper.selectPage(page, new LambdaQueryWrapper<Sku>()
-                .eq(Sku::getTenantId, UserContext.getTenantId())
-                .eq(query.getOwnerId() != null, Sku::getOwnerId, query.getOwnerId())
-                .eq(query.getSkuCode() != null, Sku::getSkuCode, query.getSkuCode())
-                .like(query.getSkuName() != null, Sku::getSkuName, query.getSkuName())
-                .eq(query.getCategory() != null, Sku::getCategory, query.getCategory())
-                .eq(query.getBatchManaged() != null, Sku::getBatchManaged, query.getBatchManaged()));
+        IPage<Sku> result =
+                skuMapper.selectPage(
+                        page,
+                        new LambdaQueryWrapper<Sku>()
+                                .eq(Sku::getTenantId, UserContext.getTenantId())
+                                .eq(query.getOwnerId() != null, Sku::getOwnerId, query.getOwnerId())
+                                .eq(query.getSkuCode() != null, Sku::getSkuCode, query.getSkuCode())
+                                .like(
+                                        query.getSkuName() != null,
+                                        Sku::getSkuName,
+                                        query.getSkuName())
+                                .eq(
+                                        query.getCategory() != null,
+                                        Sku::getCategory,
+                                        query.getCategory())
+                                .eq(
+                                        query.getBatchManaged() != null,
+                                        Sku::getBatchManaged,
+                                        query.getBatchManaged()));
         return result.convert(assembler::toDTO);
     }
 
@@ -67,7 +83,10 @@ public class SkuAppService {
 
     @Transactional
     public SkuDTO update(SkuUpdateCmd cmd) {
-        Sku sku = skuRepository.findById(cmd.getId()).orElseThrow(() -> BusinessException.notFound("SKU不存在"));
+        Sku sku =
+                skuRepository
+                        .findById(cmd.getId())
+                        .orElseThrow(() -> BusinessException.notFound("SKU不存在"));
         assembler.mergeToEntity(cmd, sku);
         sku.setUpdatedBy(UserContext.getUserId());
         domainService.validateUpdate(sku);
@@ -75,18 +94,23 @@ public class SkuAppService {
         return assembler.toDTO(sku);
     }
 
-    @Transactional public void delete(Long id) { skuRepository.deleteById(id); }
+    @Transactional
+    public void delete(Long id) {
+        skuRepository.deleteById(id);
+    }
 
     @Transactional
     public void disable(Long id) {
-        Sku sku = skuRepository.findById(id).orElseThrow(() -> BusinessException.notFound("SKU不存在"));
+        Sku sku =
+                skuRepository.findById(id).orElseThrow(() -> BusinessException.notFound("SKU不存在"));
         domainService.disableSku(sku);
         skuRepository.update(sku);
     }
 
     @Transactional
     public void enable(Long id) {
-        Sku sku = skuRepository.findById(id).orElseThrow(() -> BusinessException.notFound("SKU不存在"));
+        Sku sku =
+                skuRepository.findById(id).orElseThrow(() -> BusinessException.notFound("SKU不存在"));
         domainService.enableSku(sku);
         skuRepository.update(sku);
     }
@@ -94,8 +118,9 @@ public class SkuAppService {
     // ───── 包装规格管理 ─────
 
     public List<SkuPackageDTO> listPackages(Long skuId) {
-        return packageRepository.findBySkuId(UserContext.getTenantId(), skuId)
-                .stream().map(assembler::toPackageDTO).collect(Collectors.toList());
+        return packageRepository.findBySkuId(UserContext.getTenantId(), skuId).stream()
+                .map(assembler::toPackageDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional

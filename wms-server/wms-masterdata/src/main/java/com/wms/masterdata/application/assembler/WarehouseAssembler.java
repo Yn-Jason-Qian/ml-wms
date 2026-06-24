@@ -4,6 +4,7 @@ import com.wms.masterdata.application.dto.WarehouseCreateCmd;
 import com.wms.masterdata.application.dto.WarehouseDTO;
 import com.wms.masterdata.application.dto.WarehouseUpdateCmd;
 import com.wms.masterdata.domain.entity.Warehouse;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,7 +22,7 @@ public class WarehouseAssembler {
         w.setLength(cmd.getLength());
         w.setWidth(cmd.getWidth());
         w.setHeight(cmd.getHeight());
-        w.setStatus(1);  // 新建默认启用
+        w.setStatus(1); // 新建默认启用
         return w;
     }
 

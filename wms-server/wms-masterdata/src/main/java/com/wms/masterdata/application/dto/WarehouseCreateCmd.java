@@ -2,6 +2,7 @@ package com.wms.masterdata.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+
 import lombok.Data;
 
 import java.math.BigDecimal;

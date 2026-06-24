@@ -1,6 +1,7 @@
 package com.wms.inbound.application.dto;
 
 import jakarta.validation.constraints.NotNull;
+
 import lombok.Data;
 
 /** PDA 上架确认 */

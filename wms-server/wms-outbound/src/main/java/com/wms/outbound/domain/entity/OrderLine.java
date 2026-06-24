@@ -1,9 +1,11 @@
 package com.wms.outbound.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.wms.common.base.BaseEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.math.BigDecimal;
 
 @Data
@@ -24,5 +26,7 @@ public class OrderLine extends BaseEntity {
     private String lotAttrs;
     private String status;
 
-    public BigDecimal getRemainingQty() { return orderQty.subtract(allocatedQty); }
+    public BigDecimal getRemainingQty() {
+        return orderQty.subtract(allocatedQty);
+    }
 }

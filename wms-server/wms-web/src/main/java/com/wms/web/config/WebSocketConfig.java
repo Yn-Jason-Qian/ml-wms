@@ -6,10 +6,7 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
-/**
- * WebSocket STOMP 配置
- * 用于 PDA 任务实时推送 和 Web 端 Dashboard 状态更新
- */
+/** WebSocket STOMP 配置 用于 PDA 任务实时推送 和 Web 端 Dashboard 状态更新 */
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {

@@ -10,9 +10,13 @@ import com.wms.outbound.application.dto.*;
 import com.wms.outbound.application.service.OutboundAppService;
 import com.wms.outbound.domain.entity.*;
 import com.wms.outbound.infrastructure.mapper.*;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
@@ -27,21 +31,54 @@ public class OutboundController {
 
     // ── Orders ──
     @PostMapping("/orders/page")
-    public ApiResponse<PageResponse<Map<String, Object>>> pageOrders(@Valid @RequestBody OrderPageQuery query) {
-        IPage<OrderHeader> result = orderMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()),
-                new LambdaQueryWrapper<OrderHeader>()
-                        .eq(query.getWarehouseId() != null, OrderHeader::getWarehouseId, query.getWarehouseId())
-                        .eq(query.getStatus() != null, OrderHeader::getStatus, query.getStatus())
-                        .eq(query.getOrderType() != null, OrderHeader::getOrderType, query.getOrderType())
-                        .orderByDesc(OrderHeader::getCreatedAt));
-        return ApiResponse.ok(PageResponse.of(result.getRecords().stream().map(h -> {
-            java.util.Map<String, Object> m = new java.util.HashMap<>();
-            m.put("id", h.getId()); m.put("orderNo", h.getOrderNo()); m.put("warehouseId", h.getWarehouseId());
-            m.put("orderType", h.getOrderType()); m.put("customerName", h.getCustomerName() != null ? h.getCustomerName() : "");
-            m.put("priority", h.getPriority()); m.put("status", h.getStatus());
-            m.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
-            return m;
-        }).toList(), result.getTotal(), (int) result.getCurrent(), (int) result.getSize()));
+    public ApiResponse<PageResponse<Map<String, Object>>> pageOrders(
+            @Valid @RequestBody OrderPageQuery query) {
+        IPage<OrderHeader> result =
+                orderMapper.selectPage(
+                        new Page<>(query.getPageNum(), query.getPageSize()),
+                        new LambdaQueryWrapper<OrderHeader>()
+                                .eq(
+                                        query.getWarehouseId() != null,
+                                        OrderHeader::getWarehouseId,
+                                        query.getWarehouseId())
+                                .eq(
+                                        query.getStatus() != null,
+                                        OrderHeader::getStatus,
+                                        query.getStatus())
+                                .eq(
+                                        query.getOrderType() != null,
+                                        OrderHeader::getOrderType,
+                                        query.getOrderType())
+                                .orderByDesc(OrderHeader::getCreatedAt));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords().stream()
+                                .map(
+                                        h -> {
+                                            java.util.Map<String, Object> m =
+                                                    new java.util.HashMap<>();
+                                            m.put("id", h.getId());
+                                            m.put("orderNo", h.getOrderNo());
+                                            m.put("warehouseId", h.getWarehouseId());
+                                            m.put("orderType", h.getOrderType());
+                                            m.put(
+                                                    "customerName",
+                                                    h.getCustomerName() != null
+                                                            ? h.getCustomerName()
+                                                            : "");
+                                            m.put("priority", h.getPriority());
+                                            m.put("status", h.getStatus());
+                                            m.put(
+                                                    "createdAt",
+                                                    h.getCreatedAt() != null
+                                                            ? h.getCreatedAt().toString()
+                                                            : "");
+                                            return m;
+                                        })
+                                .toList(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @PostMapping("/orders")
@@ -52,19 +89,45 @@ public class OutboundController {
 
     // ── Waves ──
     @PostMapping("/waves/page")
-    public ApiResponse<PageResponse<Map<String, Object>>> pageWaves(@Valid @RequestBody WavePageQuery query) {
-        IPage<WaveHeader> result = waveMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()),
-                new LambdaQueryWrapper<WaveHeader>()
-                        .eq(query.getWarehouseId() != null, WaveHeader::getWarehouseId, query.getWarehouseId())
-                        .eq(query.getWaveStatus() != null, WaveHeader::getWaveStatus, query.getWaveStatus())
-                        .orderByDesc(WaveHeader::getCreatedAt));
-        return ApiResponse.ok(PageResponse.of(result.getRecords().stream().map(h -> {
-            java.util.Map<String, Object> m = new java.util.HashMap<>();
-            m.put("id", h.getId()); m.put("waveNo", h.getWaveNo()); m.put("warehouseId", h.getWarehouseId());
-            m.put("waveType", h.getWaveType()); m.put("waveStatus", h.getWaveStatus()); m.put("orderCount", h.getOrderCount());
-            m.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
-            return m;
-        }).toList(), result.getTotal(), (int) result.getCurrent(), (int) result.getSize()));
+    public ApiResponse<PageResponse<Map<String, Object>>> pageWaves(
+            @Valid @RequestBody WavePageQuery query) {
+        IPage<WaveHeader> result =
+                waveMapper.selectPage(
+                        new Page<>(query.getPageNum(), query.getPageSize()),
+                        new LambdaQueryWrapper<WaveHeader>()
+                                .eq(
+                                        query.getWarehouseId() != null,
+                                        WaveHeader::getWarehouseId,
+                                        query.getWarehouseId())
+                                .eq(
+                                        query.getWaveStatus() != null,
+                                        WaveHeader::getWaveStatus,
+                                        query.getWaveStatus())
+                                .orderByDesc(WaveHeader::getCreatedAt));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords().stream()
+                                .map(
+                                        h -> {
+                                            java.util.Map<String, Object> m =
+                                                    new java.util.HashMap<>();
+                                            m.put("id", h.getId());
+                                            m.put("waveNo", h.getWaveNo());
+                                            m.put("warehouseId", h.getWarehouseId());
+                                            m.put("waveType", h.getWaveType());
+                                            m.put("waveStatus", h.getWaveStatus());
+                                            m.put("orderCount", h.getOrderCount());
+                                            m.put(
+                                                    "createdAt",
+                                                    h.getCreatedAt() != null
+                                                            ? h.getCreatedAt().toString()
+                                                            : "");
+                                            return m;
+                                        })
+                                .toList(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @PostMapping("/waves")
@@ -75,20 +138,47 @@ public class OutboundController {
 
     // ── Picks ──
     @PostMapping("/picks/page")
-    public ApiResponse<PageResponse<Map<String, Object>>> pagePicks(@Valid @RequestBody PickPageQuery query) {
-        IPage<PickHeader> result = pickMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()),
-                new LambdaQueryWrapper<PickHeader>()
-                        .eq(query.getWarehouseId() != null, PickHeader::getWarehouseId, query.getWarehouseId())
-                        .eq(query.getStatus() != null, PickHeader::getStatus, query.getStatus())
-                        .orderByDesc(PickHeader::getCreatedAt));
-        return ApiResponse.ok(PageResponse.of(result.getRecords().stream().map(h -> {
-            java.util.Map<String, Object> m = new java.util.HashMap<>();
-            m.put("id", h.getId()); m.put("pickNo", h.getPickNo()); m.put("warehouseId", h.getWarehouseId());
-            m.put("pickType", h.getPickType()); m.put("status", h.getStatus());
-            m.put("assignTo", h.getAssignTo() != null ? h.getAssignTo() : 0);
-            m.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
-            return m;
-        }).toList(), result.getTotal(), (int) result.getCurrent(), (int) result.getSize()));
+    public ApiResponse<PageResponse<Map<String, Object>>> pagePicks(
+            @Valid @RequestBody PickPageQuery query) {
+        IPage<PickHeader> result =
+                pickMapper.selectPage(
+                        new Page<>(query.getPageNum(), query.getPageSize()),
+                        new LambdaQueryWrapper<PickHeader>()
+                                .eq(
+                                        query.getWarehouseId() != null,
+                                        PickHeader::getWarehouseId,
+                                        query.getWarehouseId())
+                                .eq(
+                                        query.getStatus() != null,
+                                        PickHeader::getStatus,
+                                        query.getStatus())
+                                .orderByDesc(PickHeader::getCreatedAt));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords().stream()
+                                .map(
+                                        h -> {
+                                            java.util.Map<String, Object> m =
+                                                    new java.util.HashMap<>();
+                                            m.put("id", h.getId());
+                                            m.put("pickNo", h.getPickNo());
+                                            m.put("warehouseId", h.getWarehouseId());
+                                            m.put("pickType", h.getPickType());
+                                            m.put("status", h.getStatus());
+                                            m.put(
+                                                    "assignTo",
+                                                    h.getAssignTo() != null ? h.getAssignTo() : 0);
+                                            m.put(
+                                                    "createdAt",
+                                                    h.getCreatedAt() != null
+                                                            ? h.getCreatedAt().toString()
+                                                            : "");
+                                            return m;
+                                        })
+                                .toList(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @PostMapping("/picks/from-wave/{waveId}")
@@ -106,20 +196,54 @@ public class OutboundController {
 
     // ── Ships ──
     @PostMapping("/ships/page")
-    public ApiResponse<PageResponse<Map<String, Object>>> pageShips(@Valid @RequestBody ShipPageQuery query) {
-        IPage<ShipHeader> result = shipMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()),
-                new LambdaQueryWrapper<ShipHeader>()
-                        .eq(query.getWarehouseId() != null, ShipHeader::getWarehouseId, query.getWarehouseId())
-                        .eq(query.getStatus() != null, ShipHeader::getStatus, query.getStatus())
-                        .orderByDesc(ShipHeader::getCreatedAt));
-        return ApiResponse.ok(PageResponse.of(result.getRecords().stream().map(h -> {
-            java.util.Map<String, Object> m = new java.util.HashMap<>();
-            m.put("id", h.getId()); m.put("shipNo", h.getShipNo()); m.put("warehouseId", h.getWarehouseId());
-            m.put("deliveryMethod", h.getDeliveryMethod()); m.put("carrierName", h.getCarrierName() != null ? h.getCarrierName() : "");
-            m.put("trackingNo", h.getTrackingNo() != null ? h.getTrackingNo() : ""); m.put("status", h.getStatus());
-            m.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
-            return m;
-        }).toList(), result.getTotal(), (int) result.getCurrent(), (int) result.getSize()));
+    public ApiResponse<PageResponse<Map<String, Object>>> pageShips(
+            @Valid @RequestBody ShipPageQuery query) {
+        IPage<ShipHeader> result =
+                shipMapper.selectPage(
+                        new Page<>(query.getPageNum(), query.getPageSize()),
+                        new LambdaQueryWrapper<ShipHeader>()
+                                .eq(
+                                        query.getWarehouseId() != null,
+                                        ShipHeader::getWarehouseId,
+                                        query.getWarehouseId())
+                                .eq(
+                                        query.getStatus() != null,
+                                        ShipHeader::getStatus,
+                                        query.getStatus())
+                                .orderByDesc(ShipHeader::getCreatedAt));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords().stream()
+                                .map(
+                                        h -> {
+                                            java.util.Map<String, Object> m =
+                                                    new java.util.HashMap<>();
+                                            m.put("id", h.getId());
+                                            m.put("shipNo", h.getShipNo());
+                                            m.put("warehouseId", h.getWarehouseId());
+                                            m.put("deliveryMethod", h.getDeliveryMethod());
+                                            m.put(
+                                                    "carrierName",
+                                                    h.getCarrierName() != null
+                                                            ? h.getCarrierName()
+                                                            : "");
+                                            m.put(
+                                                    "trackingNo",
+                                                    h.getTrackingNo() != null
+                                                            ? h.getTrackingNo()
+                                                            : "");
+                                            m.put("status", h.getStatus());
+                                            m.put(
+                                                    "createdAt",
+                                                    h.getCreatedAt() != null
+                                                            ? h.getCreatedAt().toString()
+                                                            : "");
+                                            return m;
+                                        })
+                                .toList(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @PostMapping("/ships")

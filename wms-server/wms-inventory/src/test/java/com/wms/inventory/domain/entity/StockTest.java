@@ -1,9 +1,11 @@
 package com.wms.inventory.domain.entity;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import java.math.BigDecimal;
-import static org.junit.jupiter.api.Assertions.*;
 
 class StockTest {
 
@@ -94,6 +96,7 @@ class StockTest {
     @Test
     void testDeallocateMoreThanAllocatedShouldFail() {
         stock.allocate(BigDecimal.valueOf(10));
-        assertThrows(IllegalArgumentException.class, () -> stock.deallocate(BigDecimal.valueOf(50)));
+        assertThrows(
+                IllegalArgumentException.class, () -> stock.deallocate(BigDecimal.valueOf(50)));
     }
 }

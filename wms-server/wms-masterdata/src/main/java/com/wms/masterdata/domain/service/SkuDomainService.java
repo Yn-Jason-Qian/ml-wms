@@ -5,7 +5,9 @@ import com.wms.masterdata.domain.entity.Sku;
 import com.wms.masterdata.domain.entity.SkuPackage;
 import com.wms.masterdata.domain.repository.SkuPackageRepository;
 import com.wms.masterdata.domain.repository.SkuRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -38,15 +40,15 @@ public class SkuDomainService {
 
     /** 包装规格校验：同一SKU下层级不可重复 */
     public void validatePackageCreate(SkuPackage pkg) {
-        if (skuPackageRepository.existsByLevel(pkg.getTenantId(), pkg.getSkuId(),
-                pkg.getPackageLevel(), null)) {
+        if (skuPackageRepository.existsByLevel(
+                pkg.getTenantId(), pkg.getSkuId(), pkg.getPackageLevel(), null)) {
             throw BusinessException.conflict("包装层级 [" + pkg.getPackageLevel() + "] 已存在");
         }
     }
 
     public void validatePackageUpdate(SkuPackage pkg) {
-        if (skuPackageRepository.existsByLevel(pkg.getTenantId(), pkg.getSkuId(),
-                pkg.getPackageLevel(), pkg.getId())) {
+        if (skuPackageRepository.existsByLevel(
+                pkg.getTenantId(), pkg.getSkuId(), pkg.getPackageLevel(), pkg.getId())) {
             throw BusinessException.conflict("包装层级 [" + pkg.getPackageLevel() + "] 已存在");
         }
     }

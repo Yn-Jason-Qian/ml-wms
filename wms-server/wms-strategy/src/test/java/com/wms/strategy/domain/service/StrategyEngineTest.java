@@ -1,13 +1,16 @@
 package com.wms.strategy.domain.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wms.strategy.domain.entity.StrategyConfig;
 import com.wms.strategy.domain.entity.StrategyRule;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import java.util.*;
 import java.util.function.Function;
-import static org.junit.jupiter.api.Assertions.*;
 
 class StrategyEngineTest {
 
@@ -38,10 +41,11 @@ class StrategyEngineTest {
 
     @Test
     void testMatchSuccess() {
-        Function<String, List<StrategyConfig>> provider = type ->
-            "PUTAWAY".equals(type) ? testConfigs : new ArrayList<>();
+        Function<String, List<StrategyConfig>> provider =
+                type -> "PUTAWAY".equals(type) ? testConfigs : new ArrayList<>();
 
-        Map<String, Object> sku = new HashMap<>(); sku.put("weight", 300);
+        Map<String, Object> sku = new HashMap<>();
+        sku.put("weight", 300);
         var ctx = Map.<String, Object>of("sku", sku);
         var result = engine.match("PUTAWAY", ctx, provider);
 
@@ -54,10 +58,11 @@ class StrategyEngineTest {
 
     @Test
     void testMatchNoMatch() {
-        Function<String, List<StrategyConfig>> provider = type ->
-            "PUTAWAY".equals(type) ? testConfigs : new ArrayList<>();
+        Function<String, List<StrategyConfig>> provider =
+                type -> "PUTAWAY".equals(type) ? testConfigs : new ArrayList<>();
 
-        Map<String, Object> sku2 = new HashMap<>(); sku2.put("weight", 800);
+        Map<String, Object> sku2 = new HashMap<>();
+        sku2.put("weight", 800);
         var ctx2 = Map.<String, Object>of("sku", sku2);
         var result = engine.match("PUTAWAY", ctx2, provider);
         assertNull(result);
@@ -72,14 +77,17 @@ class StrategyEngineTest {
     @Test
     void testEmptyConditionsAlwaysMatches() {
         var emptyRule = new StrategyRule();
-        emptyRule.setRuleNo(1); emptyRule.setRuleName("无条件");
+        emptyRule.setRuleNo(1);
+        emptyRule.setRuleName("无条件");
         emptyRule.setConditionsJson("[]");
         emptyRule.setActionsJson("[{\"type\":\"default\",\"params\":{}}]");
         emptyRule.setIsEnabled(1);
 
         var config = new StrategyConfig();
-        config.setStrategyCode("DEFAULT"); config.setStrategyType("DEFAULT");
-        config.setSortOrder(1); config.setIsEnabled(1);
+        config.setStrategyCode("DEFAULT");
+        config.setStrategyType("DEFAULT");
+        config.setSortOrder(1);
+        config.setIsEnabled(1);
         config.setRules(new ArrayList<>(List.of(emptyRule)));
 
         var result = engine.match("DEFAULT", Map.of(), type -> new ArrayList<>(List.of(config)));
@@ -89,13 +97,15 @@ class StrategyEngineTest {
     @Test
     void testDisabledConfigSkipped() {
         var rule = new StrategyRule();
-        rule.setRuleNo(1); rule.setRuleName("rule");
+        rule.setRuleNo(1);
+        rule.setRuleName("rule");
         rule.setConditionsJson("[]");
         rule.setActionsJson("[{\"type\":\"test\"}]");
         rule.setIsEnabled(1);
 
         var config = new StrategyConfig();
-        config.setStrategyCode("DISABLED"); config.setSortOrder(1);
+        config.setStrategyCode("DISABLED");
+        config.setSortOrder(1);
         config.setIsEnabled(0);
         config.setRules(new ArrayList<>(List.of(rule)));
 

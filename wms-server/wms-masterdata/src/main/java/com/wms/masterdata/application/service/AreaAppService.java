@@ -11,9 +11,12 @@ import com.wms.masterdata.domain.entity.Area;
 import com.wms.masterdata.domain.repository.AreaRepository;
 import com.wms.masterdata.domain.service.AreaDomainService;
 import com.wms.masterdata.infrastructure.mapper.AreaMapper;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,18 +34,34 @@ public class AreaAppService {
     }
 
     public List<AreaDTO> findByWarehouse(Long warehouseId) {
-        return areaRepository.findByWarehouse(UserContext.getTenantId(), warehouseId)
-                .stream().map(assembler::toDTO).collect(Collectors.toList());
+        return areaRepository.findByWarehouse(UserContext.getTenantId(), warehouseId).stream()
+                .map(assembler::toDTO)
+                .collect(Collectors.toList());
     }
 
     public IPage<AreaDTO> page(AreaPageQuery query) {
         Page<Area> page = new Page<>(query.getPageNum(), query.getPageSize());
-        IPage<Area> result = areaMapper.selectPage(page, new LambdaQueryWrapper<Area>()
-                .eq(Area::getTenantId, UserContext.getTenantId())
-                .eq(query.getWarehouseId() != null, Area::getWarehouseId, query.getWarehouseId())
-                .eq(query.getAreaCode() != null, Area::getAreaCode, query.getAreaCode())
-                .like(query.getAreaName() != null, Area::getAreaName, query.getAreaName())
-                .eq(query.getAreaType() != null, Area::getAreaType, query.getAreaType()));
+        IPage<Area> result =
+                areaMapper.selectPage(
+                        page,
+                        new LambdaQueryWrapper<Area>()
+                                .eq(Area::getTenantId, UserContext.getTenantId())
+                                .eq(
+                                        query.getWarehouseId() != null,
+                                        Area::getWarehouseId,
+                                        query.getWarehouseId())
+                                .eq(
+                                        query.getAreaCode() != null,
+                                        Area::getAreaCode,
+                                        query.getAreaCode())
+                                .like(
+                                        query.getAreaName() != null,
+                                        Area::getAreaName,
+                                        query.getAreaName())
+                                .eq(
+                                        query.getAreaType() != null,
+                                        Area::getAreaType,
+                                        query.getAreaType()));
         return result.convert(assembler::toDTO);
     }
 
@@ -59,7 +78,10 @@ public class AreaAppService {
 
     @Transactional
     public AreaDTO update(AreaUpdateCmd cmd) {
-        Area area = areaRepository.findById(cmd.getId()).orElseThrow(() -> BusinessException.notFound("库区不存在"));
+        Area area =
+                areaRepository
+                        .findById(cmd.getId())
+                        .orElseThrow(() -> BusinessException.notFound("库区不存在"));
         assembler.mergeToEntity(cmd, area);
         area.setUpdatedBy(UserContext.getUserId());
         domainService.validateUpdate(area);
@@ -67,18 +89,23 @@ public class AreaAppService {
         return assembler.toDTO(area);
     }
 
-    @Transactional public void delete(Long id) { areaRepository.deleteById(id); }
+    @Transactional
+    public void delete(Long id) {
+        areaRepository.deleteById(id);
+    }
 
     @Transactional
     public void disable(Long id) {
-        Area area = areaRepository.findById(id).orElseThrow(() -> BusinessException.notFound("库区不存在"));
+        Area area =
+                areaRepository.findById(id).orElseThrow(() -> BusinessException.notFound("库区不存在"));
         domainService.disableArea(area);
         areaRepository.update(area);
     }
 
     @Transactional
     public void enable(Long id) {
-        Area area = areaRepository.findById(id).orElseThrow(() -> BusinessException.notFound("库区不存在"));
+        Area area =
+                areaRepository.findById(id).orElseThrow(() -> BusinessException.notFound("库区不存在"));
         domainService.enableArea(area);
         areaRepository.update(area);
     }

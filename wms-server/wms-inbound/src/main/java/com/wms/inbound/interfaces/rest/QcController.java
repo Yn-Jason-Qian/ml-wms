@@ -12,9 +12,13 @@ import com.wms.inbound.application.dto.QcSubmitCmd;
 import com.wms.inbound.application.service.InboundAppService;
 import com.wms.inbound.domain.entity.QcHeader;
 import com.wms.inbound.infrastructure.mapper.QcHeaderMapper;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
@@ -25,20 +29,51 @@ public class QcController {
     private final QcHeaderMapper qcHeaderMapper;
 
     @PostMapping("/page")
-    public ApiResponse<PageResponse<Map<String, Object>>> page(@Valid @RequestBody QcPageQuery query) {
-        IPage<QcHeader> result = qcHeaderMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()),
-                new LambdaQueryWrapper<QcHeader>()
-                        .eq(query.getWarehouseId() != null, QcHeader::getWarehouseId, query.getWarehouseId())
-                        .eq(query.getStatus() != null, QcHeader::getStatus, query.getStatus())
-                        .orderByDesc(QcHeader::getCreatedAt));
-        return ApiResponse.ok(PageResponse.of(result.getRecords().stream().map(h -> {
-            java.util.Map<String, Object> m = new java.util.HashMap<>();
-            m.put("id", h.getId()); m.put("qcNo", h.getQcNo()); m.put("warehouseId", h.getWarehouseId());
-            m.put("status", h.getStatus()); m.put("qcType", h.getQcType() != null ? h.getQcType() : "");
-            m.put("receiveHeaderId", h.getReceiveHeaderId() != null ? h.getReceiveHeaderId() : 0);
-            m.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
-            return m;
-        }).toList(), result.getTotal(), (int) result.getCurrent(), (int) result.getSize()));
+    public ApiResponse<PageResponse<Map<String, Object>>> page(
+            @Valid @RequestBody QcPageQuery query) {
+        IPage<QcHeader> result =
+                qcHeaderMapper.selectPage(
+                        new Page<>(query.getPageNum(), query.getPageSize()),
+                        new LambdaQueryWrapper<QcHeader>()
+                                .eq(
+                                        query.getWarehouseId() != null,
+                                        QcHeader::getWarehouseId,
+                                        query.getWarehouseId())
+                                .eq(
+                                        query.getStatus() != null,
+                                        QcHeader::getStatus,
+                                        query.getStatus())
+                                .orderByDesc(QcHeader::getCreatedAt));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords().stream()
+                                .map(
+                                        h -> {
+                                            java.util.Map<String, Object> m =
+                                                    new java.util.HashMap<>();
+                                            m.put("id", h.getId());
+                                            m.put("qcNo", h.getQcNo());
+                                            m.put("warehouseId", h.getWarehouseId());
+                                            m.put("status", h.getStatus());
+                                            m.put(
+                                                    "qcType",
+                                                    h.getQcType() != null ? h.getQcType() : "");
+                                            m.put(
+                                                    "receiveHeaderId",
+                                                    h.getReceiveHeaderId() != null
+                                                            ? h.getReceiveHeaderId()
+                                                            : 0);
+                                            m.put(
+                                                    "createdAt",
+                                                    h.getCreatedAt() != null
+                                                            ? h.getCreatedAt().toString()
+                                                            : "");
+                                            return m;
+                                        })
+                                .toList(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @PostMapping

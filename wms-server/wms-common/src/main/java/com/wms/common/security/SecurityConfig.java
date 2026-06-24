@@ -1,6 +1,7 @@
 package com.wms.common.security;
 
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -23,28 +24,31 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> {})  // 使用 WebMvcConfig 中的 CORS 配置
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // 放行：登录、Swagger/Knife4j 文档、健康检查
-                .requestMatchers(
-                    "/api/v1/auth/login",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**",
-                    "/doc.html",
-                    "/webjars/**",
-                    "/actuator/health"
-                ).permitAll()
-                // API 需要认证
-                .requestMatchers("/api/**").authenticated()
-                // 其他放行
-                .anyRequest().permitAll()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> {}) // 使用 WebMvcConfig 中的 CORS 配置
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth
+                                        // 放行：登录、Swagger/Knife4j 文档、健康检查
+                                        .requestMatchers(
+                                                "/api/v1/auth/login",
+                                                "/swagger-ui.html",
+                                                "/swagger-ui/**",
+                                                "/v3/api-docs/**",
+                                                "/doc.html",
+                                                "/webjars/**",
+                                                "/actuator/health")
+                                        .permitAll()
+                                        // API 需要认证
+                                        .requestMatchers("/api/**")
+                                        .authenticated()
+                                        // 其他放行
+                                        .anyRequest()
+                                        .permitAll())
+                .addFilterBefore(
+                        jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

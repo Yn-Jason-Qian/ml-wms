@@ -1,9 +1,11 @@
 package com.wms.inbound.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.wms.common.base.BaseEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.math.BigDecimal;
 
 @Data

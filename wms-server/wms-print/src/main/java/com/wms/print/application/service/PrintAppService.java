@@ -12,7 +12,9 @@ import com.wms.print.domain.entity.PrintTemplate;
 import com.wms.print.domain.service.ZplGenerator;
 import com.wms.print.infrastructure.mapper.PrintRecordMapper;
 import com.wms.print.infrastructure.mapper.PrintTemplateMapper;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,39 +57,41 @@ public class PrintAppService {
     }
 
     public PageResponse<PrintTemplateDTO> pageTemplates(int pageNum, int pageSize) {
-        IPage<PrintTemplate> result = templateMapper.selectPage(
-            new Page<>(pageNum, pageSize),
-            new LambdaQueryWrapper<PrintTemplate>().orderByDesc(PrintTemplate::getCreatedAt)
-        );
+        IPage<PrintTemplate> result =
+                templateMapper.selectPage(
+                        new Page<>(pageNum, pageSize),
+                        new LambdaQueryWrapper<PrintTemplate>()
+                                .orderByDesc(PrintTemplate::getCreatedAt));
 
         return PageResponse.of(
-            result.getRecords().stream().map(t -> {
-                PrintTemplateDTO dto = new PrintTemplateDTO();
-                dto.setId(t.getId());
-                dto.setTemplateCode(t.getTemplateCode());
-                dto.setTemplateName(t.getTemplateName());
-                dto.setTemplateType(t.getTemplateType());
-                dto.setPaperWidth(t.getPaperWidth());
-                dto.setPaperHeight(t.getPaperHeight());
-                dto.setContentJson(t.getContentJson());
-                dto.setStatus(t.getStatus());
-                dto.setCreatedAt(t.getCreatedAt());
-                return dto;
-            }).toList(),
-            result.getTotal(),
-            (int) result.getCurrent(),
-            (int) result.getSize()
-        );
+                result.getRecords().stream()
+                        .map(
+                                t -> {
+                                    PrintTemplateDTO dto = new PrintTemplateDTO();
+                                    dto.setId(t.getId());
+                                    dto.setTemplateCode(t.getTemplateCode());
+                                    dto.setTemplateName(t.getTemplateName());
+                                    dto.setTemplateType(t.getTemplateType());
+                                    dto.setPaperWidth(t.getPaperWidth());
+                                    dto.setPaperHeight(t.getPaperHeight());
+                                    dto.setContentJson(t.getContentJson());
+                                    dto.setStatus(t.getStatus());
+                                    dto.setCreatedAt(t.getCreatedAt());
+                                    return dto;
+                                })
+                        .toList(),
+                result.getTotal(),
+                (int) result.getCurrent(),
+                (int) result.getSize());
     }
 
     // ── 打印执行 ──
 
-    /**
-     * 根据模板类型和数据生成 ZPL 标签文本
-     */
+    /** 根据模板类型和数据生成 ZPL 标签文本 */
     public String generateZpl(String templateType, Map<String, String> data) {
         return switch (templateType) {
-            case "SKU_LABEL", "INBOUND_LABEL", "RECEIVE_LABEL" -> ZplGenerator.generateReceiveLabel(data);
+            case "SKU_LABEL", "INBOUND_LABEL", "RECEIVE_LABEL" ->
+                    ZplGenerator.generateReceiveLabel(data);
             case "LOCATION_LABEL" -> ZplGenerator.generateLocationLabel(data);
             case "SHIPPING_LABEL" -> ZplGenerator.generateShipLabel(data);
             case "PALLET_LABEL" -> ZplGenerator.generatePalletLabel(data);
@@ -95,10 +99,7 @@ public class PrintAppService {
         };
     }
 
-    /**
-     * 执行打印 — 生成 ZPL 并记录打印历史
-     * 后续可通过蓝牙/网络发送 ZPL 到打印机
-     */
+    /** 执行打印 — 生成 ZPL 并记录打印历史 后续可通过蓝牙/网络发送 ZPL 到打印机 */
     @Transactional
     public Map<String, Object> executePrint(PrintCmd cmd) {
         PrintTemplate template = templateMapper.selectById(cmd.getTemplateId());

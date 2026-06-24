@@ -1,6 +1,7 @@
 package com.wms.masterdata.application.dto;
 
 import com.wms.common.base.PageRequest;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

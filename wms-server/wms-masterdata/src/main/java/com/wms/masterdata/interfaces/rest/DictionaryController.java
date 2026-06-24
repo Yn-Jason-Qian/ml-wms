@@ -5,9 +5,13 @@ import com.wms.common.log.OperationLog;
 import com.wms.masterdata.application.dto.*;
 import com.wms.masterdata.application.service.DictTypeAppService;
 import com.wms.masterdata.application.service.DictionaryAppService;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -43,8 +47,8 @@ public class DictionaryController {
 
     @PutMapping("/{id}")
     @OperationLog(module = "基础数据", action = "更新字典项")
-    public ApiResponse<DictionaryDTO> update(@PathVariable("id") Long id,
-                                              @Valid @RequestBody DictionaryUpdateCmd cmd) {
+    public ApiResponse<DictionaryDTO> update(
+            @PathVariable("id") Long id, @Valid @RequestBody DictionaryUpdateCmd cmd) {
         cmd.setId(id);
         return ApiResponse.ok(dictAppService.update(cmd));
     }

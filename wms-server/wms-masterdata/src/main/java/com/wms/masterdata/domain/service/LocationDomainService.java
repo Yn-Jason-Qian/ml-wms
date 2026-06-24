@@ -3,7 +3,9 @@ package com.wms.masterdata.domain.service;
 import com.wms.common.exception.BusinessException;
 import com.wms.masterdata.domain.entity.Location;
 import com.wms.masterdata.domain.repository.LocationRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,15 +14,21 @@ public class LocationDomainService {
     private final LocationRepository locationRepository;
 
     public void validateCreate(Location location) {
-        if (locationRepository.existsByCode(location.getTenantId(), location.getWarehouseId(),
-                location.getLocationCode(), null)) {
+        if (locationRepository.existsByCode(
+                location.getTenantId(),
+                location.getWarehouseId(),
+                location.getLocationCode(),
+                null)) {
             throw BusinessException.conflict("库位编码 [" + location.getLocationCode() + "] 已存在");
         }
     }
 
     public void validateUpdate(Location location) {
-        if (locationRepository.existsByCode(location.getTenantId(), location.getWarehouseId(),
-                location.getLocationCode(), location.getId())) {
+        if (locationRepository.existsByCode(
+                location.getTenantId(),
+                location.getWarehouseId(),
+                location.getLocationCode(),
+                location.getId())) {
             throw BusinessException.conflict("库位编码 [" + location.getLocationCode() + "] 已存在");
         }
     }

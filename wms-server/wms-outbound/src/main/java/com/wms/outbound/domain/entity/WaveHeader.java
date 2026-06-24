@@ -1,9 +1,11 @@
 package com.wms.outbound.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.wms.common.base.BaseEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -28,5 +30,8 @@ public class WaveHeader extends BaseEntity {
     public static final String STATUS_PICKED = "PICKED";
     public static final String STATUS_DONE = "DONE";
 
-    public void release() { this.waveStatus = STATUS_RELEASED; this.releasedAt = LocalDateTime.now(); }
+    public void release() {
+        this.waveStatus = STATUS_RELEASED;
+        this.releasedAt = LocalDateTime.now();
+    }
 }

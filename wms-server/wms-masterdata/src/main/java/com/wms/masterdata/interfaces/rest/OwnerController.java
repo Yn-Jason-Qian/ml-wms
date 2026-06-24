@@ -6,9 +6,13 @@ import com.wms.common.base.PageResponse;
 import com.wms.common.log.OperationLog;
 import com.wms.masterdata.application.dto.*;
 import com.wms.masterdata.application.service.OwnerAppService;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -25,8 +29,12 @@ public class OwnerController {
     @PostMapping("/page")
     public ApiResponse<PageResponse<OwnerDTO>> page(@Valid @RequestBody OwnerPageQuery query) {
         IPage<OwnerDTO> result = ownerAppService.page(query);
-        return ApiResponse.ok(PageResponse.of(result.getRecords(), result.getTotal(),
-                (int) result.getCurrent(), (int) result.getSize()));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @GetMapping("/{id}")
@@ -42,7 +50,8 @@ public class OwnerController {
 
     @PutMapping("/{id}")
     @OperationLog(module = "基础数据", action = "更新货主")
-    public ApiResponse<OwnerDTO> update(@PathVariable("id") Long id, @Valid @RequestBody OwnerUpdateCmd cmd) {
+    public ApiResponse<OwnerDTO> update(
+            @PathVariable("id") Long id, @Valid @RequestBody OwnerUpdateCmd cmd) {
         cmd.setId(id);
         return ApiResponse.ok(ownerAppService.update(cmd));
     }

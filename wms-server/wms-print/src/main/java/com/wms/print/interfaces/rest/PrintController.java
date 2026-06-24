@@ -7,8 +7,11 @@ import com.wms.print.application.dto.PrintCmd;
 import com.wms.print.application.dto.PrintTemplateCreateCmd;
 import com.wms.print.application.dto.PrintTemplateDTO;
 import com.wms.print.application.service.PrintAppService;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -24,7 +27,8 @@ public class PrintController {
 
     @PostMapping("/templates")
     @OperationLog(module = "打印管理", action = "创建打印模板")
-    public ApiResponse<PrintTemplateDTO> createTemplate(@Valid @RequestBody PrintTemplateCreateCmd cmd) {
+    public ApiResponse<PrintTemplateDTO> createTemplate(
+            @Valid @RequestBody PrintTemplateCreateCmd cmd) {
         return ApiResponse.ok(printAppService.createTemplate(cmd));
     }
 

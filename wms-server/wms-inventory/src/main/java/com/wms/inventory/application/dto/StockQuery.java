@@ -1,6 +1,7 @@
 package com.wms.inventory.application.dto;
 
 import com.wms.common.base.PageRequest;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -15,8 +16,10 @@ public class StockQuery extends PageRequest {
     private String skuName;
     private String batchNo;
     private Integer status;
+
     /** 仅查有库存的 */
     private Boolean onlyAvailable;
+
     /** 效期预警天数（查 N 天内过期） */
     private Integer expiryWithinDays;
 }

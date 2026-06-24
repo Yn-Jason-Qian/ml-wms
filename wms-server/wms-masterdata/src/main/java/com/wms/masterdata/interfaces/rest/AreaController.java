@@ -6,9 +6,13 @@ import com.wms.common.base.PageResponse;
 import com.wms.common.log.OperationLog;
 import com.wms.masterdata.application.dto.*;
 import com.wms.masterdata.application.service.AreaAppService;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -18,15 +22,20 @@ public class AreaController {
     private final AreaAppService areaAppService;
 
     @GetMapping("/by-warehouse/{warehouseId}")
-    public ApiResponse<List<AreaDTO>> listByWarehouse(@PathVariable("warehouseId") Long warehouseId) {
+    public ApiResponse<List<AreaDTO>> listByWarehouse(
+            @PathVariable("warehouseId") Long warehouseId) {
         return ApiResponse.ok(areaAppService.findByWarehouse(warehouseId));
     }
 
     @PostMapping("/page")
     public ApiResponse<PageResponse<AreaDTO>> page(@Valid @RequestBody AreaPageQuery query) {
         IPage<AreaDTO> result = areaAppService.page(query);
-        return ApiResponse.ok(PageResponse.of(result.getRecords(), result.getTotal(),
-                (int) result.getCurrent(), (int) result.getSize()));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @GetMapping("/{id}")
@@ -42,7 +51,8 @@ public class AreaController {
 
     @PutMapping("/{id}")
     @OperationLog(module = "基础数据", action = "更新库区")
-    public ApiResponse<AreaDTO> update(@PathVariable("id") Long id, @Valid @RequestBody AreaUpdateCmd cmd) {
+    public ApiResponse<AreaDTO> update(
+            @PathVariable("id") Long id, @Valid @RequestBody AreaUpdateCmd cmd) {
         cmd.setId(id);
         return ApiResponse.ok(areaAppService.update(cmd));
     }

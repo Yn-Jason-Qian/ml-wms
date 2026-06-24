@@ -12,9 +12,13 @@ import com.wms.inbound.application.dto.PutawaySubmitCmd;
 import com.wms.inbound.application.service.InboundAppService;
 import com.wms.inbound.domain.entity.PutawayHeader;
 import com.wms.inbound.infrastructure.mapper.PutawayHeaderMapper;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
@@ -25,19 +29,48 @@ public class PutawayController {
     private final PutawayHeaderMapper putawayHeaderMapper;
 
     @PostMapping("/page")
-    public ApiResponse<PageResponse<Map<String, Object>>> page(@Valid @RequestBody PutawayPageQuery query) {
-        IPage<PutawayHeader> result = putawayHeaderMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()),
-                new LambdaQueryWrapper<PutawayHeader>()
-                        .eq(query.getWarehouseId() != null, PutawayHeader::getWarehouseId, query.getWarehouseId())
-                        .eq(query.getStatus() != null, PutawayHeader::getStatus, query.getStatus())
-                        .orderByDesc(PutawayHeader::getCreatedAt));
-        return ApiResponse.ok(PageResponse.of(result.getRecords().stream().map(h -> {
-            java.util.Map<String, Object> m = new java.util.HashMap<>();
-            m.put("id", h.getId()); m.put("putawayNo", h.getPutawayNo()); m.put("warehouseId", h.getWarehouseId());
-            m.put("status", h.getStatus()); m.put("receiveHeaderId", h.getReceiveHeaderId() != null ? h.getReceiveHeaderId() : 0);
-            m.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
-            return m;
-        }).toList(), result.getTotal(), (int) result.getCurrent(), (int) result.getSize()));
+    public ApiResponse<PageResponse<Map<String, Object>>> page(
+            @Valid @RequestBody PutawayPageQuery query) {
+        IPage<PutawayHeader> result =
+                putawayHeaderMapper.selectPage(
+                        new Page<>(query.getPageNum(), query.getPageSize()),
+                        new LambdaQueryWrapper<PutawayHeader>()
+                                .eq(
+                                        query.getWarehouseId() != null,
+                                        PutawayHeader::getWarehouseId,
+                                        query.getWarehouseId())
+                                .eq(
+                                        query.getStatus() != null,
+                                        PutawayHeader::getStatus,
+                                        query.getStatus())
+                                .orderByDesc(PutawayHeader::getCreatedAt));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords().stream()
+                                .map(
+                                        h -> {
+                                            java.util.Map<String, Object> m =
+                                                    new java.util.HashMap<>();
+                                            m.put("id", h.getId());
+                                            m.put("putawayNo", h.getPutawayNo());
+                                            m.put("warehouseId", h.getWarehouseId());
+                                            m.put("status", h.getStatus());
+                                            m.put(
+                                                    "receiveHeaderId",
+                                                    h.getReceiveHeaderId() != null
+                                                            ? h.getReceiveHeaderId()
+                                                            : 0);
+                                            m.put(
+                                                    "createdAt",
+                                                    h.getCreatedAt() != null
+                                                            ? h.getCreatedAt().toString()
+                                                            : "");
+                                            return m;
+                                        })
+                                .toList(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @PostMapping

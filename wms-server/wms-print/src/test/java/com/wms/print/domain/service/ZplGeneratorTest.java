@@ -1,9 +1,11 @@
 package com.wms.print.domain.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
+
 import java.util.HashMap;
 import java.util.Map;
-import static org.junit.jupiter.api.Assertions.*;
 
 class ZplGeneratorTest {
 
@@ -87,21 +89,27 @@ class ZplGeneratorTest {
     @Test
     void testAllLabelsStartAndEndCorrectly() {
         Map<String, String> base = new HashMap<>();
-        base.put("skuCode", "T"); base.put("qty", "1");
-        base.put("date", "2026-01-01"); base.put("locationCode", "L");
+        base.put("skuCode", "T");
+        base.put("qty", "1");
+        base.put("date", "2026-01-01");
+        base.put("locationCode", "L");
         Map<String, String> ship = new HashMap<>();
-        ship.put("trackingNo", "T1"); ship.put("carrierName", "C"); ship.put("packageCount", "1");
+        ship.put("trackingNo", "T1");
+        ship.put("carrierName", "C");
+        ship.put("packageCount", "1");
         Map<String, String> loc = new HashMap<>();
         loc.put("locationCode", "L1");
         Map<String, String> pallet = new HashMap<>();
-        pallet.put("palletNo", "P1"); pallet.put("details", "D");
+        pallet.put("palletNo", "P1");
+        pallet.put("details", "D");
 
-        for (String zpl : new String[]{
-            ZplGenerator.generateReceiveLabel(base),
-            ZplGenerator.generateShipLabel(ship),
-            ZplGenerator.generateLocationLabel(loc),
-            ZplGenerator.generatePalletLabel(pallet)
-        }) {
+        for (String zpl :
+                new String[] {
+                    ZplGenerator.generateReceiveLabel(base),
+                    ZplGenerator.generateShipLabel(ship),
+                    ZplGenerator.generateLocationLabel(loc),
+                    ZplGenerator.generatePalletLabel(pallet)
+                }) {
             assertTrue(zpl.startsWith("^XA"), "Every ZPL must start with ^XA");
             assertTrue(zpl.endsWith("^XZ\n") || zpl.endsWith("^XZ"), "Every ZPL must end with ^XZ");
         }

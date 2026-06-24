@@ -12,9 +12,13 @@ import com.wms.inventory.application.dto.MovePageQuery;
 import com.wms.inventory.application.service.InventoryAppService;
 import com.wms.inventory.domain.entity.MoveHeader;
 import com.wms.inventory.infrastructure.mapper.MoveHeaderMapper;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
@@ -25,19 +29,44 @@ public class MoveController {
     private final MoveHeaderMapper moveHeaderMapper;
 
     @PostMapping("/page")
-    public ApiResponse<PageResponse<Map<String, Object>>> page(@Valid @RequestBody MovePageQuery query) {
-        IPage<MoveHeader> result = moveHeaderMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()),
-                new LambdaQueryWrapper<MoveHeader>()
-                        .eq(query.getWarehouseId() != null, MoveHeader::getWarehouseId, query.getWarehouseId())
-                        .eq(query.getStatus() != null, MoveHeader::getStatus, query.getStatus())
-                        .orderByDesc(MoveHeader::getCreatedAt));
-        return ApiResponse.ok(PageResponse.of(result.getRecords().stream().map(h -> {
-            java.util.Map<String, Object> m = new java.util.HashMap<>();
-            m.put("id", h.getId()); m.put("moveNo", h.getMoveNo()); m.put("warehouseId", h.getWarehouseId());
-            m.put("moveType", h.getMoveType()); m.put("status", h.getStatus());
-            m.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
-            return m;
-        }).toList(), result.getTotal(), (int) result.getCurrent(), (int) result.getSize()));
+    public ApiResponse<PageResponse<Map<String, Object>>> page(
+            @Valid @RequestBody MovePageQuery query) {
+        IPage<MoveHeader> result =
+                moveHeaderMapper.selectPage(
+                        new Page<>(query.getPageNum(), query.getPageSize()),
+                        new LambdaQueryWrapper<MoveHeader>()
+                                .eq(
+                                        query.getWarehouseId() != null,
+                                        MoveHeader::getWarehouseId,
+                                        query.getWarehouseId())
+                                .eq(
+                                        query.getStatus() != null,
+                                        MoveHeader::getStatus,
+                                        query.getStatus())
+                                .orderByDesc(MoveHeader::getCreatedAt));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords().stream()
+                                .map(
+                                        h -> {
+                                            java.util.Map<String, Object> m =
+                                                    new java.util.HashMap<>();
+                                            m.put("id", h.getId());
+                                            m.put("moveNo", h.getMoveNo());
+                                            m.put("warehouseId", h.getWarehouseId());
+                                            m.put("moveType", h.getMoveType());
+                                            m.put("status", h.getStatus());
+                                            m.put(
+                                                    "createdAt",
+                                                    h.getCreatedAt() != null
+                                                            ? h.getCreatedAt().toString()
+                                                            : "");
+                                            return m;
+                                        })
+                                .toList(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @PostMapping

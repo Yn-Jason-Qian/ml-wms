@@ -3,7 +3,9 @@ package com.wms.masterdata.domain.service;
 import com.wms.common.exception.BusinessException;
 import com.wms.masterdata.domain.entity.Owner;
 import com.wms.masterdata.domain.repository.OwnerRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,7 +22,8 @@ public class OwnerDomainService {
 
     public void validateUpdate(Owner owner) {
         owner.validateCode();
-        if (ownerRepository.existsByCode(owner.getTenantId(), owner.getOwnerCode(), owner.getId())) {
+        if (ownerRepository.existsByCode(
+                owner.getTenantId(), owner.getOwnerCode(), owner.getId())) {
             throw BusinessException.conflict("货主编码 [" + owner.getOwnerCode() + "] 已存在");
         }
     }

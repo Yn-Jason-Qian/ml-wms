@@ -1,6 +1,7 @@
 package com.wms.common.base;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -19,7 +20,8 @@ public class ApiResponse<T> {
     // ---- Success ----
 
     public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(200, "success", data, UUID.randomUUID().toString().substring(0, 8));
+        return new ApiResponse<>(
+                200, "success", data, UUID.randomUUID().toString().substring(0, 8));
     }
 
     public static <T> ApiResponse<T> ok() {

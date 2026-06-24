@@ -1,9 +1,11 @@
 package com.wms.task.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.wms.common.base.BaseEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -33,9 +35,27 @@ public class TaskHeader extends BaseEntity {
     public static final String STATUS_DONE = "DONE";
     public static final String STATUS_CANCELLED = "CANCELLED";
 
-    public void release() { this.status = STATUS_RELEASED; }
-    public void assign(Long userId) { this.status = STATUS_ASSIGNED; this.assignTo = userId; }
-    public void start() { this.status = STATUS_EXECUTING; this.startTime = LocalDateTime.now(); }
-    public void complete() { this.status = STATUS_DONE; this.endTime = LocalDateTime.now(); }
-    public void cancel() { this.status = STATUS_CANCELLED; this.endTime = LocalDateTime.now(); }
+    public void release() {
+        this.status = STATUS_RELEASED;
+    }
+
+    public void assign(Long userId) {
+        this.status = STATUS_ASSIGNED;
+        this.assignTo = userId;
+    }
+
+    public void start() {
+        this.status = STATUS_EXECUTING;
+        this.startTime = LocalDateTime.now();
+    }
+
+    public void complete() {
+        this.status = STATUS_DONE;
+        this.endTime = LocalDateTime.now();
+    }
+
+    public void cancel() {
+        this.status = STATUS_CANCELLED;
+        this.endTime = LocalDateTime.now();
+    }
 }

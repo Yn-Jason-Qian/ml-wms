@@ -2,6 +2,7 @@ package com.wms.masterdata.application.assembler;
 
 import com.wms.masterdata.application.dto.DictTypeDTO;
 import com.wms.masterdata.domain.entity.DictType;
+
 import org.springframework.stereotype.Component;
 
 @Component

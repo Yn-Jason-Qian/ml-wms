@@ -4,6 +4,7 @@ import com.wms.masterdata.application.dto.DictionaryCreateCmd;
 import com.wms.masterdata.application.dto.DictionaryDTO;
 import com.wms.masterdata.application.dto.DictionaryUpdateCmd;
 import com.wms.masterdata.domain.entity.Dictionary;
+
 import org.springframework.stereotype.Component;
 
 @Component

@@ -14,7 +14,9 @@ import com.wms.masterdata.domain.entity.Warehouse;
 import com.wms.masterdata.domain.repository.WarehouseRepository;
 import com.wms.masterdata.domain.service.WarehouseDomainService;
 import com.wms.masterdata.infrastructure.mapper.WarehouseMapper;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +25,8 @@ import java.util.stream.Collectors;
 
 /**
  * 仓库应用服务 —— 用例编排 + 事务边界。
- * <p>
- * 应用层只做编排，不写业务规则（规则在 DomainService 中）。
+ *
+ * <p>应用层只做编排，不写业务规则（规则在 DomainService 中）。
  */
 @Service
 @RequiredArgsConstructor
@@ -38,29 +40,45 @@ public class WarehouseAppService {
     // ───── 查询（只读，不需要事务） ─────
 
     public WarehouseDTO findById(Long id) {
-        Warehouse w = warehouseRepository.findById(id)
-                .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
+        Warehouse w =
+                warehouseRepository
+                        .findById(id)
+                        .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
         return assembler.toDTO(w);
     }
 
     public List<WarehouseDTO> findAll() {
-Long tenantId = UserContext.getTenantId();
+        Long tenantId = UserContext.getTenantId();
         return warehouseRepository.findAll(tenantId).stream()
                 .map(assembler::toDTO)
                 .collect(Collectors.toList());
     }
 
     public IPage<WarehouseDTO> page(WarehousePageQuery query) {
-Long tenantId = UserContext.getTenantId();
+        Long tenantId = UserContext.getTenantId();
         Page<Warehouse> page = new Page<>(query.getPageNum(), query.getPageSize());
 
-        IPage<Warehouse> result = warehouseMapper.selectPage(page,
-                new LambdaQueryWrapper<Warehouse>()
-                        .eq(Warehouse::getTenantId, tenantId)
-                        .eq(query.getWhCode() != null, Warehouse::getWhCode, query.getWhCode())
-                        .like(query.getWhName() != null, Warehouse::getWhName, query.getWhName())
-                        .eq(query.getWhType() != null, Warehouse::getWhType, query.getWhType())
-                        .eq(query.getStatus() != null, Warehouse::getStatus, query.getStatus()));
+        IPage<Warehouse> result =
+                warehouseMapper.selectPage(
+                        page,
+                        new LambdaQueryWrapper<Warehouse>()
+                                .eq(Warehouse::getTenantId, tenantId)
+                                .eq(
+                                        query.getWhCode() != null,
+                                        Warehouse::getWhCode,
+                                        query.getWhCode())
+                                .like(
+                                        query.getWhName() != null,
+                                        Warehouse::getWhName,
+                                        query.getWhName())
+                                .eq(
+                                        query.getWhType() != null,
+                                        Warehouse::getWhType,
+                                        query.getWhType())
+                                .eq(
+                                        query.getStatus() != null,
+                                        Warehouse::getStatus,
+                                        query.getStatus()));
 
         return result.convert(assembler::toDTO);
     }
@@ -71,8 +89,8 @@ Long tenantId = UserContext.getTenantId();
     public WarehouseDTO create(WarehouseCreateCmd cmd) {
         Warehouse warehouse = assembler.toEntity(cmd);
         // 注入上下文
-Long tenantId = UserContext.getTenantId();
-Long userId = UserContext.getUserId();
+        Long tenantId = UserContext.getTenantId();
+        Long userId = UserContext.getUserId();
         warehouse.setTenantId(tenantId);
         warehouse.setCreatedBy(userId);
         warehouse.setUpdatedBy(userId);
@@ -88,8 +106,10 @@ Long userId = UserContext.getUserId();
 
     @Transactional
     public WarehouseDTO update(WarehouseUpdateCmd cmd) {
-        Warehouse warehouse = warehouseRepository.findById(cmd.getId())
-                .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
+        Warehouse warehouse =
+                warehouseRepository
+                        .findById(cmd.getId())
+                        .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
 
         assembler.mergeToEntity(cmd, warehouse);
         warehouse.setUpdatedBy(UserContext.getUserId());
@@ -102,24 +122,30 @@ Long userId = UserContext.getUserId();
 
     @Transactional
     public void delete(Long id) {
-        Warehouse warehouse = warehouseRepository.findById(id)
-                .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
+        Warehouse warehouse =
+                warehouseRepository
+                        .findById(id)
+                        .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
         // 删除前检查：后续可对接 Inventory 域判断是否有库存
         warehouseRepository.deleteById(id);
     }
 
     @Transactional
     public void disable(Long id) {
-        Warehouse warehouse = warehouseRepository.findById(id)
-                .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
+        Warehouse warehouse =
+                warehouseRepository
+                        .findById(id)
+                        .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
         domainService.disableWarehouse(warehouse);
         warehouseRepository.update(warehouse);
     }
 
     @Transactional
     public void enable(Long id) {
-        Warehouse warehouse = warehouseRepository.findById(id)
-                .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
+        Warehouse warehouse =
+                warehouseRepository
+                        .findById(id)
+                        .orElseThrow(() -> BusinessException.notFound("仓库不存在"));
         domainService.enableWarehouse(warehouse);
         warehouseRepository.update(warehouse);
     }

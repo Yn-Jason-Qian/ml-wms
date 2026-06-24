@@ -4,6 +4,7 @@ import com.wms.masterdata.application.dto.LocationCreateCmd;
 import com.wms.masterdata.application.dto.LocationDTO;
 import com.wms.masterdata.application.dto.LocationUpdateCmd;
 import com.wms.masterdata.domain.entity.Location;
+
 import org.springframework.stereotype.Component;
 
 @Component

@@ -3,7 +3,9 @@ package com.wms.masterdata.domain.service;
 import com.wms.common.exception.BusinessException;
 import com.wms.masterdata.domain.entity.Area;
 import com.wms.masterdata.domain.repository.AreaRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,14 +15,16 @@ public class AreaDomainService {
 
     public void validateCreate(Area area) {
         area.validateCode();
-        if (areaRepository.existsByCode(area.getTenantId(), area.getWarehouseId(), area.getAreaCode(), null)) {
+        if (areaRepository.existsByCode(
+                area.getTenantId(), area.getWarehouseId(), area.getAreaCode(), null)) {
             throw BusinessException.conflict("库区编码 [" + area.getAreaCode() + "] 已存在");
         }
     }
 
     public void validateUpdate(Area area) {
         area.validateCode();
-        if (areaRepository.existsByCode(area.getTenantId(), area.getWarehouseId(), area.getAreaCode(), area.getId())) {
+        if (areaRepository.existsByCode(
+                area.getTenantId(), area.getWarehouseId(), area.getAreaCode(), area.getId())) {
             throw BusinessException.conflict("库区编码 [" + area.getAreaCode() + "] 已存在");
         }
     }

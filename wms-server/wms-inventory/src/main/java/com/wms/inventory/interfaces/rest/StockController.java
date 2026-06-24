@@ -5,9 +5,13 @@ import com.wms.common.base.ApiResponse;
 import com.wms.common.base.PageResponse;
 import com.wms.inventory.application.dto.*;
 import com.wms.inventory.application.service.InventoryAppService;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -19,8 +23,12 @@ public class StockController {
     @PostMapping("/stocks/page")
     public ApiResponse<PageResponse<StockDTO>> pageStocks(@Valid @RequestBody StockQuery query) {
         IPage<StockDTO> result = inventoryAppService.pageStock(query);
-        return ApiResponse.ok(PageResponse.of(result.getRecords(), result.getTotal(),
-                (int) result.getCurrent(), (int) result.getSize()));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @GetMapping("/stocks/{id}")
@@ -29,7 +37,8 @@ public class StockController {
     }
 
     @GetMapping("/stocks/{stockId}/transactions")
-    public ApiResponse<List<StockTransactionDTO>> getTransactions(@PathVariable("stockId") Long stockId) {
+    public ApiResponse<List<StockTransactionDTO>> getTransactions(
+            @PathVariable("stockId") Long stockId) {
         return ApiResponse.ok(inventoryAppService.findTransactionsByStock(stockId));
     }
 
@@ -37,7 +46,11 @@ public class StockController {
     public ApiResponse<PageResponse<StockTransactionDTO>> pageTransactions(
             @Valid @RequestBody TransactionQuery query) {
         IPage<StockTransactionDTO> result = inventoryAppService.pageTransactions(query);
-        return ApiResponse.ok(PageResponse.of(result.getRecords(), result.getTotal(),
-                (int) result.getCurrent(), (int) result.getSize()));
+        return ApiResponse.ok(
+                PageResponse.of(
+                        result.getRecords(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 }

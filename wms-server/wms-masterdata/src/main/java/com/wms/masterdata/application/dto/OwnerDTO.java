@@ -1,6 +1,7 @@
 package com.wms.masterdata.application.dto;
 
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data

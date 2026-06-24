@@ -1,9 +1,10 @@
 package com.wms.masterdata.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.wms.common.base.BaseEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -15,7 +16,15 @@ public class Unit extends BaseEntity {
     private String unitType;
     private Integer status;
 
-    public void disable() { this.status = 0; }
-    public void enable() { this.status = 1; }
-    public boolean isEnabled() { return status != null && status == 1; }
+    public void disable() {
+        this.status = 0;
+    }
+
+    public void enable() {
+        this.status = 1;
+    }
+
+    public boolean isEnabled() {
+        return status != null && status == 1;
+    }
 }

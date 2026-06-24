@@ -3,14 +3,22 @@ package com.wms.masterdata.application.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
 import lombok.Data;
+
 import java.math.BigDecimal;
 
 @Data
 public class LocationUpdateCmd {
     @NotNull private Long id;
-    @NotBlank @Size(max = 64) private String locationCode;
-    @Size(max = 128) private String locationName;
+
+    @NotBlank
+    @Size(max = 64)
+    private String locationCode;
+
+    @Size(max = 128)
+    private String locationName;
+
     @NotBlank private String locationType;
     private String aisle;
     private String shelf;

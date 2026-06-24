@@ -9,8 +9,11 @@ import com.wms.masterdata.application.dto.WarehouseDTO;
 import com.wms.masterdata.application.dto.WarehousePageQuery;
 import com.wms.masterdata.application.dto.WarehouseUpdateCmd;
 import com.wms.masterdata.application.service.WarehouseAppService;
+
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,12 +31,15 @@ public class WarehouseController {
     }
 
     @PostMapping("/page")
-    public ApiResponse<PageResponse<WarehouseDTO>> page(@Valid @RequestBody WarehousePageQuery query) {
+    public ApiResponse<PageResponse<WarehouseDTO>> page(
+            @Valid @RequestBody WarehousePageQuery query) {
         IPage<WarehouseDTO> result = warehouseAppService.page(query);
         return ApiResponse.ok(
-                PageResponse.of(result.getRecords(), result.getTotal(),
-                        (int) result.getCurrent(), (int) result.getSize())
-        );
+                PageResponse.of(
+                        result.getRecords(),
+                        result.getTotal(),
+                        (int) result.getCurrent(),
+                        (int) result.getSize()));
     }
 
     @GetMapping("/{id}")
@@ -49,8 +55,8 @@ public class WarehouseController {
 
     @PutMapping("/{id}")
     @OperationLog(module = "基础数据", action = "更新仓库", desc = "更新仓库")
-    public ApiResponse<WarehouseDTO> update(@PathVariable("id") Long id,
-                                             @Valid @RequestBody WarehouseUpdateCmd cmd) {
+    public ApiResponse<WarehouseDTO> update(
+            @PathVariable("id") Long id, @Valid @RequestBody WarehouseUpdateCmd cmd) {
         cmd.setId(id);
         return ApiResponse.ok(warehouseAppService.update(cmd));
     }

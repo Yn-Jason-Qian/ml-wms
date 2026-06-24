@@ -1,5 +1,9 @@
 package com.wms.print.application.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import com.wms.print.application.dto.PrintCmd;
 import com.wms.print.application.dto.PrintTemplateCreateCmd;
 import com.wms.print.application.dto.PrintTemplateDTO;
@@ -7,6 +11,7 @@ import com.wms.print.domain.entity.PrintRecord;
 import com.wms.print.domain.entity.PrintTemplate;
 import com.wms.print.infrastructure.mapper.PrintRecordMapper;
 import com.wms.print.infrastructure.mapper.PrintTemplateMapper;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -16,10 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PrintAppServiceTest {
@@ -31,11 +32,13 @@ class PrintAppServiceTest {
 
     @Test
     void testCreateTemplate() {
-        when(templateMapper.insert(any(PrintTemplate.class))).thenAnswer(inv -> {
-            PrintTemplate t = inv.getArgument(0);
-            t.setId(1L);
-            return 1;
-        });
+        when(templateMapper.insert(any(PrintTemplate.class)))
+                .thenAnswer(
+                        inv -> {
+                            PrintTemplate t = inv.getArgument(0);
+                            t.setId(1L);
+                            return 1;
+                        });
 
         PrintTemplateCreateCmd cmd = new PrintTemplateCreateCmd();
         cmd.setTemplateCode("SKU_LABEL_01");
@@ -64,7 +67,10 @@ class PrintAppServiceTest {
         assertTrue(zpl.contains("A-01"));
         assertTrue(zpl.contains("^BCN"));
 
-        zpl = service.generateZpl("SHIPPING_LABEL", Map.of("trackingNo", "SF001", "carrierName", "SF", "packageCount", "1"));
+        zpl =
+                service.generateZpl(
+                        "SHIPPING_LABEL",
+                        Map.of("trackingNo", "SF001", "carrierName", "SF", "packageCount", "1"));
         assertTrue(zpl.contains("SF001"));
 
         zpl = service.generateZpl("PALLET_LABEL", Map.of("palletNo", "P1", "details", ""));
@@ -72,7 +78,10 @@ class PrintAppServiceTest {
         assertTrue(zpl.contains("^BQN"));
 
         // unknown type falls back to receive label
-        zpl = service.generateZpl("UNKNOWN", Map.of("skuCode", "X", "qty", "1", "date", "", "locationCode", ""));
+        zpl =
+                service.generateZpl(
+                        "UNKNOWN",
+                        Map.of("skuCode", "X", "qty", "1", "date", "", "locationCode", ""));
         assertTrue(zpl.contains("X"));
     }
 
@@ -83,11 +92,13 @@ class PrintAppServiceTest {
         template.setTemplateType("SKU_LABEL");
         template.setContentJson(null); // triggers ZPL generation
         when(templateMapper.selectById(1L)).thenReturn(template);
-        when(recordMapper.insert(any(PrintRecord.class))).thenAnswer(inv -> {
-            PrintRecord r = inv.getArgument(0);
-            r.setId(200L);  // simulate MyBatis-Plus ASSIGN_ID
-            return 1;
-        });
+        when(recordMapper.insert(any(PrintRecord.class)))
+                .thenAnswer(
+                        inv -> {
+                            PrintRecord r = inv.getArgument(0);
+                            r.setId(200L); // simulate MyBatis-Plus ASSIGN_ID
+                            return 1;
+                        });
 
         PrintCmd cmd = new PrintCmd();
         cmd.setTemplateId(1L);
