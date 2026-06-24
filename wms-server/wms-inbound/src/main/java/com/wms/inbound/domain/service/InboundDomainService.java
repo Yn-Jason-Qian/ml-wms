@@ -2,14 +2,9 @@ package com.wms.inbound.domain.service;
 
 import com.wms.common.exception.BusinessException;
 import com.wms.inbound.domain.entity.*;
-import com.wms.inbound.domain.repository.*;
-import com.wms.inventory.domain.entity.Stock;
-import com.wms.inventory.domain.entity.StockTransaction;
-import com.wms.inventory.domain.repository.StockRepository;
-import com.wms.inventory.domain.repository.StockTransactionRepository;
-import com.wms.strategy.domain.entity.StrategyConfig;
-import com.wms.strategy.domain.repository.StrategyRepository;
-import com.wms.strategy.domain.service.StrategyEngine;
+import com.wms.inbound.domain.gateway.InventoryGateway;
+import com.wms.inbound.domain.gateway.StrategyGateway;
+import com.wms.inbound.domain.repository.InboundRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +21,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class InboundDomainService {
     private final InboundRepository inboundRepo;
-    private final StockRepository stockRepository;
-    private final StockTransactionRepository txnRepository;
-    private final StrategyRepository strategyRepository;
-    private final StrategyEngine strategyEngine;
+    private final InventoryGateway inventoryGateway;
+    private final StrategyGateway strategyGateway;
 
     /** 收货确认：校验数量 + 更新ASN行 + 创建收货行 */
     public AsnLine receiveLine(ReceiveHeader header, ReceiveLine receiveLine, Long userId) {
@@ -86,20 +78,7 @@ public class InboundDomainService {
             Map<String, Object> context = new HashMap<>();
             context.put("sku", Map.of("code", line.getSkuCode()));
             context.put("putaway", Map.of("fromLocationId", line.getFromLocationId()));
-            StrategyEngine.MatchResult result =
-                    strategyEngine.match(
-                            StrategyConfig.TYPE_PUTAWAY,
-                            context,
-                            type -> {
-                                List<StrategyConfig> configs =
-                                        strategyRepository.findByType(line.getTenantId(), type);
-                                configs.forEach(
-                                        c ->
-                                                c.setRules(
-                                                        strategyRepository.findRulesByStrategy(
-                                                                c.getId())));
-                                return configs;
-                            });
+            var result = strategyGateway.matchPutawayStrategy(line.getTenantId(), context);
             if (result != null && result.getActionParams().containsKey("locationId")) {
                 line.setToLocationId(
                         Long.valueOf(result.getActionParams().get("locationId").toString()));
@@ -110,75 +89,18 @@ public class InboundDomainService {
             throw BusinessException.notFound("未找到合适的上架库位，请手动指定");
         }
 
-        // 查找或创建库存记录
-        Long tenantId = line.getTenantId();
-        Stock stock =
-                stockRepository
-                        .findByKey(
-                                tenantId,
-                                null /*warehouse*/,
-                                line.getToLocationId(),
-                                line.getSkuId(),
-                                line.getBatchNo())
-                        .orElse(null);
-
-        if (stock == null) {
-            stock = new Stock();
-            stock.setTenantId(tenantId);
-            stock.setLocationId(line.getToLocationId());
-            stock.setSkuId(line.getSkuId());
-            stock.setSkuCode(line.getSkuCode());
-            stock.setSkuName(line.getSkuName());
-            stock.setBatchNo(line.getBatchNo());
-            stock.setLotAttrs(line.getLotAttrs());
-            stock.setQtyOnHand(BigDecimal.ZERO);
-            stock.setQtyAllocated(BigDecimal.ZERO);
-            stock.setQtyAvailable(BigDecimal.ZERO);
-            stock.setQtyFrozen(BigDecimal.ZERO);
-            stock.setCreatedBy(userId);
-            stock.setUpdatedBy(userId);
-            stockRepository.save(stock);
-        }
-
-        stock.add(line.getPutawayQty());
-        stockRepository.updateWithVersion(stock);
-
-        // 写库存流水
-        writeTransaction(
-                stock,
-                "PUTAWAY",
-                "IN",
+        inventoryGateway.increaseStock(
+                line.getTenantId(),
+                null /*warehouseId*/,
+                line.getToLocationId(),
+                line.getSkuId(),
+                line.getSkuCode(),
+                line.getSkuName(),
+                line.getBatchNo(),
+                line.getLotAttrs(),
                 line.getPutawayQty(),
                 line.getPutawayHeaderId().toString(),
                 line.getPutawayHeaderId(),
                 userId);
-    }
-
-    private void writeTransaction(
-            Stock stock,
-            String txnType,
-            String direction,
-            BigDecimal qty,
-            String refNo,
-            Long refId,
-            Long operator) {
-        StockTransaction txn = new StockTransaction();
-        txn.setWarehouseId(stock.getWarehouseId());
-        txn.setTenantId(stock.getTenantId());
-        txn.setStockId(stock.getId());
-        txn.setSkuId(stock.getSkuId());
-        txn.setSkuCode(stock.getSkuCode());
-        txn.setBatchNo(stock.getBatchNo());
-        txn.setTxnType(txnType);
-        txn.setTxnDirection(direction);
-        txn.setTxnQty(qty);
-        txn.setQtyBefore(stock.getQtyOnHand().subtract(qty));
-        txn.setQtyAfter(stock.getQtyOnHand());
-        txn.setRefNo(refNo);
-        txn.setRefId(refId);
-        txn.setTxnTime(LocalDateTime.now());
-        txn.setCreatedBy(operator);
-        txn.setUpdatedBy(operator);
-        txnRepository.save(txn);
     }
 }

@@ -138,4 +138,29 @@ public class StrategyAppService {
         }
         return dto;
     }
+
+    // ───── 跨域调用（供其他模块 Gateway Adapter 使用）─────
+
+    /**
+     * 执行策略匹配（由调用方指定 tenantId，不依赖 UserContext）。
+     *
+     * @param tenantId 租户 ID
+     * @param strategyType 策略类型
+     * @param context 匹配上下文
+     * @return 匹配结果，未匹配返回 null
+     */
+    public StrategyEngine.MatchResult matchStrategy(
+            Long tenantId, String strategyType, Map<String, Object> context) {
+        return engine.match(
+                strategyType,
+                context,
+                type ->
+                        strategyRepository.findByType(tenantId, type).stream()
+                                .peek(
+                                        c ->
+                                                c.setRules(
+                                                        strategyRepository.findRulesByStrategy(
+                                                                c.getId())))
+                                .collect(Collectors.toList()));
+    }
 }

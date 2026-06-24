@@ -40,6 +40,30 @@ public class SkuAppService {
         return dto;
     }
 
+    // ───── 跨域调用（供其他模块 Gateway Adapter 使用）─────
+
+    /**
+     * 根据 ID 或 code 查找 SKU（支持 PDA 扫码传 code 的场景）。
+     *
+     * @param skuId SKU ID，可为 null
+     * @param skuCode SKU 编码，可为 null
+     * @param tenantId 租户 ID
+     * @return SKU 实体
+     */
+    public Sku resolveSku(Long skuId, String skuCode, Long tenantId) {
+        if (skuId != null) {
+            return skuRepository
+                    .findById(skuId)
+                    .orElseThrow(() -> BusinessException.notFound("SKU不存在: id=" + skuId));
+        }
+        if (skuCode != null && !skuCode.isBlank()) {
+            return skuRepository
+                    .findByCode(tenantId, skuCode)
+                    .orElseThrow(() -> BusinessException.notFound("SKU不存在: code=" + skuCode));
+        }
+        throw BusinessException.badRequest("skuId 或 skuCode 必须提供一个");
+    }
+
     public List<SkuDTO> findByOwner(Long ownerId) {
         return skuRepository.findByOwner(UserContext.getTenantId(), ownerId).stream()
                 .map(assembler::toDTO)

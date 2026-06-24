@@ -77,6 +77,65 @@ public class InventoryAppService {
                         .orElseThrow(() -> BusinessException.notFound("库存记录不存在")));
     }
 
+    // ───── 跨域调用（供其他模块 Gateway Adapter 使用）─────
+
+    public void increaseStock(
+            Long tenantId,
+            Long warehouseId,
+            Long locationId,
+            Long skuId,
+            String skuCode,
+            String skuName,
+            String batchNo,
+            String lotAttrs,
+            BigDecimal qty,
+            String refNo,
+            Long refId,
+            Long userId) {
+        stockDomainService.increaseStock(
+                tenantId,
+                warehouseId,
+                locationId,
+                skuId,
+                skuCode,
+                skuName,
+                batchNo,
+                lotAttrs,
+                qty,
+                refNo,
+                refId,
+                userId);
+    }
+
+    public void allocateBySku(
+            Long tenantId, Long skuId, BigDecimal requiredQty, String refNo, Long refId) {
+        stockDomainService.allocateBySku(tenantId, skuId, requiredQty, refNo, refId);
+    }
+
+    public void deductStock(
+            Long tenantId,
+            Long warehouseId,
+            Long locationId,
+            Long skuId,
+            String batchNo,
+            BigDecimal qty,
+            String txnType,
+            String refNo,
+            Long refId,
+            Long userId) {
+        stockDomainService.deductStock(
+                tenantId,
+                warehouseId,
+                locationId,
+                skuId,
+                batchNo,
+                qty,
+                txnType,
+                refNo,
+                refId,
+                userId);
+    }
+
     // ───── 库存流水 ─────
 
     public List<StockTransactionDTO> findTransactionsByStock(Long stockId) {

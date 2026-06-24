@@ -4,10 +4,10 @@ import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
 import com.wms.inbound.application.dto.*;
 import com.wms.inbound.domain.entity.*;
+import com.wms.inbound.domain.gateway.MasterDataGateway;
 import com.wms.inbound.domain.repository.InboundRepository;
 import com.wms.inbound.domain.service.InboundDomainService;
 import com.wms.masterdata.domain.entity.Sku;
-import com.wms.masterdata.domain.repository.SkuRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class InboundAppService {
     private final InboundRepository inboundRepo;
     private final InboundDomainService domainService;
-    private final SkuRepository skuRepository;
+    private final MasterDataGateway masterDataGateway;
 
     // ───── ASN ─────
 
@@ -56,7 +56,7 @@ public class InboundAppService {
         for (AsnCreateCmd.AsnLineItem item : cmd.getLines()) {
             lineNo++;
             // 支持 SKU code → ID 查找 (PDA扫码场景传 code)
-            Sku sku = resolveSku(item.getSkuId(), item.getSkuCode(), tenantId);
+            Sku sku = masterDataGateway.resolveSku(item.getSkuId(), item.getSkuCode(), tenantId);
             AsnLine l = new AsnLine();
             l.setTenantId(tenantId);
             l.setAsnHeaderId(h.getId());
@@ -97,7 +97,7 @@ public class InboundAppService {
                 "RCV-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         // 支持 SKU code → ID 查找
-        Sku sku = resolveSku(cmd.getSkuId(), cmd.getSkuCode(), tenantId);
+        Sku sku = masterDataGateway.resolveSku(cmd.getSkuId(), cmd.getSkuCode(), tenantId);
         // 支持库位 code → ID 查找 (如果传了 code 但未传 id, 使用 code 记录)
         Long locationId = cmd.getReceiveLocationId();
         if (locationId == null && cmd.getReceiveLocationCode() != null) {
@@ -298,23 +298,6 @@ public class InboundAppService {
                 inboundRepo.updatePutawayHeader(h);
             }
         }
-    }
-
-    // ───── Helpers ─────
-
-    /** 根据 ID 或 code 查找 SKU (支持PDA扫码传 code 的场景) */
-    private Sku resolveSku(Long skuId, String skuCode, Long tenantId) {
-        if (skuId != null) {
-            return skuRepository
-                    .findById(skuId)
-                    .orElseThrow(() -> BusinessException.notFound("SKU不存在: id=" + skuId));
-        }
-        if (skuCode != null && !skuCode.isBlank()) {
-            return skuRepository
-                    .findByCode(tenantId, skuCode)
-                    .orElseThrow(() -> BusinessException.notFound("SKU不存在: code=" + skuCode));
-        }
-        throw BusinessException.badRequest("skuId 或 skuCode 必须提供一个");
     }
 
     // ───── DTO ─────

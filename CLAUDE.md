@@ -164,7 +164,10 @@ npm run build:android            # Android 打包
 
 ## Key Development Rules
 
-1. **跨模块通信**：模块间不允许直接注入 Service，使用 Spring Events 或 MQ 解耦
+1. **跨模块通信**：Domain/Application 层不允许直接注入其他模块的 Service 或 Repository。跨模块调用通过以下方式：
+   - **Port/Adapter 模式**：在自己的 domain 层定义 Gateway 接口（端口），infrastructure 层实现 Adapter 调用其他模块的 ApplicationService（出站适配器）。这是同步调用的首选方式。
+   - **Spring Events / MQ**：适用于异步解耦场景（如"上架完成后通知任务域创建任务"），不适用于需要同步返回值的查询或命令。
+   - **禁止**：任何模块的 domain 或 application 层直接 import 其他模块的 domain/repository/*。只有 infrastructure 层的 Gateway Adapter 可以调用其他模块的 ApplicationService。
 2. **事务边界**：事务标注在 AppService 方法上，不允许在 Controller 或 DomainService 上开事务
 3. **领域对象隔离**：Controller 接收的 DTO 必须在应用层通过 Assembler 转换为领域对象，领域对象不暴露到接口层
 4. **PDA 接口**：PDA 专用 API 路径加 `/pda/` 前缀（如 `/api/v1/pda/pick/task-list`），因为 PDA 接口的数据结构和分页方式与 PC 不同
