@@ -56,7 +56,6 @@
           </div>
         </el-header>
 
-        <TagsView />
         <!-- 主内容区 -->
         <el-main class="app-main">
           <router-view v-slot="{ Component }">
@@ -75,15 +74,12 @@ import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
-import { useTabsStore } from '@/stores/tabs'
-import TagsView from './components/TagsView.vue'
 import GlobalSearch from '@/components/common/GlobalSearch.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
-const tabsStore = useTabsStore()
 
 const isCollapse = computed(() => appStore.sidebarCollapsed)
 const activeMenu = computed(() => route.path)

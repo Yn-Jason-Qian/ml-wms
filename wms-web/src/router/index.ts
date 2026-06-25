@@ -129,11 +129,4 @@ router.beforeEach((to, _from, next) => {
   else { next('/login') }
 })
 
-// Tab tracking via afterEach
-router.afterEach((to) => {
-  if (!to.meta.noAuth && to.name) {
-    import('@/stores/tabs').then(m => m.useTabsStore().addView(to as any)).catch(()=>{})
-  }
-})
-
 export default router
