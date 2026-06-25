@@ -12,6 +12,7 @@ public interface InventoryGateway {
     void increaseStock(
             Long tenantId,
             Long warehouseId,
+            Long ownerId,
             Long locationId,
             Long skuId,
             String skuCode,

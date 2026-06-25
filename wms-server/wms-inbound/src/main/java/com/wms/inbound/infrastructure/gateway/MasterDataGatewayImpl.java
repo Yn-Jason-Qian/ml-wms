@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("inboundMasterDataGateway")
 @RequiredArgsConstructor
 public class MasterDataGatewayImpl implements MasterDataGateway {
 

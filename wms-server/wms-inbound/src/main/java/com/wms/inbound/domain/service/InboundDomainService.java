@@ -72,7 +72,7 @@ public class InboundDomainService {
     }
 
     /** 执行上架 + 增加库存 + 写流水 */
-    public void executePutaway(PutawayLine line, Long userId) {
+    public void executePutaway(PutawayLine line, Long warehouseId, Long ownerId, Long userId) {
         // 调用上架策略引擎获取推荐库位（如果目标库位未指定）
         if (line.getToLocationId() == null) {
             Map<String, Object> context = new HashMap<>();
@@ -91,7 +91,8 @@ public class InboundDomainService {
 
         inventoryGateway.increaseStock(
                 line.getTenantId(),
-                null /*warehouseId*/,
+                warehouseId,
+                ownerId,
                 line.getToLocationId(),
                 line.getSkuId(),
                 line.getSkuCode(),

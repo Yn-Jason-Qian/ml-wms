@@ -15,6 +15,7 @@ public class MyBatisMetaObjectHandler implements MetaObjectHandler {
         LocalDateTime now = LocalDateTime.now();
         this.strictInsertFill(metaObject, "createdAt", LocalDateTime.class, now);
         this.strictInsertFill(metaObject, "updatedAt", LocalDateTime.class, now);
+        this.strictInsertFill(metaObject, "version", Integer.class, 0);
     }
 
     @Override

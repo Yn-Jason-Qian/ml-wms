@@ -62,34 +62,28 @@
         </el-table-column>
       </el-table>
 
-      <div v-if="ruleFormVisible" style="margin-top:12px;padding:12px;background:#f5f7fa;border-radius:4px">
-        <el-form label-width="80px" size="small">
+      <div v-if="ruleFormVisible" style="margin-top:12px;padding:0;background:#f8f9fb;border-radius:8px">
+        <div style="padding:12px 16px 0">
           <el-row :gutter="10">
-            <el-col :span="4"><el-form-item label="序号"><el-input-number v-model="ruleForm.ruleNo" :min="1" controls-position="right" style="width:100%" /></el-form-item></el-col>
-            <el-col :span="8"><el-form-item label="名称"><el-input v-model="ruleForm.ruleName" /></el-form-item></el-col>
-            <el-col :span="12" style="text-align:right;padding-top:4px">
-              <el-button type="primary" @click="saveRule" :loading="ruleSaving">保存</el-button>
+            <el-col :span="4"><el-form-item label="序号" label-position="top"><el-input-number v-model="ruleForm.ruleNo" :min="1" controls-position="right" style="width:100%" /></el-form-item></el-col>
+            <el-col :span="12"><el-form-item label="规则名称" label-position="top"><el-input v-model="ruleForm.ruleName" placeholder="如：重货上架规则" /></el-form-item></el-col>
+            <el-col :span="8" style="display:flex;align-items:flex-end;gap:8px;padding-bottom:12px">
+              <el-button type="primary" @click="saveRule" :loading="ruleSaving" style="margin-left:auto">保存规则</el-button>
               <el-button @click="ruleFormVisible=false">取消</el-button>
             </el-col>
           </el-row>
-          <el-form-item label="条件JSON">
-            <el-input v-model="ruleForm.conditionsJson" type="textarea" :rows="3"
-              placeholder='[{"attr":"sku.weight","op":"<=","value":"500"},{"attr":"location.type","op":"in","value":"RACK,SHELF"}]' />
-          </el-form-item>
-          <el-form-item label="动作JSON">
-            <el-input v-model="ruleForm.actionsJson" type="textarea" :rows="2"
-              placeholder='[{"type":"assign_location","params":{"zone":"A","prefix":"ELEC"}}]' />
-          </el-form-item>
-        </el-form>
+        </div>
+        <RuleEditor v-model="ruleEditorModel" />
       </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/api/request'
+import RuleEditor from './RuleEditor.vue'
 
 const activeTab = ref('PUTAWAY')
 const configs = ref<any[]>([])
@@ -100,6 +94,12 @@ const configFormRef = ref()
 
 const configForm = reactive({ strategyCode: '', strategyName: '', strategyType: '', sortOrder: 0, description: '' })
 const ruleForm = reactive({ strategyId: null as any, ruleNo: 1, ruleName: '', conditionsJson: '[]', actionsJson: '[]' })
+const ruleEditorModel = reactive({ conditionsJson: '[]', actionsJson: '[]' })
+
+watch(ruleEditorModel, (v) => {
+  ruleForm.conditionsJson = v.conditionsJson
+  ruleForm.actionsJson = v.actionsJson
+})
 
 async function fetchConfigs() {
   const res = await request.get(`/strategy/configs/type/${activeTab.value}`)
@@ -129,7 +129,9 @@ async function openRuleDialog(config: any) {
 }
 
 function openRuleForm() {
-  Object.assign(ruleForm, { strategyId: currentConfig.value.id, ruleNo: (currentRules.value.length||0)+1, ruleName: '', conditionsJson: '[]', actionsJson: '[]' })
+  const init = { strategyId: currentConfig.value.id, ruleNo: (currentRules.value.length||0)+1, ruleName: '', conditionsJson: '[]', actionsJson: '[]' }
+  Object.assign(ruleForm, init)
+  Object.assign(ruleEditorModel, { conditionsJson: '[]', actionsJson: '[]' })
   ruleFormVisible.value = true
 }
 

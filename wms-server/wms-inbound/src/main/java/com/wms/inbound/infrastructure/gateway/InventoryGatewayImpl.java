@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
-@Component
+@Component("inboundInventoryGateway")
 @RequiredArgsConstructor
 public class InventoryGatewayImpl implements InventoryGateway {
 
@@ -19,6 +19,7 @@ public class InventoryGatewayImpl implements InventoryGateway {
     public void increaseStock(
             Long tenantId,
             Long warehouseId,
+            Long ownerId,
             Long locationId,
             Long skuId,
             String skuCode,
@@ -30,7 +31,18 @@ public class InventoryGatewayImpl implements InventoryGateway {
             Long refId,
             Long userId) {
         inventoryAppService.increaseStock(
-                tenantId, warehouseId, locationId, skuId, skuCode, skuName, batchNo, lotAttrs,
-                qty, refNo, refId, userId);
+                tenantId,
+                warehouseId,
+                ownerId,
+                locationId,
+                skuId,
+                skuCode,
+                skuName,
+                batchNo,
+                lotAttrs,
+                qty,
+                refNo,
+                refId,
+                userId);
     }
 }

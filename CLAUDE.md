@@ -155,12 +155,13 @@ npm run build:android            # Android 打包
 
 - 表名：`wms_<domain>_<entity>`（例：`wms_masterdata_warehouse`、`wms_inbound_asn_header`）
 - 主键：统一使用雪花 ID（`Long id`），MyBatis-Plus `IdType.ASSIGN_ID`
-- 每表必有字段：`created_at`、`updated_at`、`created_by`、`updated_by`、`version`（乐观锁）
+- 每表必有字段：`created_at`、`updated_at`、`created_by`、`updated_by`、`version`（乐观锁）、`is_deleted`（逻辑删除）
 - 租户隔离：`tenant_id`（多租户物理字段），所有查询必须包含
 - 逻辑删除：MyBatis-Plus `@TableLogic`，字段 `is_deleted`
 - 枚举：数据库存 `varchar`，Java 使用 `enum` + MyBatis `TypeHandler` 转换
 - 金额用 `BigDecimal`，精度到分（`DECIMAL(18,4)`）
 - 数量用 `BigDecimal`（`DECIMAL(18,4)`），整数用 `Integer`
+- **改表必须同步 init.sql**：任何 `ALTER TABLE` 或表结构变更，必须同步更新 `wms-server/wms-web/src/main/resources/db/init.sql`。init.sql 是唯一的数据源建表脚本，新增环境或重建数据库都依赖它。
 
 ## Key Development Rules
 

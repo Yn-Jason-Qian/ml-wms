@@ -21,12 +21,14 @@ description: Verify code changes in this WMS project. Triggered by user saying "
 
 ## 验证流程
 
+> **Docker 只用于运行 MySQL 和 Redis 等基础组件。后端和前端始终用 Maven/npm 直接启动，不过 Docker。**
+
 ### 第一层：基础设施（仅首次或变更时）
 
 ```bash
-# 确保 MySQL + Redis 运行
+# 只启动 MySQL + Redis，不启动后端/前端容器
 docker compose up -d mysql redis
-docker compose ps  # 确认 healthy
+docker compose ps mysql redis  # 确认 both healthy
 ```
 
 如果 infra 无变更且已 `healthy`，跳过。
@@ -41,18 +43,26 @@ docker exec wms-mysql mysql -uroot -proot ml_wms < <sql_file>
 cd wms-server
 # 增量编译，只编译有改动的模块及依赖（秒级）
 mvn compile -pl <changed-module> -am -q
-# 启动（跳过 Docker，本地 profile 连 Docker 里的 MySQL/Redis）
+# 安装到本地 Maven 仓库（必须！否则 spring-boot:run 会加载 ~/.m2 里的旧 JAR）
+mvn install -DskipTests -q
+# 直接启动，连 Docker 里的 MySQL/Redis（不使用 Docker 运行后端）
 mvn spring-boot:run -pl wms-web -Dspring-boot.run.profiles=dev
 ```
 
 确认日志 `Started WmsApplication`，然后用 curl 快速检查接口：
 
 ```bash
-# 示例：分页接口
+# 先登录拿 token
+TOKEN=$(curl -s 'http://localhost:8080/api/v1/auth/login' -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin123"}' | sed 's/.*"token":"\([^"]*\)".*/\1/')
+
+# 验证分页接口
 curl -s 'http://localhost:8080/api/v1/masterdata/skus/page' \
-  -X POST -H 'Content-Type: application/json' \
+  -X POST -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
   -d '{"pageNum":1,"pageSize":10}'
-# 确认返回 code:200 且 records 非空（如有数据）
+# 确认返回 code:200
 ```
 
 ### 第三层：前端改动验证
@@ -66,15 +76,6 @@ cd wms-web && npm run dev   # http://localhost:5173, HMR 秒级生效
 - 控制台无报错
 - 涉及的表单/弹窗功能正常
 
-### 第四层：最终 Docker 确认（用户检查前）
-
-```bash
-docker compose up --build -d
-docker compose ps                  # 全部 Up / healthy
-docker compose logs server | grep 'Started WmsApplication'
-# 前端 http://localhost  后端 http://localhost:8080
-```
-
 ## 必做检查清单
 
 无论改动大小，验证通过标准：
@@ -82,7 +83,7 @@ docker compose logs server | grep 'Started WmsApplication'
 - [ ] 编译通过：前端 `vue-tsc && vite build` 无报错，后端 `mvn compile` 通过
 - [ ] 接口正确：涉及 API 返回 200，数据结构正确
 - [ ] 页面正确：涉及页面正常渲染，控制台无报错
-- [ ] 容器健康：`docker compose ps` 全部 Up / healthy（如用到）
+- [ ] 容器健康：`docker compose ps mysql redis` 均为 healthy
 - [ ] 后端启动：`Started WmsApplication` 无异常日志
 
 以上全部通过后才邀请用户检查。

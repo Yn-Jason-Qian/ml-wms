@@ -49,6 +49,7 @@ public class StockDomainService {
         toStock.add(qty);
         if (toStock.getId() == null) {
             stockRepository.save(toStock);
+            toStock.setVersion(0);
         } else {
             stockRepository.updateWithVersion(toStock);
         }
@@ -106,6 +107,7 @@ public class StockDomainService {
     public Stock increaseStock(
             Long tenantId,
             Long warehouseId,
+            Long ownerId,
             Long locationId,
             Long skuId,
             String skuCode,
@@ -124,6 +126,7 @@ public class StockDomainService {
             stock = new Stock();
             stock.setTenantId(tenantId);
             stock.setWarehouseId(warehouseId);
+            stock.setOwnerId(ownerId);
             stock.setLocationId(locationId);
             stock.setSkuId(skuId);
             stock.setSkuCode(skuCode);
@@ -137,6 +140,7 @@ public class StockDomainService {
             stock.setCreatedBy(userId);
             stock.setUpdatedBy(userId);
             stockRepository.save(stock);
+            stock.setVersion(0);
         }
         stock.add(qty);
         stockRepository.updateWithVersion(stock);

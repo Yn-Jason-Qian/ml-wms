@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
-@Component
+@Component("outboundInventoryGateway")
 @RequiredArgsConstructor
 public class InventoryGatewayImpl implements InventoryGateway {
 

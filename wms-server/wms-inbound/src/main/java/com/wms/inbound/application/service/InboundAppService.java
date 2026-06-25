@@ -243,6 +243,7 @@ public class InboundAppService {
             pl.setBatchNo(rl.getBatchNo());
             pl.setLotAttrs(rl.getLotAttrs());
             pl.setStatus("CREATED");
+            pl.setToLocationId(0L);
             pl.setCreatedBy(userId);
             pl.setUpdatedBy(userId);
             inboundRepo.savePutawayLine(pl);
@@ -256,28 +257,30 @@ public class InboundAppService {
     @Transactional
     public void submitPutaway(PutawaySubmitCmd cmd) {
         Long userId = UserContext.getUserId();
-        PutawayLine line =
+        PutawayHeader paHeader =
                 inboundRepo
                         .findPutawayHeaderById(cmd.getPutawayHeaderId())
-                        .map(
-                                h ->
-                                        inboundRepo.findPutawayLinesByHeader(h.getId()).stream()
-                                                .filter(
-                                                        l ->
-                                                                l.getId()
-                                                                        .equals(
-                                                                                cmd
-                                                                                        .getPutawayLineId()))
-                                                .findFirst()
-                                                .orElse(null))
+                        .orElseThrow(() -> BusinessException.notFound("上架单不存在"));
+        PutawayLine line =
+                inboundRepo.findPutawayLinesByHeader(paHeader.getId()).stream()
+                        .filter(l -> l.getId().equals(cmd.getPutawayLineId()))
+                        .findFirst()
                         .orElseThrow(() -> BusinessException.notFound("上架行不存在"));
 
         if (cmd.getToLocationId() != null) {
             line.setToLocationId(cmd.getToLocationId());
         }
 
+        // 获取 warehouseId 和 ownerId
+        Long warehouseId = paHeader.getWarehouseId();
+        Long ownerId =
+                inboundRepo
+                        .findReceiveHeaderById(paHeader.getReceiveHeaderId())
+                        .map(ReceiveHeader::getOwnerId)
+                        .orElse(0L);
+
         // 执行上架 + 增加库存
-        domainService.executePutaway(line, userId);
+        domainService.executePutaway(line, warehouseId, ownerId, userId);
 
         // 更新上架行状态
         line.setDoneQty(line.getPutawayQty());
