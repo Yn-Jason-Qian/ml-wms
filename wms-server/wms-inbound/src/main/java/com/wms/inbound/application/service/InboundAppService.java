@@ -182,6 +182,17 @@ public class InboundAppService {
         l.setQcHeaderId(cmd.getHeaderId());
         l.setLineNo(1);
         l.setSkuId(cmd.getSkuId());
+
+        // 补齐 SKU 编码/名称（数据库字段 NOT NULL）
+        Sku sku = masterDataGateway.resolveSku(cmd.getSkuId(), null, UserContext.getTenantId());
+        if (sku != null) {
+            l.setSkuCode(sku.getSkuCode());
+            l.setSkuName(sku.getSkuName());
+        } else {
+            l.setSkuCode("");
+            l.setSkuName("");
+        }
+
         l.setInspectQty(cmd.getInspectQty());
         l.setPassQty(cmd.getPassQty());
         l.setRejectQty(cmd.getRejectQty() != null ? cmd.getRejectQty() : BigDecimal.ZERO);

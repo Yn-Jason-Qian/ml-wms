@@ -37,6 +37,14 @@ public class AsnController {
                                         AsnHeader::getWarehouseId,
                                         query.getWarehouseId())
                                 .eq(
+                                        query.getOwnerId() != null,
+                                        AsnHeader::getOwnerId,
+                                        query.getOwnerId())
+                                .eq(
+                                        query.getAsnType() != null,
+                                        AsnHeader::getAsnType,
+                                        query.getAsnType())
+                                .eq(
                                         query.getStatus() != null,
                                         AsnHeader::getStatus,
                                         query.getStatus())

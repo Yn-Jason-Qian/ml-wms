@@ -9,5 +9,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class ReceivePageQuery extends PageRequest {
     private Long warehouseId;
+    private Long ownerId;
+    private String asnNo;
     private String status;
 }

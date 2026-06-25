@@ -11,7 +11,11 @@ import com.wms.inbound.application.dto.QcPageQuery;
 import com.wms.inbound.application.dto.QcSubmitCmd;
 import com.wms.inbound.application.service.InboundAppService;
 import com.wms.inbound.domain.entity.QcHeader;
+import com.wms.inbound.domain.entity.QcLine;
+import com.wms.inbound.domain.entity.ReceiveHeader;
 import com.wms.inbound.infrastructure.mapper.QcHeaderMapper;
+import com.wms.inbound.infrastructure.mapper.QcLineMapper;
+import com.wms.inbound.infrastructure.mapper.ReceiveHeaderMapper;
 
 import jakarta.validation.Valid;
 
@@ -19,6 +23,9 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,6 +34,8 @@ import java.util.Map;
 public class QcController {
     private final InboundAppService inboundAppService;
     private final QcHeaderMapper qcHeaderMapper;
+    private final QcLineMapper qcLineMapper;
+    private final ReceiveHeaderMapper receiveHeaderMapper;
 
     @PostMapping("/page")
     public ApiResponse<PageResponse<Map<String, Object>>> page(
@@ -46,34 +55,76 @@ public class QcController {
                                 .orderByDesc(QcHeader::getCreatedAt));
         return ApiResponse.ok(
                 PageResponse.of(
-                        result.getRecords().stream()
-                                .map(
-                                        h -> {
-                                            java.util.Map<String, Object> m =
-                                                    new java.util.HashMap<>();
-                                            m.put("id", h.getId());
-                                            m.put("qcNo", h.getQcNo());
-                                            m.put("warehouseId", h.getWarehouseId());
-                                            m.put("status", h.getStatus());
-                                            m.put(
-                                                    "qcType",
-                                                    h.getQcType() != null ? h.getQcType() : "");
-                                            m.put(
-                                                    "receiveHeaderId",
-                                                    h.getReceiveHeaderId() != null
-                                                            ? h.getReceiveHeaderId()
-                                                            : 0);
-                                            m.put(
-                                                    "createdAt",
-                                                    h.getCreatedAt() != null
-                                                            ? h.getCreatedAt().toString()
-                                                            : "");
-                                            return m;
-                                        })
-                                .toList(),
+                        result.getRecords().stream().map(h -> buildQcMap(h)).toList(),
                         result.getTotal(),
                         (int) result.getCurrent(),
                         (int) result.getSize()));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<Map<String, Object>> getById(@PathVariable("id") Long id) {
+        QcHeader h = qcHeaderMapper.selectById(id);
+        if (h == null) {
+            return ApiResponse.ok(null);
+        }
+        return ApiResponse.ok(buildQcMap(h));
+    }
+
+    private Map<String, Object> buildQcMap(QcHeader h) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("id", h.getId());
+        m.put("qcNo", h.getQcNo());
+        m.put("warehouseId", h.getWarehouseId());
+        m.put("receiveHeaderId", h.getReceiveHeaderId());
+        m.put("qcType", h.getQcType() != null ? h.getQcType() : "");
+        m.put("sampleRatio", h.getSampleRatio());
+        m.put("status", h.getStatus());
+        m.put("remark", h.getRemark());
+        m.put("qcBy", h.getQcBy());
+        m.put("qcAt", h.getQcAt() != null ? h.getQcAt().toString() : "");
+        m.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
+
+        // resolve receive header info
+        if (h.getReceiveHeaderId() != null) {
+            ReceiveHeader rcv = receiveHeaderMapper.selectById(h.getReceiveHeaderId());
+            if (rcv != null) {
+                m.put("receiveNo", rcv.getReceiveNo());
+                m.put("ownerId", rcv.getOwnerId());
+            } else {
+                m.put("receiveNo", "");
+                m.put("ownerId", null);
+            }
+        } else {
+            m.put("receiveNo", "");
+            m.put("ownerId", null);
+        }
+
+        // load lines
+        List<QcLine> lines =
+                qcLineMapper.selectList(
+                        new LambdaQueryWrapper<QcLine>()
+                                .eq(QcLine::getQcHeaderId, h.getId())
+                                .orderByAsc(QcLine::getLineNo));
+        List<Map<String, Object>> lineList = new ArrayList<>();
+        if (lines != null) {
+            for (QcLine l : lines) {
+                Map<String, Object> lm = new HashMap<>();
+                lm.put("id", l.getId());
+                lm.put("lineNo", l.getLineNo());
+                lm.put("skuId", l.getSkuId());
+                lm.put("skuCode", l.getSkuCode());
+                lm.put("skuName", l.getSkuName());
+                lm.put("inspectQty", l.getInspectQty());
+                lm.put("passQty", l.getPassQty());
+                lm.put("rejectQty", l.getRejectQty());
+                lm.put("rejectReason", l.getRejectReason());
+                lm.put("batchNo", l.getBatchNo());
+                lm.put("lotAttrs", l.getLotAttrs());
+                lineList.add(lm);
+            }
+        }
+        m.put("lines", lineList);
+        return m;
     }
 
     @PostMapping

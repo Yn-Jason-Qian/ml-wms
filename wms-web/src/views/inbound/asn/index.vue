@@ -4,12 +4,24 @@
       <template #header>
         <div class="page-header"><span>ASN管理</span><el-button type="primary" @click="openDialog()">创建ASN</el-button></div>
       </template>
+      <el-form :model="query" inline class="query-form">
+        <el-form-item label="ASN单号"><el-input v-model="query.asnNo" placeholder="ASN单号" clearable style="width:180px" /></el-form-item>
+        <el-form-item label="类型"><el-select v-model="query.asnType" placeholder="类型" clearable style="width:140px"><el-option v-for="(v,k) in asnTypeMap" :key="k" :label="v" :value="k" /></el-select></el-form-item>
+        <el-form-item label="仓库"><el-select v-model="query.warehouseId" placeholder="仓库" clearable style="width:160px"><el-option v-for="w in warehouses" :key="w.id" :label="w.whName" :value="w.id" /></el-select></el-form-item>
+        <el-form-item label="货主"><el-select v-model="query.ownerId" placeholder="货主" clearable style="width:160px"><el-option v-for="o in owners" :key="o.id" :label="o.ownerName" :value="o.id" /></el-select></el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
       <el-table :data="tableData" v-loading="loading" border stripe>
         <el-table-column prop="asnNo" label="ASN单号" width="180" />
         <el-table-column prop="asnType" label="类型" width="100">
           <template #default="{ row }"><el-tag size="small">{{ asnTypeMap[row.asnType]||row.asnType }}</el-tag></template>
         </el-table-column>
         <el-table-column prop="sourceNo" label="来源单号" width="140" />
+        <el-table-column prop="warehouseName" label="仓库" width="140" />
+        <el-table-column prop="ownerName" label="货主" width="140" />
         <el-table-column prop="carrierName" label="承运商" width="120" />
         <el-table-column prop="expectedArriveTime" label="预计到货" width="150" />
         <el-table-column label="状态" width="110">
@@ -21,14 +33,24 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-pagination
+        v-model:current-page="pageNum"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        class="pagination"
+        @size-change="fetchData"
+        @current-change="fetchData"
+      />
     </el-card>
 
     <!-- 创建ASN弹窗 -->
-    <el-dialog v-model="dialogVisible" title="创建ASN" width="700px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" title="创建ASN" width="760px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="12">
           <el-col :span="8"><el-form-item label="仓库" prop="warehouseId"><el-select v-model="form.warehouseId" style="width:100%"><el-option v-for="w in warehouses" :key="w.id" :label="w.whName" :value="w.id" /></el-select></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="货主" prop="ownerId"><el-select v-model="form.ownerId" style="width:100%"><el-option v-for="o in owners" :key="o.id" :label="o.ownerName" :value="o.id" /></el-select></el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="货主" prop="ownerId"><el-select v-model="form.ownerId" style="width:100%" @change="onOwnerChange"><el-option v-for="o in owners" :key="o.id" :label="o.ownerName" :value="o.id" /></el-select></el-form-item></el-col>
           <el-col :span="8"><el-form-item label="类型"><el-select v-model="form.asnType" style="width:100%"><el-option v-for="(v,k) in asnTypeMap" :key="k" :label="v" :value="k" /></el-select></el-form-item></el-col>
         </el-row>
         <el-row :gutter="12">
@@ -40,14 +62,21 @@
       <el-divider content-position="left">ASN行明细</el-divider>
       <div v-for="(item, idx) in form.lines" :key="idx" class="asn-line">
         <el-row :gutter="8" style="align-items:center">
-          <el-col :span="8"><el-select v-model="item.skuId" filterable placeholder="选择SKU" style="width:100%"><el-option v-for="s in skuList" :key="s.id" :label="s.skuCode+' '+s.skuName" :value="s.id" /></el-select></el-col>
+          <el-col :span="7">
+            <el-form-item :prop="`lines.${idx}.skuId`" :rules="lineRules.skuId" class="line-form-item">
+              <el-select v-model="item.skuId" filterable placeholder="选择SKU" style="width:100%" :disabled="!form.ownerId">
+                <el-option v-for="s in skuOptions" :key="s.id" :label="s.skuCode+' '+s.skuName" :value="s.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
           <el-col :span="4"><el-input-number v-model="item.expectedQty" :min="1" placeholder="数量" controls-position="right" style="width:100%" /></el-col>
           <el-col :span="4"><el-input v-model="item.batchNo" placeholder="批次号" /></el-col>
           <el-col :span="4"><el-date-picker v-model="item.productionDate" type="date" placeholder="生产日期" style="width:100%" /></el-col>
-          <el-col :span="3"><el-button link type="danger" @click="form.lines.splice(idx,1)" :disabled="form.lines.length<=1">删除</el-button></el-col>
+          <el-col :span="4"><el-date-picker v-model="item.expiryDate" type="date" placeholder="失效日期" style="width:100%" /></el-col>
+          <el-col :span="1"><el-button link type="danger" @click="form.lines.splice(idx,1)" :disabled="form.lines.length<=1">删除</el-button></el-col>
         </el-row>
       </div>
-      <el-button style="margin-top:8px" size="small" @click="form.lines.push({skuId:null,expectedQty:1,batchNo:'',productionDate:null,expiryDate:null})">+ 添加行</el-button>
+      <el-button style="margin-top:8px" size="small" @click="addLine">+ 添加行</el-button>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSave" :loading="saving">创建</el-button>
@@ -55,12 +84,18 @@
     </el-dialog>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="ASN详情" width="750px" destroy-on-close>
+    <el-dialog v-model="detailVisible" title="ASN详情" width="800px" destroy-on-close>
       <div v-if="detailAsn">
         <el-descriptions :column="3" border size="small">
           <el-descriptions-item label="ASN单号">{{ detailAsn.asnNo }}</el-descriptions-item>
           <el-descriptions-item label="类型">{{ asnTypeMap[detailAsn.asnType] }}</el-descriptions-item>
           <el-descriptions-item label="状态"><el-tag :type="statusColor(detailAsn.status)">{{ statusMap[detailAsn.status] }}</el-tag></el-descriptions-item>
+          <el-descriptions-item label="仓库">{{ detailAsn.warehouseName }}</el-descriptions-item>
+          <el-descriptions-item label="货主">{{ detailAsn.ownerName }}</el-descriptions-item>
+          <el-descriptions-item label="承运商">{{ detailAsn.carrierName }}</el-descriptions-item>
+          <el-descriptions-item label="来源单号">{{ detailAsn.sourceNo }}</el-descriptions-item>
+          <el-descriptions-item label="预计到货">{{ detailAsn.expectedArriveTime }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ detailAsn.createdAt }}</el-descriptions-item>
         </el-descriptions>
         <el-table :data="detailAsn.lines" border size="small" style="margin-top:12px">
           <el-table-column prop="lineNo" label="#" width="50" />
@@ -79,9 +114,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getWarehouseList, getOwnerList, getSkuPage } from '@/api/modules/masterdata'
+import { getWarehouseList, getOwnerList, getSkuListByOwner } from '@/api/modules/masterdata'
 import request from '@/api/request'
 
 const asnTypeMap: Record<string, string> = { PURCHASE: '采购入库', RETURN: '退货入库', TRANSFER: '调拨入库', ADJUST: '调整入库' }
@@ -91,36 +126,98 @@ const statusColor = (s: string) => s==='RECEIVED'||s==='CLOSED'?'success':s==='R
 const loading = ref(false), saving = ref(false), dialogVisible = ref(false), detailVisible = ref(false)
 const tableData = ref<any[]>([]), warehouses = ref<any[]>([]), owners = ref<any[]>([]), skuList = ref<any[]>([])
 const formRef = ref(), detailAsn = ref<any>(null), detailLines = ref<any[]>([])
+const pageNum = ref(1), pageSize = ref(10), total = ref(0)
 
 const form = reactive({
   warehouseId: null as any, ownerId: null as any, asnType: 'PURCHASE', sourceNo: '', expectedArriveTime: '', carrierName: '',
   lines: [{ skuId: null as any, expectedQty: 1, batchNo: '', productionDate: null as any, expiryDate: null as any } as any]
 })
+const query = reactive({ asnNo: '', asnType: '', warehouseId: null as any, ownerId: null as any })
 const rules = {
   warehouseId: [{ required: true, message: '请选择仓库', trigger: 'change' }],
   ownerId: [{ required: true, message: '请选择货主', trigger: 'change' }]
 }
+const lineRules = {
+  skuId: [{ required: true, message: '请选择SKU', trigger: 'change' }]
+}
+
+const skuOptions = computed(() => form.ownerId ? skuList.value.filter(s => s.ownerId === form.ownerId) : [])
+const warehouseMap = computed(() => Object.fromEntries(warehouses.value.map(w => [w.id, w.whName])))
+const ownerMap = computed(() => Object.fromEntries(owners.value.map(o => [o.id, o.ownerName])))
 
 async function fetchData() {
   loading.value = true
-  try { const res = await request.post('/inbound/asns/page', { pageNum: 1, pageSize: 50 }); tableData.value = res.data.records || [] } finally { loading.value = false }
+  try {
+    const params = {
+      pageNum: pageNum.value,
+      pageSize: pageSize.value,
+      asnNo: query.asnNo || undefined,
+      asnType: query.asnType || undefined,
+      warehouseId: query.warehouseId || undefined,
+      ownerId: query.ownerId || undefined
+    }
+    const res = await request.post('/inbound/asns/page', params)
+    total.value = res.data.total || 0
+    tableData.value = (res.data.records || []).map((r: any) => ({
+      ...r,
+      warehouseName: warehouseMap.value[r.warehouseId] || r.warehouseId,
+      ownerName: ownerMap.value[r.ownerId] || r.ownerId
+    }))
+  } finally { loading.value = false }
+}
+
+function handleSearch() {
+  pageNum.value = 1
+  fetchData()
+}
+
+function resetQuery() {
+  query.asnNo = ''
+  query.asnType = ''
+  query.warehouseId = null
+  query.ownerId = null
+  pageNum.value = 1
+  fetchData()
 }
 
 async function loadOptions() {
   try { const r = await getWarehouseList(); warehouses.value = r.data || [] } catch {}
   try { const r = await getOwnerList(); owners.value = r.data || [] } catch {}
-  try { const r = await getSkuPage({ pageNum: 1, pageSize: 100 }); skuList.value = r.data.records || [] } catch {}
+}
+
+async function loadSkuList() {
+  if (!form.ownerId) { skuList.value = []; return }
+  try { const r = await getSkuListByOwner(form.ownerId); skuList.value = r.data || [] } catch {}
+}
+
+function onOwnerChange() {
+  form.lines.forEach(line => { line.skuId = null })
+  loadSkuList()
+}
+
+function addLine() {
+  form.lines.push({ skuId: null, expectedQty: 1, batchNo: '', productionDate: null, expiryDate: null })
+}
+
+function resetForm() {
+  Object.keys(form).forEach(k => { if (k !== 'lines') (form as any)[k] = '' })
+  form.asnType = 'PURCHASE'
+  form.lines = [{ skuId: null, expectedQty: 1, batchNo: '', productionDate: null, expiryDate: null }]
 }
 
 function openDialog() {
-  Object.keys(form).forEach(k => { if (k !== 'lines') (form as any)[k] = '' })
-  form.asnType = 'PURCHASE'; form.lines = [{ skuId: null, expectedQty: 1, batchNo: '', productionDate: null, expiryDate: null }]
+  resetForm()
+  skuList.value = []
   dialogVisible.value = true
 }
 
 async function handleSave() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
+  if (!form.lines.length || form.lines.some(l => !l.skuId)) {
+    ElMessage.warning('请为每一行选择SKU')
+    return
+  }
   saving.value = true
   try {
     await request.post('/inbound/asns', form)
@@ -131,13 +228,21 @@ async function handleSave() {
 
 async function viewDetail(id: number) {
   const res = await request.get(`/inbound/asns/${id}`)
-  detailAsn.value = res.data; detailVisible.value = true
+  detailAsn.value = {
+    ...res.data,
+    warehouseName: warehouseMap.value[res.data.warehouseId] || res.data.warehouseId,
+    ownerName: ownerMap.value[res.data.ownerId] || res.data.ownerId
+  }
+  detailVisible.value = true
 }
 
-onMounted(() => { loadOptions(); fetchData() })
+onMounted(() => { loadOptions().then(fetchData) })
 </script>
 
 <style scoped>
 .page-header { display: flex; justify-content: space-between; align-items: center; }
+.query-form { margin-bottom: 16px; }
+.pagination { margin-top: 16px; justify-content: flex-end; }
 .asn-line { padding: 8px; margin-bottom: 4px; background: #fafafa; border-radius: 4px; }
+.line-form-item { margin-bottom: 0; }
 </style>
