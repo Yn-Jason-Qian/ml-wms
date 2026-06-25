@@ -13,6 +13,8 @@ public interface OutboundRepository {
 
     void saveOrderLine(OrderLine l);
 
+    void updateOrderLine(OrderLine l);
+
     List<OrderLine> findOrderLines(Long headerId);
 
     void updateOrder(OrderHeader h);

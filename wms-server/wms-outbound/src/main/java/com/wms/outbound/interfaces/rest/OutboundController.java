@@ -17,7 +17,8 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/outbound")
@@ -25,7 +26,9 @@ import java.util.Map;
 public class OutboundController {
     private final OutboundAppService outboundAppService;
     private final OrderHeaderMapper orderMapper;
+    private final OrderLineMapper orderLineMapper;
     private final WaveHeaderMapper waveMapper;
+    private final WaveLineMapper waveLineMapper;
     private final PickHeaderMapper pickMapper;
     private final ShipHeaderMapper shipMapper;
 
@@ -60,6 +63,7 @@ public class OutboundController {
                                             m.put("id", h.getId());
                                             m.put("orderNo", h.getOrderNo());
                                             m.put("warehouseId", h.getWarehouseId());
+                                            m.put("ownerId", h.getOwnerId());
                                             m.put("orderType", h.getOrderType());
                                             m.put(
                                                     "customerName",
@@ -85,6 +89,51 @@ public class OutboundController {
     @OperationLog(module = "出库管理", action = "创建订单")
     public ApiResponse<Map<String, Object>> createOrder(@Valid @RequestBody OrderCreateCmd cmd) {
         return ApiResponse.ok(outboundAppService.createOrder(cmd));
+    }
+
+    @GetMapping("/orders/{id}")
+    public ApiResponse<Map<String, Object>> getOrderById(@PathVariable("id") Long id) {
+        OrderHeader h = orderMapper.selectById(id);
+        if (h == null) {
+            return ApiResponse.notFound("订单不存在");
+        }
+        List<OrderLine> lines =
+                orderLineMapper.selectList(
+                        new LambdaQueryWrapper<OrderLine>()
+                                .eq(OrderLine::getOrderHeaderId, id)
+                                .orderByAsc(OrderLine::getLineNo));
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", h.getId());
+        result.put("orderNo", h.getOrderNo());
+        result.put("warehouseId", h.getWarehouseId());
+        result.put("ownerId", h.getOwnerId());
+        result.put("orderType", h.getOrderType());
+        result.put("customerName", h.getCustomerName() != null ? h.getCustomerName() : "");
+        result.put("customerAddress", h.getCustomerAddress() != null ? h.getCustomerAddress() : "");
+        result.put("priority", h.getPriority());
+        result.put("status", h.getStatus());
+        result.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
+        result.put(
+                "lines",
+                lines.stream()
+                        .map(
+                                l -> {
+                                    Map<String, Object> lm = new HashMap<>();
+                                    lm.put("id", l.getId());
+                                    lm.put("lineNo", l.getLineNo());
+                                    lm.put("skuId", l.getSkuId());
+                                    lm.put("skuCode", l.getSkuCode());
+                                    lm.put("skuName", l.getSkuName());
+                                    lm.put("orderQty", l.getOrderQty());
+                                    lm.put("allocatedQty", l.getAllocatedQty());
+                                    lm.put("pickedQty", l.getPickedQty());
+                                    lm.put("shippedQty", l.getShippedQty());
+                                    lm.put("batchNo", l.getBatchNo() != null ? l.getBatchNo() : "");
+                                    lm.put("status", l.getStatus());
+                                    return lm;
+                                })
+                        .collect(Collectors.toList()));
+        return ApiResponse.ok(result);
     }
 
     // ── Waves ──
@@ -134,6 +183,45 @@ public class OutboundController {
     @OperationLog(module = "出库管理", action = "生成波次")
     public ApiResponse<Map<String, Object>> createWave(@Valid @RequestBody WaveCreateCmd cmd) {
         return ApiResponse.ok(outboundAppService.createWave(cmd));
+    }
+
+    @GetMapping("/waves/{id}")
+    public ApiResponse<Map<String, Object>> getWaveById(@PathVariable("id") Long id) {
+        WaveHeader h = waveMapper.selectById(id);
+        if (h == null) {
+            return ApiResponse.notFound("波次不存在");
+        }
+        List<WaveLine> waveLines =
+                waveLineMapper.selectList(
+                        new LambdaQueryWrapper<WaveLine>()
+                                .eq(WaveLine::getWaveHeaderId, id)
+                                .orderByAsc(WaveLine::getSortOrder));
+        List<Map<String, Object>> orders = new ArrayList<>();
+        for (WaveLine wl : waveLines) {
+            OrderHeader order = orderMapper.selectById(wl.getOrderHeaderId());
+            if (order != null) {
+                Map<String, Object> om = new HashMap<>();
+                om.put("id", order.getId());
+                om.put("orderNo", order.getOrderNo());
+                om.put("orderType", order.getOrderType());
+                om.put(
+                        "customerName",
+                        order.getCustomerName() != null ? order.getCustomerName() : "");
+                om.put("priority", order.getPriority());
+                om.put("status", order.getStatus());
+                orders.add(om);
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", h.getId());
+        result.put("waveNo", h.getWaveNo());
+        result.put("warehouseId", h.getWarehouseId());
+        result.put("waveType", h.getWaveType());
+        result.put("waveStatus", h.getWaveStatus());
+        result.put("orderCount", h.getOrderCount());
+        result.put("createdAt", h.getCreatedAt() != null ? h.getCreatedAt().toString() : "");
+        result.put("orders", orders);
+        return ApiResponse.ok(result);
     }
 
     // ── Picks ──

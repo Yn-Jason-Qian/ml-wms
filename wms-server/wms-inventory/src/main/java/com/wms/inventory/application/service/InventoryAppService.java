@@ -116,6 +116,26 @@ public class InventoryAppService {
         stockDomainService.allocateBySku(tenantId, skuId, requiredQty, refNo, refId);
     }
 
+    /** 查询 SKU 的首选库位（有可用库存的库位，FIFO 优先）。 */
+    public Long findLocationBySku(Long tenantId, Long skuId, String batchNo) {
+        List<Stock> stocks = stockRepository.findBySku(tenantId, skuId);
+        stocks.sort(
+                java.util.Comparator.comparing(
+                        Stock::getFirstInTime,
+                        java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())));
+        for (Stock stock : stocks) {
+            if (stock.getQtyAvailable().compareTo(BigDecimal.ZERO) <= 0) continue;
+            if (batchNo != null && !batchNo.isBlank() && !batchNo.equals(stock.getBatchNo()))
+                continue;
+            return stock.getLocationId();
+        }
+        // 无可用库存时，返回第一个库存的库位
+        if (!stocks.isEmpty()) {
+            return stocks.get(0).getLocationId();
+        }
+        return null;
+    }
+
     public void deductStock(
             Long tenantId,
             Long warehouseId,

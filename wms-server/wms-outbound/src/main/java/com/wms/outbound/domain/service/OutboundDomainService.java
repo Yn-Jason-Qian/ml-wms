@@ -25,8 +25,12 @@ public class OutboundDomainService {
         // 用策略引擎匹配分配策略
         Map<String, Object> context = new HashMap<>();
         context.put("order", Map.of("priority", "5"));
-        context.put(
-                "sku", Map.of("code", orderLine.getSkuCode(), "batchNo", orderLine.getBatchNo()));
+        Map<String, Object> skuCtx = new HashMap<>();
+        skuCtx.put("code", orderLine.getSkuCode());
+        if (orderLine.getBatchNo() != null) {
+            skuCtx.put("batchNo", orderLine.getBatchNo());
+        }
+        context.put("sku", skuCtx);
         strategyGateway.matchAllocationStrategy(tenantId, context);
 
         // 委托库存域执行 FIFO 分配

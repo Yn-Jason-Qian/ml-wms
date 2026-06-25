@@ -22,6 +22,11 @@ public class InventoryGatewayImpl implements InventoryGateway {
     }
 
     @Override
+    public Long findLocationBySku(Long tenantId, Long skuId, String batchNo) {
+        return inventoryAppService.findLocationBySku(tenantId, skuId, batchNo);
+    }
+
+    @Override
     public void deductStock(
             Long tenantId,
             Long warehouseId,

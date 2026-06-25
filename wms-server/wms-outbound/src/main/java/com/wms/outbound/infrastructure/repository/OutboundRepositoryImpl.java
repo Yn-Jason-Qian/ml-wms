@@ -42,6 +42,11 @@ public class OutboundRepositoryImpl implements OutboundRepository {
     }
 
     @Override
+    public void updateOrderLine(OrderLine l) {
+        orderLineMapper.updateById(l);
+    }
+
+    @Override
     public void updateOrder(OrderHeader h) {
         orderMapper.updateById(h);
     }

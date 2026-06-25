@@ -25,6 +25,7 @@ public class OutboundAppService {
     private final OutboundRepository outboundRepo;
     private final OutboundDomainService domainService;
     private final MasterDataGateway masterDataGateway;
+    private final com.wms.outbound.domain.gateway.InventoryGateway inventoryGateway;
 
     // ───── 订单 ─────
 
@@ -77,6 +78,8 @@ public class OutboundAppService {
             // 自动分配库存
             domainService.allocateInventory(l, tenantId, cmd.getWarehouseId());
             l.setAllocatedQty(l.getOrderQty());
+            l.setStatus("ALLOCATED");
+            outboundRepo.updateOrderLine(l);
         }
         h.setStatus(OrderHeader.STATUS_ALLOCATED);
         outboundRepo.updateOrder(h);
@@ -169,6 +172,11 @@ public class OutboundAppService {
                 pl.setSkuName(ol.getSkuName());
                 pl.setPickQty(ol.getOrderQty());
                 pl.setPickedQty(BigDecimal.ZERO);
+                // 查询被分配库存的库位
+                Long locId =
+                        inventoryGateway.findLocationBySku(
+                                tenantId, ol.getSkuId(), ol.getBatchNo());
+                pl.setLocationId(locId != null ? locId : 0L);
                 pl.setBatchNo(ol.getBatchNo());
                 pl.setLotAttrs(ol.getLotAttrs());
                 pl.setStatus("CREATED");

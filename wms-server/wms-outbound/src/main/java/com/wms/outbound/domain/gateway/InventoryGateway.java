@@ -10,6 +10,13 @@ public interface InventoryGateway {
     void allocateBySku(
             Long tenantId, Long skuId, java.math.BigDecimal requiredQty, String refNo, Long refId);
 
+    /**
+     * 查询 SKU 的可用库存库位（FIFO 优先）。
+     *
+     * @return 库位 ID，无库存时返回 null
+     */
+    Long findLocationBySku(Long tenantId, Long skuId, String batchNo);
+
     void deductStock(
             Long tenantId,
             Long warehouseId,
