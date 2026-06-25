@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.wms.print.application.dto.PrintCmd;
+import com.wms.print.application.dto.PrintResultDTO;
 import com.wms.print.application.dto.PrintTemplateCreateCmd;
 import com.wms.print.application.dto.PrintTemplateDTO;
 import com.wms.print.domain.entity.PrintRecord;
@@ -107,11 +108,11 @@ class PrintAppServiceTest {
         cmd.setPrinterName("Zebra-ZT410");
         cmd.setPrintCount(2);
 
-        Map<String, Object> result = service.executePrint(cmd);
+        PrintResultDTO result = service.executePrint(cmd);
 
-        assertNotNull(result.get("recordId"));
-        assertNotNull(result.get("zpl"));
-        assertEquals("Zebra-ZT410", result.get("printerName"));
+        assertNotNull(result.getRecordId());
+        assertNotNull(result.getZpl());
+        assertEquals("Zebra-ZT410", result.getPrinterName());
 
         ArgumentCaptor<PrintRecord> captor = ArgumentCaptor.forClass(PrintRecord.class);
         verify(recordMapper).insert(captor.capture());

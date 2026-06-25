@@ -1,7 +1,7 @@
 package com.wms.inbound.infrastructure.gateway;
 
 import com.wms.inbound.domain.gateway.InventoryGateway;
-import com.wms.inventory.application.service.InventoryAppService;
+import com.wms.inventory.application.service.StockAppService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class InventoryGatewayImpl implements InventoryGateway {
 
-    private final InventoryAppService inventoryAppService;
+    private final StockAppService stockAppService;
 
     @Override
     public void increaseStock(
@@ -31,7 +31,7 @@ public class InventoryGatewayImpl implements InventoryGateway {
             String refNo,
             Long refId,
             Long userId) {
-        inventoryAppService.increaseStock(
+        stockAppService.increaseStock(
                 tenantId,
                 warehouseId,
                 ownerId,

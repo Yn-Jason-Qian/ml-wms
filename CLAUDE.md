@@ -53,12 +53,105 @@ Each business module follows this four-layer architecture:
     └── mapper/          # MyBatis XML Mapper
 ```
 
-**Key rules:**
-- 领域层不依赖任何框架/基础设施代码（纯 Java，无 Spring 注解）
-- Repository 接口定义在 `domain/repository`，实现在 `infrastructure/repository`
-- Controller 只做参数校验和响应组装，不写业务逻辑
-- AppService 编排领域服务，标注 `@Transactional`，一个用例一个方法
-- 模块间通过事件异步通信（Spring Event 或 MQ），避免直接调用
+### DDD 分层约束（强制性）
+
+参照 `wms-masterdata` 模块，每层严格遵守以下注入和职责边界：
+
+#### 1. interfaces/rest/ — Controller
+
+```
+只注入：AppService
+禁止注入：Mapper、Repository、DomainService、Assembler、Entity
+```
+
+- 只做参数校验（`@Valid`）和响应组装（`ApiResponse.ok()`）
+- 调用 AppService 方法获取已转换好的 DTO，**绝不**调用 `assembler.toDTO()`
+- 分页响应从 `IPage<XxxDTO>` 提取 `records/total/current/size` 组装 `PageResponse`
+- 不写任何业务逻辑，不直接访问数据库
+
+#### 2. application/service/ — AppService
+
+```
+注入：Repository（domain 接口） + Mapper（仅分页） + DomainService + Assembler
+```
+
+- **读操作（无事务）**：通过 `repository.findById()` 查询 → `assembler.toDTO(entity)` 返回 DTO
+- **分页查询**：直接使用 `xxxMapper.selectPage(page, wrapper)` → `result.convert(assembler::toDTO)` 返回 `IPage<XxxDTO>`。Mapper 仅在分页场景直接使用，因为 MyBatis-Plus 的 `LambdaQueryWrapper` 动态条件难以抽象到 Repository 接口
+- **写操作（@Transactional）**：创建实体 → 注入上下文（tenantId/userId）→ domainService 校验 → repository 持久化 → assembler 转换返回
+- **子实体加载**：Controller 需要 lines 时，AppService 负责加载并组装（先查 header → 再查 lines → 转换 → setLines）
+- AppService 方法返回 DTO，**绝不**返回 Entity 或 `Map<String, Object>`
+
+#### 3. application/assembler/ — Assembler
+
+```
+@Component 零外部依赖，纯 Java 映射
+禁止注入：Mapper、Repository、AppService、DomainService
+```
+
+- `toDTO(Entity)` / `toLineDTO(LineEntity)` — 实体 → DTO（一对一字段拷贝）
+- `toDTO(Header, List<Line>)` — 带行的 DTO 转换（纯数据组装，不查数据库）
+- `toEntity(CreateCmd)` — Cmd → 新建实体
+- `mergeToEntity(UpdateCmd, Entity)` — 合并更新字段到已有实体
+- 只做字段拷贝和默认值设置，不包含业务规则、不访问数据库
+
+#### 4. domain/repository/ — Repository 接口
+
+```
+纯 Java 接口，无 Spring 注解
+定义方法：findById, findByIds, save, update, deleteById, existsBy*, findBy*
+返回值：Optional<Entity>（单条）、List<Entity>（多条）
+```
+
+- 定义领域需要的持久化契约，不依赖任何 ORM 框架
+- **不定义分页方法**（分页在 AppService 通过 Mapper 直接处理）
+
+#### 5. domain/service/ — DomainService
+
+```
+注入：仅 Repository 接口（同域的）
+禁止注入：Mapper、Assembler、其他模块的 Service
+```
+
+- `validateCreate(entity)` / `validateUpdate(entity)` — 业务规则校验（唯一性、状态机等）
+- 跨聚合根的领域逻辑编排
+- **不标注 @Transactional**（事务由 AppService 管理）
+
+#### 6. infrastructure/repository/ — Repository 实现
+
+```
+@Repository，implements domain Repository 接口
+注入：仅对应的 Mapper
+```
+
+- 每个方法委托到 MyBatis-Plus Mapper（`mapper.selectById`, `mapper.insert`, `mapper.updateById` 等）
+
+#### 7. infrastructure/mapper/ — MyBatis Mapper
+
+```
+@Mapper，extends BaseMapper<Entity>
+```
+
+- MyBatis-Plus 数据访问接口，继承 `selectPage`, `selectList`, `insert`, `updateById` 等方法
+
+#### 分层依赖图（自顶向下）
+
+```
+Controller  →  AppService  →  Repository(接口) + Mapper(仅分页) + DomainService + Assembler
+                                   ↑
+DomainService  →  Repository(接口)     Assembler (零依赖，纯映射)
+                       ↑
+              RepositoryImpl  →  Mapper  →  DB
+```
+
+#### 禁止事项清单
+
+| 层 | ❌ 禁止 |
+|---|---|
+| Controller | 注入 Mapper、Repository、Assembler；调用 `assembler.toDTO()`；写业务逻辑 |
+| AppService | 返回 `Map<String, Object>` 或 `Object`；返回 Entity |
+| Assembler | 注入 Mapper 查数据库；包含业务逻辑 |
+| DomainService | 注入 Mapper、Assembler；标注 @Transactional |
+| Repository(接口) | 依赖 Spring 注解；定义分页方法 |
 
 ## WMS Domain Model (Key Aggregates)
 
@@ -165,16 +258,16 @@ npm run build:android            # Android 打包
 
 ## Key Development Rules
 
+DDD 分层约束详见 [DDD 分层约束（强制性）](#ddd-分层约束强制性)。以下为跨域、PDA 及数据层面的补充规则：
+
 1. **跨模块通信**：Domain/Application 层不允许直接注入其他模块的 Service 或 Repository。跨模块调用通过以下方式：
    - **Port/Adapter 模式**：在自己的 domain 层定义 Gateway 接口（端口），infrastructure 层实现 Adapter 调用其他模块的 ApplicationService（出站适配器）。这是同步调用的首选方式。
    - **Spring Events / MQ**：适用于异步解耦场景（如"上架完成后通知任务域创建任务"），不适用于需要同步返回值的查询或命令。
    - **禁止**：任何模块的 domain 或 application 层直接 import 其他模块的 domain/repository/*。只有 infrastructure 层的 Gateway Adapter 可以调用其他模块的 ApplicationService。
-2. **事务边界**：事务标注在 AppService 方法上，不允许在 Controller 或 DomainService 上开事务
-3. **领域对象隔离**：Controller 接收的 DTO 必须在应用层通过 Assembler 转换为领域对象，领域对象不暴露到接口层
-4. **PDA 接口**：PDA 专用 API 路径加 `/pda/` 前缀（如 `/api/v1/pda/pick/task-list`），因为 PDA 接口的数据结构和分页方式与 PC 不同
-5. **扫码处理**：PDA 扫码结果统一为 `ScanResult{BarcodeType, BarcodeValue, ParsedData}`，由业务组件处理
-6. **库存变更**：所有库存变更必须写 `stock_transaction` 审计日志表
-7. **并发控制**：库存扣减等并发关键操作使用乐观锁（version 字段），失败重试或使用 Redis 分布式锁
+2. **PDA 接口**：PDA 专用 API 路径加 `/pda/` 前缀（如 `/api/v1/pda/pick/task-list`），因为 PDA 接口的数据结构和分页方式与 PC 不同
+3. **扫码处理**：PDA 扫码结果统一为 `ScanResult{BarcodeType, BarcodeValue, ParsedData}`，由业务组件处理
+4. **库存变更**：所有库存变更必须写 `stock_transaction` 审计日志表
+5. **并发控制**：库存扣减等并发关键操作使用乐观锁（version 字段），失败重试或使用 Redis 分布式锁
 
 ## Getting Started for New Developers
 

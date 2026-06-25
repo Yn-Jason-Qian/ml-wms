@@ -1,22 +1,21 @@
 package com.wms.outbound.domain.service;
 
-import com.wms.outbound.domain.entity.*;
+import com.wms.outbound.domain.entity.OrderLine;
 import com.wms.outbound.domain.gateway.InventoryGateway;
 import com.wms.outbound.domain.gateway.StrategyGateway;
-import com.wms.outbound.domain.repository.OutboundRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OutboundDomainService {
-    private final OutboundRepository outboundRepo;
+public class OrderDomainService {
     private final InventoryGateway inventoryGateway;
     private final StrategyGateway strategyGateway;
 
@@ -40,20 +39,5 @@ public class OutboundDomainService {
                 orderLine.getRemainingQty(),
                 orderLine.getOrderHeaderId().toString(),
                 orderLine.getOrderHeaderId());
-    }
-
-    /** 发货确认：扣除库存 + 写流水 */
-    public void shipDeduct(PickLine pickLine, Long userId) {
-        inventoryGateway.deductStock(
-                pickLine.getTenantId(),
-                null,
-                pickLine.getLocationId(),
-                pickLine.getSkuId(),
-                pickLine.getBatchNo(),
-                pickLine.getPickedQty(),
-                "SHIP",
-                pickLine.getPickHeaderId().toString(),
-                pickLine.getPickHeaderId(),
-                userId);
     }
 }

@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.wms.common.base.ApiResponse;
 import com.wms.common.base.PageResponse;
 import com.wms.inventory.application.dto.*;
-import com.wms.inventory.application.service.InventoryAppService;
+import com.wms.inventory.application.service.StockAppService;
 
 import jakarta.validation.Valid;
 
@@ -18,11 +18,11 @@ import java.util.List;
 @RequestMapping("/api/v1/inventory")
 @RequiredArgsConstructor
 public class StockController {
-    private final InventoryAppService inventoryAppService;
+    private final StockAppService stockAppService;
 
     @PostMapping("/stocks/page")
     public ApiResponse<PageResponse<StockDTO>> pageStocks(@Valid @RequestBody StockQuery query) {
-        IPage<StockDTO> result = inventoryAppService.pageStock(query);
+        IPage<StockDTO> result = stockAppService.pageStock(query);
         return ApiResponse.ok(
                 PageResponse.of(
                         result.getRecords(),
@@ -33,19 +33,19 @@ public class StockController {
 
     @GetMapping("/stocks/{id}")
     public ApiResponse<StockDTO> getStock(@PathVariable("id") Long id) {
-        return ApiResponse.ok(inventoryAppService.findStockById(id));
+        return ApiResponse.ok(stockAppService.findStockById(id));
     }
 
     @GetMapping("/stocks/{stockId}/transactions")
     public ApiResponse<List<StockTransactionDTO>> getTransactions(
             @PathVariable("stockId") Long stockId) {
-        return ApiResponse.ok(inventoryAppService.findTransactionsByStock(stockId));
+        return ApiResponse.ok(stockAppService.findTransactionsByStock(stockId));
     }
 
     @PostMapping("/transactions/page")
     public ApiResponse<PageResponse<StockTransactionDTO>> pageTransactions(
             @Valid @RequestBody TransactionQuery query) {
-        IPage<StockTransactionDTO> result = inventoryAppService.pageTransactions(query);
+        IPage<StockTransactionDTO> result = stockAppService.pageTransactions(query);
         return ApiResponse.ok(
                 PageResponse.of(
                         result.getRecords(),

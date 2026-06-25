@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.base.PageResponse;
 import com.wms.print.application.dto.PrintCmd;
+import com.wms.print.application.dto.PrintResultDTO;
 import com.wms.print.application.dto.PrintTemplateCreateCmd;
 import com.wms.print.application.dto.PrintTemplateDTO;
 import com.wms.print.domain.entity.PrintRecord;
@@ -101,7 +102,7 @@ public class PrintAppService {
 
     /** 执行打印 — 生成 ZPL 并记录打印历史 后续可通过蓝牙/网络发送 ZPL 到打印机 */
     @Transactional
-    public Map<String, Object> executePrint(PrintCmd cmd) {
+    public PrintResultDTO executePrint(PrintCmd cmd) {
         PrintTemplate template = templateMapper.selectById(cmd.getTemplateId());
         if (template == null) {
             throw new IllegalArgumentException("打印模板不存在: " + cmd.getTemplateId());
@@ -125,10 +126,10 @@ public class PrintAppService {
         record.setPrintAt(LocalDateTime.now());
         recordMapper.insert(record);
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("recordId", record.getId());
-        result.put("zpl", zpl);
-        result.put("printerName", cmd.getPrinterName());
+        PrintResultDTO result = new PrintResultDTO();
+        result.setRecordId(record.getId());
+        result.setZpl(zpl);
+        result.setPrinterName(cmd.getPrinterName());
         return result;
     }
 }

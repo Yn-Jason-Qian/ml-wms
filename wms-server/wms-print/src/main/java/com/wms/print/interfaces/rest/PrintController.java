@@ -4,8 +4,10 @@ import com.wms.common.base.ApiResponse;
 import com.wms.common.base.PageResponse;
 import com.wms.common.log.OperationLog;
 import com.wms.print.application.dto.PrintCmd;
+import com.wms.print.application.dto.PrintResultDTO;
 import com.wms.print.application.dto.PrintTemplateCreateCmd;
 import com.wms.print.application.dto.PrintTemplateDTO;
+import com.wms.print.application.dto.ZplResultDTO;
 import com.wms.print.application.service.PrintAppService;
 
 import jakarta.validation.Valid;
@@ -43,19 +45,19 @@ public class PrintController {
 
     @PostMapping("/zpl/generate")
     @OperationLog(module = "打印管理", action = "生成ZPL标签")
-    public ApiResponse<Map<String, Object>> generateZpl(@RequestBody Map<String, Object> body) {
+    public ApiResponse<ZplResultDTO> generateZpl(@RequestBody Map<String, Object> body) {
         String templateType = (String) body.getOrDefault("templateType", "RECEIVE_LABEL");
         @SuppressWarnings("unchecked")
         Map<String, String> data = (Map<String, String>) body.getOrDefault("data", Map.of());
         String zpl = printAppService.generateZpl(templateType, data);
-        return ApiResponse.ok(Map.of("zpl", zpl));
+        return ApiResponse.ok(new ZplResultDTO(zpl));
     }
 
     // ── 执行打印 ──
 
     @PostMapping("/print")
     @OperationLog(module = "打印管理", action = "执行打印")
-    public ApiResponse<Map<String, Object>> print(@Valid @RequestBody PrintCmd cmd) {
+    public ApiResponse<PrintResultDTO> print(@Valid @RequestBody PrintCmd cmd) {
         return ApiResponse.ok(printAppService.executePrint(cmd));
     }
 }

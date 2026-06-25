@@ -1,6 +1,6 @@
 package com.wms.outbound.infrastructure.gateway;
 
-import com.wms.inventory.application.service.InventoryAppService;
+import com.wms.inventory.application.service.StockAppService;
 import com.wms.outbound.domain.gateway.InventoryGateway;
 
 import lombok.RequiredArgsConstructor;
@@ -13,17 +13,17 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class InventoryGatewayImpl implements InventoryGateway {
 
-    private final InventoryAppService inventoryAppService;
+    private final StockAppService stockAppService;
 
     @Override
     public void allocateBySku(
             Long tenantId, Long skuId, BigDecimal requiredQty, String refNo, Long refId) {
-        inventoryAppService.allocateBySku(tenantId, skuId, requiredQty, refNo, refId);
+        stockAppService.allocateBySku(tenantId, skuId, requiredQty, refNo, refId);
     }
 
     @Override
     public Long findLocationBySku(Long tenantId, Long skuId, String batchNo) {
-        return inventoryAppService.findLocationBySku(tenantId, skuId, batchNo);
+        return stockAppService.findLocationBySku(tenantId, skuId, batchNo);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class InventoryGatewayImpl implements InventoryGateway {
             String refNo,
             Long refId,
             Long userId) {
-        inventoryAppService.deductStock(
+        stockAppService.deductStock(
                 tenantId,
                 warehouseId,
                 locationId,

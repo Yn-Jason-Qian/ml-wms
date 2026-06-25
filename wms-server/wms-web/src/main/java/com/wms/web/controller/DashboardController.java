@@ -2,6 +2,7 @@ package com.wms.web.controller;
 
 import com.wms.common.base.ApiResponse;
 import com.wms.web.dto.DashboardStatsDTO;
+import com.wms.web.dto.ExpiryAlertDTO;
 import com.wms.web.dto.TrendItemDTO;
 import com.wms.web.dto.TrendRequest;
 
@@ -72,12 +73,26 @@ public class DashboardController {
     }
 
     @GetMapping("/expiry-alert")
-    public ApiResponse<List<Map<String, Object>>> expiryAlert() {
+    public ApiResponse<List<ExpiryAlertDTO>> expiryAlert() {
         String sql =
                 "SELECT sku_code, sku_name, batch_no, location_id, expiry_date, qty_on_hand, "
                         + "DATEDIFF(expiry_date, NOW()) AS days_left FROM wms_inventory_stock "
                         + "WHERE expiry_date IS NOT NULL AND expiry_date <= DATE_ADD(NOW(), INTERVAL 30 DAY) "
                         + "AND qty_on_hand > 0 AND is_deleted = 0 ORDER BY expiry_date ASC LIMIT 5";
-        return ApiResponse.ok(jdbc.queryForList(sql));
+        return ApiResponse.ok(
+                jdbc.query(
+                        sql,
+                        (rs, rowNum) -> {
+                            ExpiryAlertDTO d = new ExpiryAlertDTO();
+                            d.setSkuCode(rs.getString("sku_code"));
+                            d.setSkuName(rs.getString("sku_name"));
+                            d.setBatchNo(rs.getString("batch_no"));
+                            d.setLocationId(rs.getLong("location_id"));
+                            java.sql.Timestamp expiry = rs.getTimestamp("expiry_date");
+                            if (expiry != null) d.setExpiryDate(expiry.toLocalDateTime());
+                            d.setQtyOnHand(rs.getBigDecimal("qty_on_hand"));
+                            d.setDaysLeft(rs.getInt("days_left"));
+                            return d;
+                        }));
     }
 }

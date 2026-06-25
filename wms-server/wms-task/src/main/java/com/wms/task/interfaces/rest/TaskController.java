@@ -7,6 +7,9 @@ import com.wms.common.base.ApiResponse;
 import com.wms.common.base.PageResponse;
 import com.wms.common.event.TaskEvent;
 import com.wms.common.log.OperationLog;
+import com.wms.task.application.assembler.TaskAssembler;
+import com.wms.task.application.dto.ClaimResultDTO;
+import com.wms.task.application.dto.TaskDTO;
 import com.wms.task.application.dto.TaskPageQuery;
 import com.wms.task.domain.entity.TaskHeader;
 import com.wms.task.infrastructure.mapper.TaskHeaderMapper;
@@ -18,18 +21,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/v1/tasks")
 @RequiredArgsConstructor
 public class TaskController {
+    private final TaskAssembler taskAssembler;
     private final TaskHeaderMapper taskHeaderMapper;
     private final ApplicationEventPublisher eventPublisher;
 
     @PostMapping("/page")
-    public ApiResponse<PageResponse<Map<String, Object>>> page(
-            @Valid @RequestBody TaskPageQuery query) {
+    public ApiResponse<PageResponse<TaskDTO>> page(@Valid @RequestBody TaskPageQuery query) {
         IPage<TaskHeader> result =
                 taskHeaderMapper.selectPage(
                         new Page<>(query.getPageNum(), query.getPageSize()),
@@ -49,33 +50,7 @@ public class TaskController {
                                 .orderByDesc(TaskHeader::getCreatedAt));
         return ApiResponse.ok(
                 PageResponse.of(
-                        result.getRecords().stream()
-                                .map(
-                                        t -> {
-                                            java.util.Map<String, Object> m =
-                                                    new java.util.HashMap<>();
-                                            m.put("id", t.getId());
-                                            m.put("taskNo", t.getTaskNo());
-                                            m.put("taskType", t.getTaskType());
-                                            m.put("warehouseId", t.getWarehouseId());
-                                            m.put("status", t.getStatus());
-                                            m.put("priority", t.getPriority());
-                                            m.put(
-                                                    "assignTo",
-                                                    t.getAssignTo() != null ? t.getAssignTo() : 0);
-                                            m.put(
-                                                    "taskSourceNo",
-                                                    t.getTaskSourceNo() != null
-                                                            ? t.getTaskSourceNo()
-                                                            : "");
-                                            m.put(
-                                                    "createdAt",
-                                                    t.getCreatedAt() != null
-                                                            ? t.getCreatedAt().toString()
-                                                            : "");
-                                            return m;
-                                        })
-                                .toList(),
+                        result.getRecords().stream().map(taskAssembler::toTaskDTO).toList(),
                         result.getTotal(),
                         (int) result.getCurrent(),
                         (int) result.getSize()));
@@ -83,7 +58,7 @@ public class TaskController {
 
     @PostMapping("/{id}/claim")
     @OperationLog(module = "任务管理", action = "领取任务")
-    public ApiResponse<Map<String, Object>> claim(@PathVariable("id") Long id) {
+    public ApiResponse<ClaimResultDTO> claim(@PathVariable("id") Long id) {
         TaskHeader task = taskHeaderMapper.selectById(id);
         if (task != null) {
             task.assign(task.getAssignTo()); // mark state transition
@@ -98,7 +73,7 @@ public class TaskController {
                             task.getWarehouseId(),
                             task.getAssignTo()));
         }
-        return ApiResponse.ok(Map.of("taskId", id, "status", "ASSIGNED"));
+        return ApiResponse.ok(new ClaimResultDTO(id, "ASSIGNED"));
     }
 
     @PostMapping("/{id}/start")
