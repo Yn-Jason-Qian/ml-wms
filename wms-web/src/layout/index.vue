@@ -60,8 +60,8 @@
         <!-- 主内容区 -->
         <el-main class="app-main">
           <router-view v-slot="{ Component }">
-            <keep-alive :include="tabsStore.cachedViews">
-              <component :is="Component" :key="$route.path" />
+            <keep-alive>
+              <component :is="Component" :key="route.name || route.path" />
             </keep-alive>
           </router-view>
         </el-main>

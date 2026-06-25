@@ -16,4 +16,16 @@ function closeTab(path: string) {
   if (route.path === path) { const r = tabs.visitedViews; router.push(r[r.length-1]?.path || '/dashboard') }
 }
 </script>
-<style scoped>.tags-view{display:flex;gap:4px;padding:6px 12px;background:#fff;border-bottom:1px solid #e4e7ed;overflow-x:auto}.tag-item{cursor:pointer;flex-shrink:0}</style>
+<style scoped>
+.tags-view {
+  display: flex; gap: 4px; padding: 6px 12px; background: #fff;
+  border-bottom: 1px solid #e4e7ed; overflow-x: auto; flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.tags-view::-webkit-scrollbar { height: 3px; }
+.tags-view::-webkit-scrollbar-track { background: transparent; }
+.tags-view::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 2px; }
+.tags-view:hover::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); }
+.tag-item { cursor: pointer; flex-shrink: 0; }
+</style>
