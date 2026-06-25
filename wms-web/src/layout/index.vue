@@ -116,9 +116,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 
 <style scoped>
 .app-layout { height: 100vh; }
+.app-layout > .el-container { height: 100%; }
 .app-sidebar {
   background: #1a365d; overflow-y: auto; overflow-x: hidden;
   transition: width 0.3s;
+  height: 100vh;
 }
 .logo {
   height: 60px; display: flex; align-items: center; justify-content: center;
@@ -127,10 +129,18 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 .app-header {
   display: flex; align-items: center; justify-content: space-between;
   background: #fff; border-bottom: 1px solid #e4e7ed; padding: 0 20px; height: 60px;
+  flex-shrink: 0;
 }
 .header-left { display: flex; align-items: center; gap: 12px; }
 .header-right { display: flex; align-items: center; gap: 16px; }
 .user-info { font-size: 14px; color: #333; }
 .tenant-tag { font-size: 12px; color: #999; background: #f0f2f5; padding: 2px 8px; border-radius: 4px; }
-.app-main { background: #f0f2f5; min-height: calc(100vh - 60px); padding: 20px; }
+.app-main {
+  background: #f0f2f5; padding: 20px;
+  flex: 1; overflow-y: auto;
+}
+/* 右侧区域 flex 列布局 */
+.app-layout > .el-container > .el-container {
+  flex-direction: column; height: 100vh; overflow: hidden;
+}
 </style>
