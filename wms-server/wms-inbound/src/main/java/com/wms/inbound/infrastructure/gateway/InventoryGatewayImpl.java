@@ -27,6 +27,7 @@ public class InventoryGatewayImpl implements InventoryGateway {
             String batchNo,
             String lotAttrs,
             BigDecimal qty,
+            String txnType,
             String refNo,
             Long refId,
             Long userId) {
@@ -41,6 +42,7 @@ public class InventoryGatewayImpl implements InventoryGateway {
                 batchNo,
                 lotAttrs,
                 qty,
+                txnType,
                 refNo,
                 refId,
                 userId);

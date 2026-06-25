@@ -90,6 +90,7 @@ public class InventoryAppService {
             String batchNo,
             String lotAttrs,
             BigDecimal qty,
+            String txnType,
             String refNo,
             Long refId,
             Long userId) {
@@ -104,6 +105,7 @@ public class InventoryAppService {
                 batchNo,
                 lotAttrs,
                 qty,
+                txnType,
                 refNo,
                 refId,
                 userId);

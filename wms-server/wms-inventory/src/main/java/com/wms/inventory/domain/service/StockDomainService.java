@@ -100,8 +100,9 @@ public class StockDomainService {
     }
 
     /**
-     * 增加库存（上架等场景），不存在则创建。
+     * 增加库存（收货、上架等场景），不存在则创建。
      *
+     * @param txnType 事务类型，如 PUTAWAY / RECEIVE
      * @return 操作后的 Stock
      */
     public Stock increaseStock(
@@ -115,6 +116,7 @@ public class StockDomainService {
             String batchNo,
             String lotAttrs,
             BigDecimal qty,
+            String txnType,
             String refNo,
             Long refId,
             Long userId) {
@@ -144,7 +146,7 @@ public class StockDomainService {
         }
         stock.add(qty);
         stockRepository.updateWithVersion(stock);
-        writeTxn(stock, "PUTAWAY", "IN", qty, refNo, refId, null, null, userId);
+        writeTxn(stock, txnType, "IN", qty, refNo, refId, null, null, userId);
         return stock;
     }
 

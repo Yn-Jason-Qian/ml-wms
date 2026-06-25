@@ -20,6 +20,7 @@ public interface InventoryGateway {
             String batchNo,
             String lotAttrs,
             BigDecimal qty,
+            String txnType,
             String refNo,
             Long refId,
             Long userId);

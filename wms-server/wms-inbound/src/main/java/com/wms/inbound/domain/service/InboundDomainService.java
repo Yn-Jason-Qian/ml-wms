@@ -100,6 +100,7 @@ public class InboundDomainService {
                 line.getBatchNo(),
                 line.getLotAttrs(),
                 line.getPutawayQty(),
+                "PUTAWAY",
                 line.getPutawayHeaderId().toString(),
                 line.getPutawayHeaderId(),
                 userId);
