@@ -47,6 +47,10 @@ jwt:
   secret: your-256-bit-secret-key-change-in-production
   expiration: 86400000
 
+hashids:
+  salt: wms-hashid-salt-2026
+  min-length: 8
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

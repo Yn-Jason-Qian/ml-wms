@@ -1,6 +1,10 @@
 # ── Production Configuration (Docker) ──
 # 敏感配置通过环境变量注入，参见 docker-compose.yml
 
+hashids:
+  salt: ${HASHIDS_SALT:wms-hashid-salt-2026-change-in-production}
+  min-length: ${HASHIDS_MIN_LENGTH:8}
+
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/ml_wms?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&tinyInt1isBit=false}
