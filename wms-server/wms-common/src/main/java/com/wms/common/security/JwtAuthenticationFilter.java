@@ -37,7 +37,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String token = extractToken(request);
 
-        if (StringUtils.hasText(token) && !jwtUtil.isExpired(token)) {
+        if (StringUtils.hasText(token)) {
+            if (jwtUtil.isExpired(token)) {
+                // Token 过期，返回 401 并提示前端跳转登录页
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":401,\"message\":\"登录已过期，请重新登录\"}");
+                return;
+            }
             try {
                 Claims claims = jwtUtil.parse(token);
                 Long userId = Long.parseLong(claims.getSubject());

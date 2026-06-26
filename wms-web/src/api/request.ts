@@ -35,7 +35,9 @@ request.interceptors.response.use(
     return res
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status
+    // 401: 未认证（token 过期/无效），403: 禁止访问（token 过期后 Spring Security 兜底）
+    if (status === 401 || status === 403) {
       removeToken()
       window.location.href = '/login'
       return Promise.reject(error)
