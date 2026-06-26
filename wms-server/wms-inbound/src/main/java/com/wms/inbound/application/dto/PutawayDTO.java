@@ -1,5 +1,7 @@
 package com.wms.inbound.application.dto;
 
+import com.wms.inbound.domain.entity.PutawayHeader.Status;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -13,7 +15,7 @@ public class PutawayDTO {
     private Long receiveHeaderId;
     private String receiveNo;
     private Long ownerId;
-    private String status;
+    private Status status;
     private Long strategyId;
     private String remark;
     private LocalDateTime createdAt;

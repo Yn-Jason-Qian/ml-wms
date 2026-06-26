@@ -69,7 +69,7 @@ public class TaskController {
                             "CLAIMED",
                             task.getId(),
                             task.getTaskNo(),
-                            task.getTaskType(),
+                            task.getTaskType().name(),
                             task.getWarehouseId(),
                             task.getAssignTo()));
         }
@@ -89,7 +89,7 @@ public class TaskController {
                             "STARTED",
                             task.getId(),
                             task.getTaskNo(),
-                            task.getTaskType(),
+                            task.getTaskType().name(),
                             task.getWarehouseId(),
                             task.getAssignTo()));
         }
@@ -109,7 +109,7 @@ public class TaskController {
                             "COMPLETED",
                             task.getId(),
                             task.getTaskNo(),
-                            task.getTaskType(),
+                            task.getTaskType().name(),
                             task.getWarehouseId(),
                             task.getAssignTo()));
         }
@@ -129,7 +129,7 @@ public class TaskController {
                             "CANCELLED",
                             task.getId(),
                             task.getTaskNo(),
-                            task.getTaskType(),
+                            task.getTaskType().name(),
                             task.getWarehouseId(),
                             task.getAssignTo()));
         }

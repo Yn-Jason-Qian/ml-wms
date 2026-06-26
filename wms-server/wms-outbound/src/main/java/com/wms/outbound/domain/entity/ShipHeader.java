@@ -13,11 +13,27 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_outbound_ship_header")
 public class ShipHeader extends BaseEntity {
+
+    /** 发货状态 */
+    public enum Status {
+        CREATED,
+        SHIPPING,
+        DONE
+    }
+
+    /** 配送方式 */
+    public enum DeliveryMethod {
+        EXPRESS,
+        LTL,
+        FTL,
+        SELF_PICKUP
+    }
+
     private Long warehouseId;
     private Long ownerId;
     private String shipNo;
     private Long waveHeaderId;
-    private String deliveryMethod;
+    private DeliveryMethod deliveryMethod;
     private String carrierName;
     private String trackingNo;
     private Integer packageCount;
@@ -25,8 +41,5 @@ public class ShipHeader extends BaseEntity {
     private BigDecimal volume;
     private Long shipBy;
     private LocalDateTime shipAt;
-    private String status;
-
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_DONE = "DONE";
+    private Status status;
 }

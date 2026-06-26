@@ -11,13 +11,25 @@ import lombok.EqualsAndHashCode;
 @TableName("wms_inventory_move_header")
 public class MoveHeader extends BaseEntity {
 
+    /** 库存移动类型 */
+    public enum MoveType {
+        MANUAL,
+        REPLENISH,
+        PUTAWAY_FIX,
+        RETURN
+    }
+
+    /** 移动状态 */
+    public enum Status {
+        CREATED,
+        MOVING,
+        DONE,
+        CANCELLED
+    }
+
     private Long warehouseId;
     private String moveNo;
-    private String moveType;
-    private String status;
+    private MoveType moveType;
+    private Status status;
     private String remark;
-
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_MOVING = "MOVING";
-    public static final String STATUS_DONE = "DONE";
 }

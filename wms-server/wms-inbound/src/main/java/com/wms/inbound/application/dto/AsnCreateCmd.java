@@ -1,6 +1,7 @@
 package com.wms.inbound.application.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.wms.inbound.domain.entity.AsnHeader.AsnType;
+
 import jakarta.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -12,7 +13,7 @@ import java.util.List;
 public class AsnCreateCmd {
     @NotNull private Long warehouseId;
     @NotNull private Long ownerId;
-    @NotBlank private String asnType;
+    @NotNull private AsnType asnType;
     private String sourceNo;
     private LocalDateTime expectedArriveTime;
     private String carrierName;

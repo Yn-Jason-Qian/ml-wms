@@ -1,5 +1,7 @@
 package com.wms.masterdata.application.dto;
 
+import com.wms.masterdata.domain.entity.Area.AreaType;
+
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,7 +13,7 @@ public class AreaDTO {
     private Long warehouseId;
     private String areaCode;
     private String areaName;
-    private String areaType;
+    private AreaType areaType;
     private BigDecimal temperatureMin;
     private BigDecimal temperatureMax;
     private Integer status;

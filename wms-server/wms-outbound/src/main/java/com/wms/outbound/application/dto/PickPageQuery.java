@@ -1,6 +1,7 @@
 package com.wms.outbound.application.dto;
 
 import com.wms.common.base.PageRequest;
+import com.wms.outbound.domain.entity.PickHeader.Status;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -9,5 +10,5 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class PickPageQuery extends PageRequest {
     private Long warehouseId;
-    private String status;
+    private Status status;
 }

@@ -119,8 +119,11 @@ public class ReceiveAppService {
         h.setOwnerId(cmd.getOwnerId());
         h.setReceiveNo(receiveNo);
         h.setAsnHeaderId(cmd.getAsnHeaderId());
-        h.setReceiveType(cmd.getReceiveType() != null ? cmd.getReceiveType() : "ASN");
-        h.setStatus(ReceiveHeader.STATUS_DONE);
+        h.setReceiveType(
+                cmd.getReceiveType() != null
+                        ? cmd.getReceiveType()
+                        : ReceiveHeader.ReceiveType.ASN);
+        h.setStatus(ReceiveHeader.Status.DONE);
         h.setReceivedBy(userId);
         h.setReceivedAt(LocalDateTime.now());
         h.setCreatedBy(userId);

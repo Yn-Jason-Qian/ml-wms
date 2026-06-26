@@ -1,5 +1,8 @@
 package com.wms.inventory.application.dto;
 
+import com.wms.inventory.domain.entity.StockTransaction.TxnDirection;
+import com.wms.inventory.domain.entity.StockTransaction.TxnType;
+
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -13,8 +16,8 @@ public class StockTransactionDTO {
     private Long skuId;
     private String skuCode;
     private String batchNo;
-    private String txnType;
-    private String txnDirection;
+    private TxnType txnType;
+    private TxnDirection txnDirection;
     private BigDecimal txnQty;
     private BigDecimal qtyBefore;
     private BigDecimal qtyAfter;

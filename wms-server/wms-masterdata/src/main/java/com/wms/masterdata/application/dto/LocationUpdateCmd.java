@@ -19,7 +19,7 @@ public class LocationUpdateCmd {
     @Size(max = 128)
     private String locationName;
 
-    @NotBlank private String locationType;
+    @NotNull private com.wms.masterdata.domain.entity.Location.LocationType locationType;
     private String aisle;
     private String shelf;
     private String tier;

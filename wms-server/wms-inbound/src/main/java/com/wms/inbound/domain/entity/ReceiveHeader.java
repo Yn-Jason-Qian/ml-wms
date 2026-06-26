@@ -12,19 +12,28 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_inbound_receive_header")
 public class ReceiveHeader extends BaseEntity {
+
+    /** 收货类型 */
+    public enum ReceiveType {
+        ASN,
+        BLIND
+    }
+
+    /** 收货状态 */
+    public enum Status {
+        CREATED,
+        RECEIVING,
+        DONE,
+        CANCELLED
+    }
+
     private Long warehouseId;
     private Long ownerId;
     private String receiveNo;
     private Long asnHeaderId;
-    private String receiveType;
-    private String status;
+    private ReceiveType receiveType;
+    private Status status;
     private Long receivedBy;
     private LocalDateTime receivedAt;
     private String remark;
-
-    public static final String TYPE_ASN = "ASN";
-    public static final String TYPE_BLIND = "BLIND";
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_RECEIVING = "RECEIVING";
-    public static final String STATUS_DONE = "DONE";
 }

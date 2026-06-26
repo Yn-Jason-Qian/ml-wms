@@ -67,7 +67,7 @@ public class ShipAppService {
         h.setPackageCount(cmd.getPackageCount());
         h.setGrossWeight(cmd.getGrossWeight());
         h.setVolume(cmd.getVolume());
-        h.setStatus(ShipHeader.STATUS_DONE);
+        h.setStatus(ShipHeader.Status.DONE);
         h.setShipBy(userId);
         h.setShipAt(LocalDateTime.now());
         h.setCreatedBy(userId);

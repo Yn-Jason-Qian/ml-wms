@@ -20,6 +20,7 @@ public class StrategyGatewayImpl implements StrategyGateway {
     @Override
     public StrategyEngine.MatchResult matchAllocationStrategy(
             Long tenantId, Map<String, Object> context) {
-        return strategyAppService.matchStrategy(tenantId, StrategyConfig.TYPE_ALLOCATION, context);
+        return strategyAppService.matchStrategy(
+                tenantId, StrategyConfig.StrategyType.ALLOCATION.name(), context);
     }
 }

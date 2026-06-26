@@ -13,9 +13,17 @@ import java.math.BigDecimal;
 @TableName("wms_masterdata_warehouse")
 public class Warehouse extends BaseEntity {
 
+    /** 仓库类型 */
+    public enum WhType {
+        STANDARD,
+        COLD,
+        HAZARDOUS,
+        BONDED
+    }
+
     private String whCode;
     private String whName;
-    private String whType;
+    private WhType whType;
     private String address;
     private String contactPerson;
     private String contactPhone;

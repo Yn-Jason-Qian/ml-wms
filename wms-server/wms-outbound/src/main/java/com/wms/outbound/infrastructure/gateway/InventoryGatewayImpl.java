@@ -1,6 +1,7 @@
 package com.wms.outbound.infrastructure.gateway;
 
 import com.wms.inventory.application.service.StockAppService;
+import com.wms.inventory.domain.entity.StockTransaction;
 import com.wms.outbound.domain.gateway.InventoryGateway;
 
 import lombok.RequiredArgsConstructor;
@@ -45,7 +46,7 @@ public class InventoryGatewayImpl implements InventoryGateway {
                 skuId,
                 batchNo,
                 qty,
-                txnType,
+                StockTransaction.TxnType.valueOf(txnType),
                 refNo,
                 refId,
                 userId);

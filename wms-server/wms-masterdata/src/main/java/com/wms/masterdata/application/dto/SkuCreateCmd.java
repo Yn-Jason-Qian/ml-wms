@@ -1,5 +1,7 @@
 package com.wms.masterdata.application.dto;
 
+import com.wms.masterdata.domain.entity.Sku.ShelfLifeType;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -32,7 +34,7 @@ public class SkuCreateCmd {
     private BigDecimal baseWeight;
     private BigDecimal baseVolume;
     private Integer shelfLife;
-    private String shelfLifeType;
+    private ShelfLifeType shelfLifeType;
     private Integer batchManaged;
     private Integer snManaged;
     private String lotAttrs;

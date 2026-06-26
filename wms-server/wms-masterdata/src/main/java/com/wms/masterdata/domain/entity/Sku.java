@@ -27,15 +27,19 @@ public class Sku extends BaseEntity {
     private BigDecimal baseHeight;
     private BigDecimal baseWeight;
     private BigDecimal baseVolume;
+
+    /** 保质期类型 */
+    public enum ShelfLifeType {
+        PRODUCTION,
+        RECEIVE
+    }
+
     private Integer shelfLife;
-    private String shelfLifeType;
+    private ShelfLifeType shelfLifeType;
     private Integer batchManaged;
     private Integer snManaged;
     private String lotAttrs;
     private Integer status;
-
-    public static final String SHELF_LIFE_PRODUCTION = "PRODUCTION";
-    public static final String SHELF_LIFE_RECEIVE = "RECEIVE";
 
     public void disable() {
         this.status = 0;

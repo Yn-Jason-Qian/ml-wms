@@ -1,6 +1,9 @@
 package com.wms.masterdata.application.dto;
 
+import com.wms.masterdata.domain.entity.Warehouse.WhType;
+
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import lombok.Data;
@@ -18,8 +21,8 @@ public class WarehouseCreateCmd {
     @Size(max = 128, message = "仓库名称最长128字符")
     private String whName;
 
-    @NotBlank(message = "仓库类型不能为空")
-    private String whType;
+    @NotNull(message = "仓库类型不能为空")
+    private WhType whType;
 
     private String address;
     private String contactPerson;

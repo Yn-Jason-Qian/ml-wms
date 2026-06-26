@@ -1,5 +1,8 @@
 package com.wms.inbound.application.dto;
 
+import com.wms.inbound.domain.entity.AsnHeader.AsnType;
+import com.wms.inbound.domain.entity.AsnHeader.Status;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -11,11 +14,11 @@ public class AsnDTO {
     private Long warehouseId;
     private Long ownerId;
     private String asnNo;
-    private String asnType;
+    private AsnType asnType;
     private String sourceNo;
     private LocalDateTime expectedArriveTime;
     private String carrierName;
-    private String status;
+    private Status status;
     private String remark;
     private LocalDateTime createdAt;
     private List<AsnLineDTO> lines;

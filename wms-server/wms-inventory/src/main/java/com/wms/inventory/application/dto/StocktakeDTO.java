@@ -1,5 +1,8 @@
 package com.wms.inventory.application.dto;
 
+import com.wms.inventory.domain.entity.StocktakeHeader.Status;
+import com.wms.inventory.domain.entity.StocktakeHeader.StocktakeType;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,9 +13,9 @@ public class StocktakeDTO {
     private Long id;
     private Long warehouseId;
     private String stocktakeNo;
-    private String stocktakeType;
+    private StocktakeType stocktakeType;
     private String stocktakeMode;
-    private String status;
+    private Status status;
     private LocalDateTime planStartTime;
     private LocalDateTime planEndTime;
     private LocalDateTime startTime;

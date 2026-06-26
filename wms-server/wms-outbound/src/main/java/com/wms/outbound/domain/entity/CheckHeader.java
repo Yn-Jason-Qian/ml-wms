@@ -12,17 +12,22 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_outbound_check_header")
 public class CheckHeader extends BaseEntity {
+
+    /** 复核状态 */
+    public enum Status {
+        CREATED,
+        CHECKING,
+        PASS,
+        REJECT,
+        DONE
+    }
+
     private Long warehouseId;
     private String checkNo;
     private Long waveHeaderId;
-    private String status;
+    private Status status;
     private Long checkBy;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String remark;
-
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_CHECKING = "CHECKING";
-    public static final String STATUS_PASS = "PASS";
-    public static final String STATUS_REJECT = "REJECT";
 }

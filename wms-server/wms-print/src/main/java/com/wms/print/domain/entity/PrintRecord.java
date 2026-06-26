@@ -12,11 +12,23 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_print_record")
 public class PrintRecord extends BaseEntity {
+
+    /** 引用类型 */
+    public enum RefType {
+        ASN,
+        RECEIVE,
+        PUTAWAY,
+        ORDER,
+        PICK,
+        SHIP,
+        STOCKTAKE
+    }
+
     private Long templateId;
     private String printerName;
     private String printContent;
     private Integer printCount;
-    private String refType;
+    private RefType refType;
     private Long refId;
     private Long printBy;
     private LocalDateTime printAt;

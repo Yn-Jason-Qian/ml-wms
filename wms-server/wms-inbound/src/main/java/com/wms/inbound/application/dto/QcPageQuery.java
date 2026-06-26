@@ -1,6 +1,7 @@
 package com.wms.inbound.application.dto;
 
 import com.wms.common.base.PageRequest;
+import com.wms.inbound.domain.entity.QcHeader.Status;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -9,5 +10,5 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class QcPageQuery extends PageRequest {
     private Long warehouseId;
-    private String status;
+    private Status status;
 }

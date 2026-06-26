@@ -13,8 +13,15 @@ import java.math.BigDecimal;
 @TableName("wms_masterdata_sku_package")
 public class SkuPackage extends BaseEntity {
 
+    /** 包装层级 */
+    public enum PackageLevel {
+        EA,
+        CASE,
+        PALLET
+    }
+
     private Long skuId;
-    private String packageLevel;
+    private PackageLevel packageLevel;
     private String packageName;
     private Long unitId;
     private BigDecimal qtyPerParent;
@@ -26,10 +33,6 @@ public class SkuPackage extends BaseEntity {
     private Integer isDefaultReceive;
     private Integer isDefaultPick;
     private Integer isDefaultStorage;
-
-    public static final String LEVEL_EA = "EA";
-    public static final String LEVEL_CASE = "CASE";
-    public static final String LEVEL_PALLET = "PALLET";
 
     /** 校验包装层级不能重复 */
     public void validateUnique(SkuPackage existing) {

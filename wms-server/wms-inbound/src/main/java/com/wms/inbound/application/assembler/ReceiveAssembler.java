@@ -17,7 +17,7 @@ public class ReceiveAssembler {
         d.setWarehouseId(h.getWarehouseId());
         d.setOwnerId(h.getOwnerId());
         d.setAsnHeaderId(h.getAsnHeaderId());
-        d.setReceiveType(h.getReceiveType() != null ? h.getReceiveType() : "");
+        d.setReceiveType(h.getReceiveType());
         d.setStatus(h.getStatus());
         d.setRemark(h.getRemark());
         d.setReceivedBy(h.getReceivedBy());

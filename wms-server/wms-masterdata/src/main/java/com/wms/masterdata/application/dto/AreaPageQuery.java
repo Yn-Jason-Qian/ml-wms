@@ -1,6 +1,7 @@
 package com.wms.masterdata.application.dto;
 
 import com.wms.common.base.PageRequest;
+import com.wms.masterdata.domain.entity.Area.AreaType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,5 +12,5 @@ public class AreaPageQuery extends PageRequest {
     private Long warehouseId;
     private String areaCode;
     private String areaName;
-    private String areaType;
+    private AreaType areaType;
 }

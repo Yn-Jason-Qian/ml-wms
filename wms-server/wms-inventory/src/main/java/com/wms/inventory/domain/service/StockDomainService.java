@@ -28,7 +28,15 @@ public class StockDomainService {
         fromStock.deduct(qty);
         stockRepository.updateWithVersion(fromStock);
         writeTxn(
-                fromStock, "MOVE", "OUT", qty, refNo, refId, null, toStock.getLocationId(), moveBy);
+                fromStock,
+                StockTransaction.TxnType.MOVE,
+                StockTransaction.TxnDirection.OUT,
+                qty,
+                refNo,
+                refId,
+                null,
+                toStock.getLocationId(),
+                moveBy);
 
         // 目标增加（若不存在则创建）
         if (toStock == null || toStock.getId() == null) {
@@ -55,8 +63,8 @@ public class StockDomainService {
         }
         writeTxn(
                 toStock,
-                "MOVE",
-                "IN",
+                StockTransaction.TxnType.MOVE,
+                StockTransaction.TxnDirection.IN,
                 qty,
                 refNo,
                 refId,
@@ -73,8 +81,8 @@ public class StockDomainService {
         stockRepository.updateWithVersion(stock);
         writeTxn(
                 stock,
-                "FREEZE",
-                "OUT",
+                StockTransaction.TxnType.FREEZE,
+                StockTransaction.TxnDirection.OUT,
                 freeze.getFreezeQty(),
                 freeze.getId().toString(),
                 freeze.getId(),
@@ -89,8 +97,8 @@ public class StockDomainService {
         stockRepository.updateWithVersion(stock);
         writeTxn(
                 stock,
-                "UNFREEZE",
-                "IN",
+                StockTransaction.TxnType.UNFREEZE,
+                StockTransaction.TxnDirection.IN,
                 freeze.getFreezeQty(),
                 freeze.getId().toString(),
                 freeze.getId(),
@@ -116,7 +124,7 @@ public class StockDomainService {
             String batchNo,
             String lotAttrs,
             BigDecimal qty,
-            String txnType,
+            StockTransaction.TxnType txnType,
             String refNo,
             Long refId,
             Long userId) {
@@ -146,7 +154,16 @@ public class StockDomainService {
         }
         stock.add(qty);
         stockRepository.updateWithVersion(stock);
-        writeTxn(stock, txnType, "IN", qty, refNo, refId, null, null, userId);
+        writeTxn(
+                stock,
+                txnType,
+                StockTransaction.TxnDirection.IN,
+                qty,
+                refNo,
+                refId,
+                null,
+                null,
+                userId);
         return stock;
     }
 
@@ -170,7 +187,16 @@ public class StockDomainService {
 
             stock.allocate(allocatable);
             stockRepository.updateWithVersion(stock);
-            writeTxn(stock, "ALLOCATE", "OUT", allocatable, refNo, refId, null, null, null);
+            writeTxn(
+                    stock,
+                    StockTransaction.TxnType.ALLOCATE,
+                    StockTransaction.TxnDirection.OUT,
+                    allocatable,
+                    refNo,
+                    refId,
+                    null,
+                    null,
+                    null);
             remaining = remaining.subtract(allocatable);
         }
         if (remaining.compareTo(BigDecimal.ZERO) > 0) {
@@ -191,7 +217,7 @@ public class StockDomainService {
             Long skuId,
             String batchNo,
             BigDecimal qty,
-            String txnType,
+            StockTransaction.TxnType txnType,
             String refNo,
             Long refId,
             Long userId) {
@@ -202,7 +228,16 @@ public class StockDomainService {
                                 () -> com.wms.common.exception.BusinessException.notFound("库存不存在"));
         stock.deduct(qty);
         stockRepository.updateWithVersion(stock);
-        writeTxn(stock, txnType, "OUT", qty, refNo, refId, null, null, userId);
+        writeTxn(
+                stock,
+                txnType,
+                StockTransaction.TxnDirection.OUT,
+                qty,
+                refNo,
+                refId,
+                null,
+                null,
+                userId);
     }
 
     /** 盘点调整库存 */
@@ -211,19 +246,37 @@ public class StockDomainService {
         if (diffQty.compareTo(BigDecimal.ZERO) > 0) {
             stock.add(diffQty);
             stockRepository.updateWithVersion(stock);
-            writeTxn(stock, "ADJUST", "IN", diffQty, refNo, refId, null, null, userId);
+            writeTxn(
+                    stock,
+                    StockTransaction.TxnType.ADJUST,
+                    StockTransaction.TxnDirection.IN,
+                    diffQty,
+                    refNo,
+                    refId,
+                    null,
+                    null,
+                    userId);
         } else if (diffQty.compareTo(BigDecimal.ZERO) < 0) {
             BigDecimal absQty = diffQty.abs();
             stock.deduct(absQty);
             stockRepository.updateWithVersion(stock);
-            writeTxn(stock, "ADJUST", "OUT", absQty, refNo, refId, null, null, userId);
+            writeTxn(
+                    stock,
+                    StockTransaction.TxnType.ADJUST,
+                    StockTransaction.TxnDirection.OUT,
+                    absQty,
+                    refNo,
+                    refId,
+                    null,
+                    null,
+                    userId);
         }
     }
 
     private void writeTxn(
             Stock stock,
-            String txnType,
-            String direction,
+            StockTransaction.TxnType txnType,
+            StockTransaction.TxnDirection direction,
             BigDecimal qty,
             String refNo,
             Long refId,
@@ -241,7 +294,9 @@ public class StockDomainService {
         txn.setTxnDirection(direction);
         txn.setTxnQty(qty);
         txn.setQtyBefore(stock.getQtyOnHand());
-        txn.setQtyAfter(stock.getQtyOnHand().add(direction.equals("IN") ? qty : qty.negate()));
+        txn.setQtyAfter(
+                stock.getQtyOnHand()
+                        .add(direction == StockTransaction.TxnDirection.IN ? qty : qty.negate()));
         txn.setRefNo(refNo);
         txn.setRefId(refId);
         txn.setFromLocationId(fromLoc);

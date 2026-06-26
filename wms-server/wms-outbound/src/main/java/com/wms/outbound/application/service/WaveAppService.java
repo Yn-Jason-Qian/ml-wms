@@ -76,7 +76,7 @@ public class WaveAppService {
         h.setWarehouseId(cmd.getWarehouseId());
         h.setWaveNo(waveNo);
         h.setWaveType(cmd.getWaveType());
-        h.setWaveStatus(WaveHeader.STATUS_CREATED);
+        h.setWaveStatus(WaveHeader.WaveStatus.CREATED);
         h.setOrderCount(cmd.getOrderIds().size());
         h.setCreatedBy(userId);
         h.setUpdatedBy(userId);

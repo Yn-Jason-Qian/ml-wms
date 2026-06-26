@@ -1,6 +1,7 @@
 package com.wms.masterdata.application.dto;
 
 import com.wms.common.base.PageRequest;
+import com.wms.masterdata.domain.entity.Location.LocationType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,6 +12,6 @@ public class LocationPageQuery extends PageRequest {
     private Long warehouseId;
     private Long areaId;
     private String locationCode;
-    private String locationType;
+    private LocationType locationType;
     private Integer status;
 }

@@ -51,7 +51,7 @@ public class AsnAppService {
         h.setCarrierName(cmd.getCarrierName());
         h.setCarrierPhone(cmd.getCarrierPhone());
         h.setRemark(cmd.getRemark());
-        h.setStatus(AsnHeader.STATUS_CREATED);
+        h.setStatus(AsnHeader.Status.CREATED);
         h.setCreatedBy(userId);
         h.setUpdatedBy(userId);
         asnRepository.saveHeader(h);

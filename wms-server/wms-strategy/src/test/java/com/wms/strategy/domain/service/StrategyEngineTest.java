@@ -31,7 +31,7 @@ class StrategyEngineTest {
         StrategyConfig config = new StrategyConfig();
         config.setStrategyCode("PUTAWAY-LIGHT");
         config.setStrategyName("轻货上架策略");
-        config.setStrategyType("PUTAWAY");
+        config.setStrategyType(StrategyConfig.StrategyType.PUTAWAY);
         config.setSortOrder(1);
         config.setIsEnabled(1);
         config.setRules(new ArrayList<>(List.of(rule)));
@@ -85,7 +85,7 @@ class StrategyEngineTest {
 
         var config = new StrategyConfig();
         config.setStrategyCode("DEFAULT");
-        config.setStrategyType("DEFAULT");
+        config.setStrategyType(StrategyConfig.StrategyType.PUTAWAY);
         config.setSortOrder(1);
         config.setIsEnabled(1);
         config.setRules(new ArrayList<>(List.of(emptyRule)));

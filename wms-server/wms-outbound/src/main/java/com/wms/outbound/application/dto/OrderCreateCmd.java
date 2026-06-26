@@ -1,6 +1,7 @@
 package com.wms.outbound.application.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.wms.outbound.domain.entity.OrderHeader.OrderType;
+
 import jakarta.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -13,7 +14,7 @@ import java.util.List;
 public class OrderCreateCmd {
     @NotNull private Long warehouseId;
     @NotNull private Long ownerId;
-    @NotBlank private String orderType;
+    @NotNull private OrderType orderType;
     private String sourceNo;
     private String customerName;
     private String customerAddress;

@@ -13,21 +13,29 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_inbound_qc_header")
 public class QcHeader extends BaseEntity {
+
+    /** 质检类型 */
+    public enum QcType {
+        FULL,
+        SAMPLE,
+        NONE
+    }
+
+    /** 质检状态 */
+    public enum Status {
+        CREATED,
+        QCING,
+        PASS,
+        REJECT
+    }
+
     private Long warehouseId;
     private String qcNo;
     private Long receiveHeaderId;
-    private String qcType;
+    private QcType qcType;
     private BigDecimal sampleRatio;
-    private String status;
+    private Status status;
     private Long qcBy;
     private LocalDateTime qcAt;
     private String remark;
-
-    public static final String TYPE_FULL = "FULL";
-    public static final String TYPE_SAMPLE = "SAMPLE";
-    public static final String TYPE_NONE = "NONE";
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_QCING = "QCING";
-    public static final String STATUS_PASS = "PASS";
-    public static final String STATUS_REJECT = "REJECT";
 }

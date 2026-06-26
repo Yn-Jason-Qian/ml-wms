@@ -1,5 +1,8 @@
 package com.wms.outbound.application.dto;
 
+import com.wms.outbound.domain.entity.PickHeader.PickType;
+import com.wms.outbound.domain.entity.PickHeader.Status;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -9,8 +12,8 @@ public class PickDTO {
     private Long id;
     private String pickNo;
     private Long warehouseId;
-    private String pickType;
-    private String status;
+    private PickType pickType;
+    private Status status;
     private Long assignTo;
     private LocalDateTime createdAt;
 }

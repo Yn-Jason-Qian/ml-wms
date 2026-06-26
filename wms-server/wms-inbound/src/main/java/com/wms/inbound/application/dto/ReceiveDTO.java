@@ -1,5 +1,8 @@
 package com.wms.inbound.application.dto;
 
+import com.wms.inbound.domain.entity.ReceiveHeader.ReceiveType;
+import com.wms.inbound.domain.entity.ReceiveHeader.Status;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -13,8 +16,8 @@ public class ReceiveDTO {
     private Long ownerId;
     private Long asnHeaderId;
     private String asnNo;
-    private String receiveType;
-    private String status;
+    private ReceiveType receiveType;
+    private Status status;
     private String remark;
     private Long receivedBy;
     private LocalDateTime receivedAt;

@@ -13,10 +13,28 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_outbound_wave_header")
 public class WaveHeader extends BaseEntity {
+
+    /** 波次类型 */
+    public enum WaveType {
+        ORDER_POOL,
+        PICK_ZONE,
+        PRIORITY,
+        TIME_WINDOW
+    }
+
+    /** 波次状态 */
+    public enum WaveStatus {
+        CREATED,
+        RELEASED,
+        PICKING,
+        PICKED,
+        DONE
+    }
+
     private Long warehouseId;
     private String waveNo;
-    private String waveType;
-    private String waveStatus;
+    private WaveType waveType;
+    private WaveStatus waveStatus;
     private Integer orderCount;
     private Integer totalLines;
     private BigDecimal totalQty;
@@ -24,14 +42,8 @@ public class WaveHeader extends BaseEntity {
     private Long releasedBy;
     private LocalDateTime releasedAt;
 
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_RELEASED = "RELEASED";
-    public static final String STATUS_PICKING = "PICKING";
-    public static final String STATUS_PICKED = "PICKED";
-    public static final String STATUS_DONE = "DONE";
-
     public void release() {
-        this.waveStatus = STATUS_RELEASED;
+        this.waveStatus = WaveStatus.RELEASED;
         this.releasedAt = LocalDateTime.now();
     }
 }

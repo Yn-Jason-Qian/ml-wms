@@ -1,5 +1,7 @@
 package com.wms.masterdata.application.dto;
 
+import com.wms.masterdata.domain.entity.Warehouse.WhType;
+
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,7 +13,7 @@ public class WarehouseDTO {
     private Long id;
     private String whCode;
     private String whName;
-    private String whType;
+    private WhType whType;
     private String address;
     private String contactPerson;
     private String contactPhone;

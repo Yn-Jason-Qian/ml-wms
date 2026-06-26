@@ -1,5 +1,7 @@
 package com.wms.inventory.application.dto;
 
+import com.wms.inventory.domain.entity.Freeze.FreezeType;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -10,7 +12,7 @@ import java.math.BigDecimal;
 @Data
 public class FreezeCreateCmd {
     @NotNull private Long warehouseId;
-    @NotBlank private String freezeType;
+    @NotNull private FreezeType freezeType;
     private Long stockId;
     private Long skuId;
     private Long locationId;

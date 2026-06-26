@@ -1,6 +1,7 @@
 package com.wms.inventory.application.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.wms.inventory.domain.entity.MoveHeader.MoveType;
+
 import jakarta.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -10,7 +11,7 @@ import java.math.BigDecimal;
 @Data
 public class MoveCreateCmd {
     @NotNull private Long warehouseId;
-    @NotBlank private String moveType;
+    @NotNull private MoveType moveType;
     @NotNull private Long skuId;
     @NotNull private BigDecimal moveQty;
     @NotNull private Long fromLocationId;

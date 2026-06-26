@@ -11,9 +11,17 @@ import lombok.EqualsAndHashCode;
 @TableName("wms_masterdata_unit")
 public class Unit extends BaseEntity {
 
+    /** 计量单位类型 */
+    public enum UnitType {
+        QUANTITY,
+        WEIGHT,
+        VOLUME,
+        LENGTH
+    }
+
     private String unitCode;
     private String unitName;
-    private String unitType;
+    private UnitType unitType;
     private Integer status;
 
     public void disable() {

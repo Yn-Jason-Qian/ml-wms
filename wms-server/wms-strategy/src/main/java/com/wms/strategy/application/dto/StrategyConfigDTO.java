@@ -1,5 +1,7 @@
 package com.wms.strategy.application.dto;
 
+import com.wms.strategy.domain.entity.StrategyConfig.StrategyType;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,7 +12,7 @@ public class StrategyConfigDTO {
     private Long id;
     private String strategyCode;
     private String strategyName;
-    private String strategyType;
+    private StrategyType strategyType;
     private String description;
     private Integer sortOrder;
     private Integer isEnabled;

@@ -92,7 +92,7 @@ public class StockAppService {
             String batchNo,
             String lotAttrs,
             BigDecimal qty,
-            String txnType,
+            StockTransaction.TxnType txnType,
             String refNo,
             Long refId,
             Long userId) {
@@ -145,7 +145,7 @@ public class StockAppService {
             Long skuId,
             String batchNo,
             BigDecimal qty,
-            String txnType,
+            StockTransaction.TxnType txnType,
             String refNo,
             Long refId,
             Long userId) {

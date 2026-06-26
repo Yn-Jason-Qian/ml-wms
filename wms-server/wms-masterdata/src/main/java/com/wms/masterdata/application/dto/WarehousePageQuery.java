@@ -1,6 +1,7 @@
 package com.wms.masterdata.application.dto;
 
 import com.wms.common.base.PageRequest;
+import com.wms.masterdata.domain.entity.Warehouse.WhType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,6 +12,6 @@ public class WarehousePageQuery extends PageRequest {
 
     private String whCode;
     private String whName;
-    private String whType;
+    private WhType whType;
     private Integer status;
 }

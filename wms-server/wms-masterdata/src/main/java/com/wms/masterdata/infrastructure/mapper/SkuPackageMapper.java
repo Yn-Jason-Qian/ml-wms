@@ -18,6 +18,6 @@ public interface SkuPackageMapper extends BaseMapper<SkuPackage> {
     boolean existsByLevel(
             @Param("tenantId") Long tenantId,
             @Param("skuId") Long skuId,
-            @Param("packageLevel") String packageLevel,
+            @Param("packageLevel") SkuPackage.PackageLevel packageLevel,
             @Param("excludeId") Long excludeId);
 }

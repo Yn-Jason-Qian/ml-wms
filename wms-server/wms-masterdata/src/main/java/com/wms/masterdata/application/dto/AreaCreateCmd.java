@@ -1,5 +1,7 @@
 package com.wms.masterdata.application.dto;
 
+import com.wms.masterdata.domain.entity.Area.AreaType;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -20,7 +22,7 @@ public class AreaCreateCmd {
     @Size(max = 128)
     private String areaName;
 
-    @NotBlank private String areaType;
+    @NotNull private AreaType areaType;
     private BigDecimal temperatureMin;
     private BigDecimal temperatureMax;
 }

@@ -1,5 +1,8 @@
 package com.wms.inventory.application.dto;
 
+import com.wms.inventory.domain.entity.Freeze.FreezeType;
+import com.wms.inventory.domain.entity.Freeze.Status;
+
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -9,14 +12,14 @@ import java.time.LocalDateTime;
 public class FreezeDTO {
     private Long id;
     private Long warehouseId;
-    private String freezeType;
+    private FreezeType freezeType;
     private Long stockId;
     private Long skuId;
     private Long locationId;
     private String batchNo;
     private BigDecimal freezeQty;
     private String reason;
-    private String status;
+    private Status status;
     private Long freezeBy;
     private LocalDateTime freezeAt;
     private LocalDateTime releaseAt;

@@ -16,7 +16,7 @@ public class LocationBatchCreateCmd {
     @NotNull private Long warehouseId;
     @NotNull private Long areaId;
     @NotBlank private String warehousePrefix;
-    @NotBlank private String locationType;
+    @NotNull private com.wms.masterdata.domain.entity.Location.LocationType locationType;
     @NotNull private Integer aisleFrom;
     @NotNull private Integer aisleTo;
     @NotNull private Integer shelfFrom;

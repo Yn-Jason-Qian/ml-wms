@@ -1,5 +1,8 @@
 package com.wms.outbound.application.dto;
 
+import com.wms.outbound.domain.entity.ShipHeader.DeliveryMethod;
+import com.wms.outbound.domain.entity.ShipHeader.Status;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -9,9 +12,9 @@ public class ShipDTO {
     private Long id;
     private String shipNo;
     private Long warehouseId;
-    private String deliveryMethod;
+    private DeliveryMethod deliveryMethod;
     private String carrierName;
     private String trackingNo;
-    private String status;
+    private Status status;
     private LocalDateTime createdAt;
 }

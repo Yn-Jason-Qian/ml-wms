@@ -46,7 +46,8 @@ public class SkuPackageRepositoryImpl implements SkuPackageRepository {
     }
 
     @Override
-    public boolean existsByLevel(Long tenantId, Long skuId, String packageLevel, Long excludeId) {
+    public boolean existsByLevel(
+            Long tenantId, Long skuId, SkuPackage.PackageLevel packageLevel, Long excludeId) {
         return mapper.existsByLevel(tenantId, skuId, packageLevel, excludeId);
     }
 }

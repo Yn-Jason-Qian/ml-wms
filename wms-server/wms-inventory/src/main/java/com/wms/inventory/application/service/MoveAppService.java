@@ -65,7 +65,7 @@ public class MoveAppService {
         header.setWarehouseId(cmd.getWarehouseId());
         header.setMoveNo(moveNo);
         header.setMoveType(cmd.getMoveType());
-        header.setStatus(MoveHeader.STATUS_CREATED);
+        header.setStatus(MoveHeader.Status.CREATED);
         header.setRemark(cmd.getRemark());
         header.setCreatedBy(userId);
         header.setUpdatedBy(userId);
@@ -113,7 +113,7 @@ public class MoveAppService {
         line.setUpdatedBy(userId);
         moveRepository.saveLine(line);
 
-        header.setStatus(MoveHeader.STATUS_DONE);
+        header.setStatus(MoveHeader.Status.DONE);
         moveRepository.updateHeader(header);
 
         return assembler.toDTO(header, List.of(line));

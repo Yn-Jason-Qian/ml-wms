@@ -1,6 +1,7 @@
 package com.wms.inbound.application.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.wms.inbound.domain.entity.QcHeader.QcType;
+
 import jakarta.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -11,7 +12,7 @@ import java.math.BigDecimal;
 public class QcCreateCmd {
     @NotNull private Long warehouseId;
     @NotNull private Long receiveHeaderId;
-    @NotBlank private String qcType;
+    @NotNull private QcType qcType;
     private BigDecimal sampleRatio;
     private String remark;
 }

@@ -57,9 +57,9 @@ public class AsnDomainService {
         boolean anyReceived =
                 lines.stream().anyMatch(l -> l.getReceivedQty().compareTo(BigDecimal.ZERO) > 0);
 
-        if (allReceived) asnHeader.setStatus(AsnHeader.STATUS_RECEIVED);
-        else if (anyReceived) asnHeader.setStatus(AsnHeader.STATUS_PARTIAL_RECEIVED);
-        else asnHeader.setStatus(AsnHeader.STATUS_CREATED);
+        if (allReceived) asnHeader.setStatus(AsnHeader.Status.RECEIVED);
+        else if (anyReceived) asnHeader.setStatus(AsnHeader.Status.PARTIAL_RECEIVED);
+        else asnHeader.setStatus(AsnHeader.Status.CREATED);
         asnHeader.setUpdatedBy(userId);
         asnRepository.updateHeader(asnHeader);
     }

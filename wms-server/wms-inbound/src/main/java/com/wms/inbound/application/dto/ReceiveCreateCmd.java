@@ -1,5 +1,7 @@
 package com.wms.inbound.application.dto;
 
+import com.wms.inbound.domain.entity.ReceiveHeader.ReceiveType;
+
 import jakarta.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -12,7 +14,7 @@ public class ReceiveCreateCmd {
     @NotNull private Long warehouseId;
     @NotNull private Long ownerId;
     private Long asnHeaderId;
-    private String receiveType;
+    private ReceiveType receiveType;
     private Long skuId; // 可选: SKU ID
     private String skuCode; // 可选: SKU 编码 (PDA扫码场景)
     @NotNull private BigDecimal receiveQty;

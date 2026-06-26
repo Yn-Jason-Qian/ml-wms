@@ -2,6 +2,7 @@ package com.wms.inbound.infrastructure.gateway;
 
 import com.wms.inbound.domain.gateway.InventoryGateway;
 import com.wms.inventory.application.service.StockAppService;
+import com.wms.inventory.domain.entity.StockTransaction;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,7 +43,7 @@ public class InventoryGatewayImpl implements InventoryGateway {
                 batchNo,
                 lotAttrs,
                 qty,
-                txnType,
+                StockTransaction.TxnType.valueOf(txnType),
                 refNo,
                 refId,
                 userId);

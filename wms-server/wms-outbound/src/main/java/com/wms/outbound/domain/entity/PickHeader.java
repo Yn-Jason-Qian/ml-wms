@@ -12,19 +12,32 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_outbound_pick_header")
 public class PickHeader extends BaseEntity {
+
+    /** 拣货类型 */
+    public enum PickType {
+        PIECE,
+        PALLET,
+        PAPER,
+        RF
+    }
+
+    /** 拣货状态 */
+    public enum Status {
+        CREATED,
+        ASSIGNED,
+        PICKING,
+        PICKED,
+        DONE,
+        CANCELLED
+    }
+
     private Long warehouseId;
     private String pickNo;
     private Long waveHeaderId;
-    private String pickType;
+    private PickType pickType;
     private String pickZone;
     private Long assignTo;
-    private String status;
+    private Status status;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_ASSIGNED = "ASSIGNED";
-    public static final String STATUS_PICKING = "PICKING";
-    public static final String STATUS_PICKED = "PICKED";
-    public static final String STATUS_DONE = "DONE";
 }

@@ -67,8 +67,8 @@ public class PickAppService {
         h.setWarehouseId(wave.getWarehouseId());
         h.setPickNo(pickNo);
         h.setWaveHeaderId(waveHeaderId);
-        h.setPickType("RF");
-        h.setStatus(PickHeader.STATUS_CREATED);
+        h.setPickType(PickHeader.PickType.RF);
+        h.setStatus(PickHeader.Status.CREATED);
         h.setCreatedBy(userId);
         h.setUpdatedBy(userId);
         pickRepository.saveHeader(h);
@@ -128,7 +128,7 @@ public class PickAppService {
                 pickRepository.findLines(h.getId()).stream()
                         .allMatch(p -> "PICKED".equals(p.getStatus()));
         if (allDone) {
-            h.setStatus(PickHeader.STATUS_PICKED);
+            h.setStatus(PickHeader.Status.PICKED);
             pickRepository.updateHeader(h);
         }
     }

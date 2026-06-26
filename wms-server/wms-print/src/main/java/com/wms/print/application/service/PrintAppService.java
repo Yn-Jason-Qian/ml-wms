@@ -112,7 +112,7 @@ public class PrintAppService {
         String zpl = template.getContentJson();
         if (zpl == null || zpl.isBlank()) {
             // 无自定义模板时使用内置 ZPL 生成器
-            zpl = generateZpl(template.getTemplateType(), new HashMap<>());
+            zpl = generateZpl(template.getTemplateType().name(), new HashMap<>());
         }
 
         // 记录打印历史

@@ -14,13 +14,34 @@ import java.time.LocalDateTime;
 @TableName("wms_inventory_stock_transaction")
 public class StockTransaction extends BaseEntity {
 
+    /** 交易类型 */
+    public enum TxnType {
+        RECEIVE,
+        PUTAWAY,
+        ALLOCATE,
+        DEALLOCATE,
+        PICK,
+        SHIP,
+        ADJUST,
+        MOVE,
+        STOCKTAKE,
+        FREEZE,
+        UNFREEZE
+    }
+
+    /** 交易方向 */
+    public enum TxnDirection {
+        IN,
+        OUT
+    }
+
     private Long warehouseId;
     private Long stockId;
     private Long skuId;
     private String skuCode;
     private String batchNo;
-    private String txnType;
-    private String txnDirection;
+    private TxnType txnType;
+    private TxnDirection txnDirection;
     private BigDecimal txnQty;
     private BigDecimal qtyBefore;
     private BigDecimal qtyAfter;

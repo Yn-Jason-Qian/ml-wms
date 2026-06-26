@@ -20,6 +20,7 @@ public class StrategyGatewayImpl implements StrategyGateway {
     @Override
     public StrategyEngine.MatchResult matchPutawayStrategy(
             Long tenantId, Map<String, Object> context) {
-        return strategyAppService.matchStrategy(tenantId, StrategyConfig.TYPE_PUTAWAY, context);
+        return strategyAppService.matchStrategy(
+                tenantId, StrategyConfig.StrategyType.PUTAWAY.name(), context);
     }
 }

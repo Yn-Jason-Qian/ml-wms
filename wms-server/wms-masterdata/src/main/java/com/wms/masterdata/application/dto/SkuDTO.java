@@ -1,5 +1,7 @@
 package com.wms.masterdata.application.dto;
 
+import com.wms.masterdata.domain.entity.Sku.ShelfLifeType;
+
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -24,7 +26,7 @@ public class SkuDTO {
     private BigDecimal baseWeight;
     private BigDecimal baseVolume;
     private Integer shelfLife;
-    private String shelfLifeType;
+    private ShelfLifeType shelfLifeType;
     private Integer batchManaged;
     private Integer snManaged;
     private String lotAttrs;

@@ -14,25 +14,36 @@ import java.time.LocalDateTime;
 @TableName("wms_inventory_freeze")
 public class Freeze extends BaseEntity {
 
+    /** 冻结类型 */
+    public enum FreezeType {
+        MANUAL,
+        LOT_EXPIRY,
+        QC_HOLD,
+        DAMAGE
+    }
+
+    /** 冻结状态 */
+    public enum Status {
+        ACTIVE,
+        RELEASED
+    }
+
     private Long warehouseId;
-    private String freezeType;
+    private FreezeType freezeType;
     private Long stockId;
     private Long skuId;
     private Long locationId;
     private String batchNo;
     private BigDecimal freezeQty;
     private String reason;
-    private String status;
+    private Status status;
     private Long freezeBy;
     private LocalDateTime freezeAt;
     private Long releaseBy;
     private LocalDateTime releaseAt;
 
-    public static final String STATUS_ACTIVE = "ACTIVE";
-    public static final String STATUS_RELEASED = "RELEASED";
-
     public void release() {
-        this.status = STATUS_RELEASED;
+        this.status = Status.RELEASED;
         this.releaseAt = LocalDateTime.now();
     }
 }

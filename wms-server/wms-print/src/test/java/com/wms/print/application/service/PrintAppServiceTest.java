@@ -44,7 +44,7 @@ class PrintAppServiceTest {
         PrintTemplateCreateCmd cmd = new PrintTemplateCreateCmd();
         cmd.setTemplateCode("SKU_LABEL_01");
         cmd.setTemplateName("SKU标签");
-        cmd.setTemplateType("SKU_LABEL");
+        cmd.setTemplateType(PrintTemplate.TemplateType.SKU_LABEL);
         cmd.setPaperWidth(BigDecimal.valueOf(100));
         cmd.setPaperHeight(BigDecimal.valueOf(80));
 
@@ -53,7 +53,7 @@ class PrintAppServiceTest {
         assertNotNull(dto);
         assertEquals(1L, dto.getId());
         assertEquals("SKU_LABEL_01", dto.getTemplateCode());
-        assertEquals("SKU_LABEL", dto.getTemplateType());
+        assertEquals(PrintTemplate.TemplateType.SKU_LABEL, dto.getTemplateType());
 
         ArgumentCaptor<PrintTemplate> captor = ArgumentCaptor.forClass(PrintTemplate.class);
         verify(templateMapper).insert(captor.capture());
@@ -90,7 +90,7 @@ class PrintAppServiceTest {
     void testExecutePrintWithTemplate() {
         PrintTemplate template = new PrintTemplate();
         template.setId(1L);
-        template.setTemplateType("SKU_LABEL");
+        template.setTemplateType(PrintTemplate.TemplateType.SKU_LABEL);
         template.setContentJson(null); // triggers ZPL generation
         when(templateMapper.selectById(1L)).thenReturn(template);
         when(recordMapper.insert(any(PrintRecord.class)))
@@ -103,7 +103,7 @@ class PrintAppServiceTest {
 
         PrintCmd cmd = new PrintCmd();
         cmd.setTemplateId(1L);
-        cmd.setRefType("ASN");
+        cmd.setRefType(PrintRecord.RefType.ASN);
         cmd.setRefId(100L);
         cmd.setPrinterName("Zebra-ZT410");
         cmd.setPrintCount(2);
@@ -116,7 +116,7 @@ class PrintAppServiceTest {
 
         ArgumentCaptor<PrintRecord> captor = ArgumentCaptor.forClass(PrintRecord.class);
         verify(recordMapper).insert(captor.capture());
-        assertEquals("ASN", captor.getValue().getRefType());
+        assertEquals(PrintRecord.RefType.ASN, captor.getValue().getRefType());
         assertEquals(2, captor.getValue().getPrintCount());
     }
 

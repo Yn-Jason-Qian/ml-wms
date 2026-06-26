@@ -13,22 +13,23 @@ import java.math.BigDecimal;
 @TableName("wms_masterdata_area")
 public class Area extends BaseEntity {
 
+    /** 库区类型 */
+    public enum AreaType {
+        RECEIVE,
+        SHIPPING,
+        STORAGE,
+        PICKING,
+        RETURN,
+        QC
+    }
+
     private Long warehouseId;
     private String areaCode;
     private String areaName;
-    private String areaType;
+    private AreaType areaType;
     private BigDecimal temperatureMin;
     private BigDecimal temperatureMax;
     private Integer status;
-
-    /** 库区类型枚举常量 */
-    public static final String TYPE_RECEIVE = "RECEIVE";
-
-    public static final String TYPE_SHIPPING = "SHIPPING";
-    public static final String TYPE_STORAGE = "STORAGE";
-    public static final String TYPE_PICKING = "PICKING";
-    public static final String TYPE_RETURN = "RETURN";
-    public static final String TYPE_QC = "QC";
 
     public void validateCode() {
         if (areaCode == null || !areaCode.matches("^AR-[A-Z0-9]{2,16}$")) {

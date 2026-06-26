@@ -12,33 +12,45 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_inbound_asn_header")
 public class AsnHeader extends BaseEntity {
+
+    /** ASN类型 */
+    public enum AsnType {
+        PURCHASE,
+        RETURN,
+        TRANSFER,
+        ADJUST
+    }
+
+    /** ASN状态 */
+    public enum Status {
+        CREATED,
+        RECEIVING,
+        PARTIAL_RECEIVED,
+        RECEIVED,
+        CANCELLED,
+        CLOSED
+    }
+
     private Long warehouseId;
     private Long ownerId;
     private String asnNo;
-    private String asnType;
+    private AsnType asnType;
     private String sourceNo;
     private LocalDateTime expectedArriveTime;
     private String carrierName;
     private String carrierPhone;
-    private String status;
+    private Status status;
     private String remark;
 
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_RECEIVING = "RECEIVING";
-    public static final String STATUS_PARTIAL_RECEIVED = "PARTIAL_RECEIVED";
-    public static final String STATUS_RECEIVED = "RECEIVED";
-    public static final String STATUS_CANCELLED = "CANCELLED";
-    public static final String STATUS_CLOSED = "CLOSED";
-
     public void startReceiving() {
-        this.status = STATUS_RECEIVING;
+        this.status = Status.RECEIVING;
     }
 
     public void cancel() {
-        this.status = STATUS_CANCELLED;
+        this.status = Status.CANCELLED;
     }
 
     public void close() {
-        this.status = STATUS_CLOSED;
+        this.status = Status.CLOSED;
     }
 }

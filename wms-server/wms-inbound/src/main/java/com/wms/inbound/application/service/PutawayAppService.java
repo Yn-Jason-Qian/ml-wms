@@ -95,7 +95,7 @@ public class PutawayAppService {
         h.setWarehouseId(cmd.getWarehouseId());
         h.setPutawayNo(paNo);
         h.setReceiveHeaderId(cmd.getReceiveHeaderId());
-        h.setStatus(PutawayHeader.STATUS_CREATED);
+        h.setStatus(PutawayHeader.Status.CREATED);
         h.setCreatedBy(userId);
         h.setUpdatedBy(userId);
         putawayRepository.saveHeader(h);
@@ -122,7 +122,7 @@ public class PutawayAppService {
             putawayRepository.saveLine(pl);
         }
 
-        h.setStatus(PutawayHeader.STATUS_PUTAWAYING);
+        h.setStatus(PutawayHeader.Status.PUTAWAYING);
         putawayRepository.updateHeader(h);
         return new PutawayResultDTO(paNo, h.getId());
     }
@@ -165,7 +165,7 @@ public class PutawayAppService {
         if (allDone) {
             PutawayHeader h = putawayRepository.findById(cmd.getPutawayHeaderId()).orElse(null);
             if (h != null) {
-                h.setStatus(PutawayHeader.STATUS_DONE);
+                h.setStatus(PutawayHeader.Status.DONE);
                 putawayRepository.updateHeader(h);
             }
         }

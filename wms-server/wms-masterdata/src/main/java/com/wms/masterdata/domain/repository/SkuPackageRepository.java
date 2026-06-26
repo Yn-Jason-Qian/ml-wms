@@ -16,5 +16,6 @@ public interface SkuPackageRepository {
 
     void deleteById(Long id);
 
-    boolean existsByLevel(Long tenantId, Long skuId, String packageLevel, Long excludeId);
+    boolean existsByLevel(
+            Long tenantId, Long skuId, SkuPackage.PackageLevel packageLevel, Long excludeId);
 }

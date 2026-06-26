@@ -66,7 +66,7 @@ public class FreezeAppService {
         freeze.setBatchNo(cmd.getBatchNo());
         freeze.setFreezeQty(cmd.getFreezeQty());
         freeze.setReason(cmd.getReason());
-        freeze.setStatus(Freeze.STATUS_ACTIVE);
+        freeze.setStatus(Freeze.Status.ACTIVE);
         freeze.setFreezeBy(userId);
         freeze.setFreezeAt(LocalDateTime.now());
         freeze.setCreatedBy(userId);
@@ -84,7 +84,7 @@ public class FreezeAppService {
                 freezeRepository
                         .findById(freezeId)
                         .orElseThrow(() -> BusinessException.notFound("冻结记录不存在"));
-        if (!Freeze.STATUS_ACTIVE.equals(freeze.getStatus())) {
+        if (freeze.getStatus() != Freeze.Status.ACTIVE) {
             throw new BusinessException("冻结记录已释放");
         }
 

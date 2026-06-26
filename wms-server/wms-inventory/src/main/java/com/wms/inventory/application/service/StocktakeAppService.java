@@ -61,7 +61,7 @@ public class StocktakeAppService {
         h.setLocationRange(cmd.getLocationRange());
         h.setPlanStartTime(cmd.getPlanStartTime());
         h.setPlanEndTime(cmd.getPlanEndTime());
-        h.setStatus(StocktakeHeader.STATUS_CREATED);
+        h.setStatus(StocktakeHeader.Status.CREATED);
         h.setTotalLines(0);
         h.setCreatedBy(userId);
         h.setUpdatedBy(userId);

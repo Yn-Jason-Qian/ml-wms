@@ -16,7 +16,7 @@ public class QcAssembler {
         d.setQcNo(h.getQcNo());
         d.setWarehouseId(h.getWarehouseId());
         d.setReceiveHeaderId(h.getReceiveHeaderId());
-        d.setQcType(h.getQcType() != null ? h.getQcType() : "");
+        d.setQcType(h.getQcType());
         d.setSampleRatio(h.getSampleRatio());
         d.setStatus(h.getStatus());
         d.setRemark(h.getRemark());

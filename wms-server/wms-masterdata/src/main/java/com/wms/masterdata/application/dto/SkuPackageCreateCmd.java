@@ -1,5 +1,7 @@
 package com.wms.masterdata.application.dto;
 
+import com.wms.masterdata.domain.entity.SkuPackage;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -10,7 +12,7 @@ import java.math.BigDecimal;
 @Data
 public class SkuPackageCreateCmd {
     private Long skuId;
-    @NotBlank private String packageLevel;
+    @NotNull private SkuPackage.PackageLevel packageLevel;
     @NotBlank private String packageName;
     @NotNull private Long unitId;
     @NotNull private BigDecimal qtyPerParent;

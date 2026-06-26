@@ -13,12 +13,32 @@ import java.time.LocalDateTime;
 @TableName("wms_inventory_stocktake_header")
 public class StocktakeHeader extends BaseEntity {
 
+    /** 盘点类型 */
+    public enum StocktakeType {
+        FULL,
+        AREA,
+        LOCATION,
+        SKU,
+        BLIND
+    }
+
+    /** 盘点状态 */
+    public enum Status {
+        CREATED,
+        COUNTING,
+        COUNTED,
+        DIFF_REVIEW,
+        ADJUSTED,
+        DONE,
+        CANCELLED
+    }
+
     private Long warehouseId;
     private String stocktakeNo;
-    private String stocktakeType;
+    private StocktakeType stocktakeType;
     private String stocktakeMode;
     private String locationRange;
-    private String status;
+    private Status status;
     private LocalDateTime planStartTime;
     private LocalDateTime planEndTime;
     private LocalDateTime startTime;
@@ -28,32 +48,25 @@ public class StocktakeHeader extends BaseEntity {
     private Integer secondCountLines;
     private Integer diffLines;
 
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_COUNTING = "COUNTING";
-    public static final String STATUS_COUNTED = "COUNTED";
-    public static final String STATUS_DIFF_REVIEW = "DIFF_REVIEW";
-    public static final String STATUS_ADJUSTED = "ADJUSTED";
-    public static final String STATUS_DONE = "DONE";
-
     public void start() {
-        this.status = STATUS_COUNTING;
+        this.status = Status.COUNTING;
         this.startTime = LocalDateTime.now();
     }
 
     public void finish() {
-        this.status = STATUS_COUNTED;
+        this.status = Status.COUNTED;
         this.endTime = LocalDateTime.now();
     }
 
     public void reviewDiffs() {
-        this.status = STATUS_DIFF_REVIEW;
+        this.status = Status.DIFF_REVIEW;
     }
 
     public void adjust() {
-        this.status = STATUS_ADJUSTED;
+        this.status = Status.ADJUSTED;
     }
 
     public void done() {
-        this.status = STATUS_DONE;
+        this.status = Status.DONE;
     }
 }

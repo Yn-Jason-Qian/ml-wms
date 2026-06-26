@@ -12,9 +12,19 @@ import java.math.BigDecimal;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_print_template")
 public class PrintTemplate extends BaseEntity {
+
+    /** 模板类型 */
+    public enum TemplateType {
+        SKU_LABEL,
+        LOCATION_LABEL,
+        PALLET_LABEL,
+        INBOUND_LABEL,
+        SHIPPING_LABEL
+    }
+
     private String templateCode;
     private String templateName;
-    private String templateType;
+    private TemplateType templateType;
     private BigDecimal paperWidth;
     private BigDecimal paperHeight;
     private String contentJson;

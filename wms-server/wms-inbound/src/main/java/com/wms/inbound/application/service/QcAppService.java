@@ -85,7 +85,7 @@ public class QcAppService {
         h.setReceiveHeaderId(cmd.getReceiveHeaderId());
         h.setQcType(cmd.getQcType());
         h.setSampleRatio(cmd.getSampleRatio());
-        h.setStatus(QcHeader.STATUS_CREATED);
+        h.setStatus(QcHeader.Status.CREATED);
         h.setRemark(cmd.getRemark());
         h.setCreatedBy(userId);
         h.setUpdatedBy(userId);
@@ -127,8 +127,8 @@ public class QcAppService {
 
         h.setStatus(
                 cmd.getRejectQty() != null && cmd.getRejectQty().compareTo(BigDecimal.ZERO) > 0
-                        ? QcHeader.STATUS_REJECT
-                        : QcHeader.STATUS_PASS);
+                        ? QcHeader.Status.REJECT
+                        : QcHeader.Status.PASS);
         h.setQcBy(userId);
         h.setQcAt(LocalDateTime.now());
         qcRepository.updateHeader(h);

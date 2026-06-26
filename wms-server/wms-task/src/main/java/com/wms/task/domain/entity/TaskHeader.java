@@ -12,15 +12,35 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_task_header")
 public class TaskHeader extends BaseEntity {
+
+    /** 任务类型 */
+    public enum TaskType {
+        PUTAWAY,
+        PICK,
+        MOVE,
+        REPLENISH,
+        STOCKTAKE
+    }
+
+    /** 任务状态 */
+    public enum Status {
+        CREATED,
+        RELEASED,
+        ASSIGNED,
+        EXECUTING,
+        DONE,
+        CANCELLED
+    }
+
     private Long warehouseId;
     private String taskNo;
-    private String taskType;
+    private TaskType taskType;
     private Long taskSourceId;
     private String taskSourceNo;
     private Integer totalLines;
     private Integer completedLines;
     private Integer priority;
-    private String status;
+    private Status status;
     private Long assignTo;
     private String assignRule;
     private LocalDateTime startTime;
@@ -28,34 +48,27 @@ public class TaskHeader extends BaseEntity {
     private LocalDateTime deadline;
     private String remark;
 
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_RELEASED = "RELEASED";
-    public static final String STATUS_ASSIGNED = "ASSIGNED";
-    public static final String STATUS_EXECUTING = "EXECUTING";
-    public static final String STATUS_DONE = "DONE";
-    public static final String STATUS_CANCELLED = "CANCELLED";
-
     public void release() {
-        this.status = STATUS_RELEASED;
+        this.status = Status.RELEASED;
     }
 
     public void assign(Long userId) {
-        this.status = STATUS_ASSIGNED;
+        this.status = Status.ASSIGNED;
         this.assignTo = userId;
     }
 
     public void start() {
-        this.status = STATUS_EXECUTING;
+        this.status = Status.EXECUTING;
         this.startTime = LocalDateTime.now();
     }
 
     public void complete() {
-        this.status = STATUS_DONE;
+        this.status = Status.DONE;
         this.endTime = LocalDateTime.now();
     }
 
     public void cancel() {
-        this.status = STATUS_CANCELLED;
+        this.status = Status.CANCELLED;
         this.endTime = LocalDateTime.now();
     }
 }

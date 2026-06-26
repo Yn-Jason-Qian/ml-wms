@@ -1,6 +1,7 @@
 package com.wms.outbound.application.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.wms.outbound.domain.entity.ShipHeader.DeliveryMethod;
+
 import jakarta.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -12,7 +13,7 @@ public class ShipCreateCmd {
     @NotNull private Long warehouseId;
     @NotNull private Long ownerId;
     @NotNull private Long waveHeaderId;
-    @NotBlank private String deliveryMethod;
+    @NotNull private DeliveryMethod deliveryMethod;
     private String carrierName;
     private String trackingNo;
     private Integer packageCount;

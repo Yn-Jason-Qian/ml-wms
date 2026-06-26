@@ -10,15 +10,20 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @TableName("wms_inbound_putaway_header")
 public class PutawayHeader extends BaseEntity {
+
+    /** 上架状态 */
+    public enum Status {
+        CREATED,
+        PUTAWAYING,
+        PARTIAL_DONE,
+        DONE,
+        CANCELLED
+    }
+
     private Long warehouseId;
     private String putawayNo;
     private Long receiveHeaderId;
-    private String status;
+    private Status status;
     private Long strategyId;
     private String remark;
-
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_PUTAWAYING = "PUTAWAYING";
-    public static final String STATUS_PARTIAL_DONE = "PARTIAL_DONE";
-    public static final String STATUS_DONE = "DONE";
 }

@@ -1,5 +1,8 @@
 package com.wms.outbound.application.dto;
 
+import com.wms.outbound.domain.entity.OrderHeader.OrderType;
+import com.wms.outbound.domain.entity.OrderHeader.Status;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -11,11 +14,11 @@ public class OrderDTO {
     private String orderNo;
     private Long warehouseId;
     private Long ownerId;
-    private String orderType;
+    private OrderType orderType;
     private String customerName;
     private String customerAddress;
     private Integer priority;
-    private String status;
+    private Status status;
     private LocalDateTime createdAt;
     private List<OrderLineDTO> lines;
 }

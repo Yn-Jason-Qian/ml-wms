@@ -80,7 +80,7 @@ public class OrderAppService {
         h.setCustomerAddress(cmd.getCustomerAddress());
         h.setExpectedShipTime(cmd.getExpectedShipTime());
         h.setPriority(cmd.getPriority() != null ? cmd.getPriority() : 5);
-        h.setStatus(OrderHeader.STATUS_CREATED);
+        h.setStatus(OrderHeader.Status.CREATED);
         h.setCreatedBy(userId);
         h.setUpdatedBy(userId);
         orderRepository.save(h);
@@ -112,7 +112,7 @@ public class OrderAppService {
             l.setStatus("ALLOCATED");
             orderRepository.updateLine(l);
         }
-        h.setStatus(OrderHeader.STATUS_ALLOCATED);
+        h.setStatus(OrderHeader.Status.ALLOCATED);
         orderRepository.update(h);
         return new OrderResultDTO(orderNo, h.getId());
     }

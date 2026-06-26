@@ -1,5 +1,7 @@
 package com.wms.masterdata.application.dto;
 
+import com.wms.masterdata.domain.entity.SkuPackage;
+
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -8,7 +10,7 @@ import java.math.BigDecimal;
 public class SkuPackageDTO {
     private Long id;
     private Long skuId;
-    private String packageLevel;
+    private SkuPackage.PackageLevel packageLevel;
     private String packageName;
     private Long unitId;
     private BigDecimal qtyPerParent;

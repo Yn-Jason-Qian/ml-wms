@@ -1,6 +1,9 @@
 package com.wms.strategy.application.dto;
 
+import com.wms.strategy.domain.entity.StrategyConfig.StrategyType;
+
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import lombok.Data;
@@ -15,7 +18,7 @@ public class StrategyConfigCreateCmd {
     @Size(max = 128)
     private String strategyName;
 
-    @NotBlank private String strategyType;
+    @NotNull private StrategyType strategyType;
     private String description;
     private Integer sortOrder;
 }

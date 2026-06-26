@@ -13,11 +13,19 @@ import java.math.BigDecimal;
 @TableName("wms_masterdata_location")
 public class Location extends BaseEntity {
 
+    /** 库位类型 */
+    public enum LocationType {
+        FLOOR,
+        RACK,
+        SHELF,
+        BIN
+    }
+
     private Long warehouseId;
     private Long areaId;
     private String locationCode;
     private String locationName;
-    private String locationType;
+    private LocationType locationType;
     private String aisle;
     private String shelf;
     private String tier;
@@ -30,11 +38,6 @@ public class Location extends BaseEntity {
     private BigDecimal height;
     private String roadway;
     private Integer status;
-
-    public static final String TYPE_FLOOR = "FLOOR";
-    public static final String TYPE_RACK = "RACK";
-    public static final String TYPE_SHELF = "SHELF";
-    public static final String TYPE_BIN = "BIN";
 
     public static final int STATUS_DISABLED = 0;
     public static final int STATUS_IDLE = 1;

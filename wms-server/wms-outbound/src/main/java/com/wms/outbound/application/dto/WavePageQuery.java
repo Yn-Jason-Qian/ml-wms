@@ -1,6 +1,7 @@
 package com.wms.outbound.application.dto;
 
 import com.wms.common.base.PageRequest;
+import com.wms.outbound.domain.entity.WaveHeader.WaveStatus;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -9,5 +10,5 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class WavePageQuery extends PageRequest {
     private Long warehouseId;
-    private String waveStatus;
+    private WaveStatus waveStatus;
 }
