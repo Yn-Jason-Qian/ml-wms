@@ -50,6 +50,14 @@ public class PickAppService {
         return result.convert(assembler::toDTO);
     }
 
+    public PickDTO getPickDetail(Long id) {
+        PickHeader h =
+                pickRepository.findById(id).orElseThrow(() -> BusinessException.notFound("拣货单不存在"));
+        PickDTO dto = assembler.toDTO(h);
+        dto.setLines(pickRepository.findLines(id).stream().map(assembler::toLineDTO).toList());
+        return dto;
+    }
+
     @Transactional
     public PickResultDTO createPickForWave(Long waveHeaderId) {
         Long tenantId = UserContext.getTenantId();

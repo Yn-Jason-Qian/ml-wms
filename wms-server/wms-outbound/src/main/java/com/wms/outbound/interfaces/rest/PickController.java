@@ -36,6 +36,11 @@ public class PickController {
         return ApiResponse.ok(pickAppService.createPickForWave(waveId));
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<PickDTO> getById(@PathVariable("id") Long id) {
+        return ApiResponse.ok(pickAppService.getPickDetail(id));
+    }
+
     @PostMapping("/submit")
     @OperationLog(module = "出库管理", action = "拣货确认")
     public ApiResponse<Void> submit(@Valid @RequestBody PickSubmitCmd cmd) {
