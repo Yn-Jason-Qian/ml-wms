@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref,reactive} from 'vue';import {ElMessage} from 'element-plus';import {pageStocktakes,createStocktake} from '@/api/modules/operations'
+import {ref,reactive} from 'vue';import {ElMessage} from 'element-plus';import {pageStocktakes,createStocktake} from '@/api/inventory'
 const loading=ref(false),saving=ref(false),dialogVisible=ref(false),tableData=ref<any[]>([]),total=ref(0)
 const query=reactive({pageNum:1,pageSize:20})
 const form=reactive({warehouseId:1,stocktakeType:'FULL',stocktakeMode:'PLAN',locationRange:'',planStartTime:null as any,planEndTime:null as any})

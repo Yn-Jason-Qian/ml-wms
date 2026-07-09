@@ -53,8 +53,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import { getWarehouseList, getOwnerList, getLocationPage } from '@/api/modules/masterdata'
-import request from '@/api/request'
+import { getWarehouseList, getOwnerList, getLocationPage } from '@/api/masterdata'
+import { pageStocks } from '@/api/inventory'
 
 const loading = ref(false), tableData = ref<any[]>([]), warehouses = ref<any[]>([]), owners = ref<any[]>([]), locations = ref<any[]>([])
 const total = ref(0), pageNum = ref(1), pageSize = ref(20)
@@ -82,7 +82,7 @@ async function fetchData() {
     if (query.batchNo) params.batchNo = query.batchNo
     if (query.onlyAvailable) params.onlyAvailable = true
     if (query.expiryWithinDays) params.expiryWithinDays = query.expiryWithinDays
-    const res = await request.post('/inventory/stocks/page', params)
+    const res = await pageStocks(params)
     tableData.value = (res.data.records || []).map((r: any) => ({
       ...r,
       warehouseName: r.warehouseId && r.warehouseId !== '0' ? (warehouseMap.value[r.warehouseId] || '') : '',

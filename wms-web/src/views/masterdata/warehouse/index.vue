@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWarehousePage, createWarehouse, updateWarehouse, deleteWarehouse, enableWarehouse, disableWarehouse } from '@/api/modules/masterdata'
+import { getWarehousePage, createWarehouse, updateWarehouse, deleteWarehouse, enableWarehouse, disableWarehouse } from '@/api/masterdata'
 
 const whTypeMap: Record<string, string> = {
   STANDARD: '标准仓', COLD: '冷库', HAZARDOUS: '危化品仓', BONDED: '保税仓'

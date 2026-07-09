@@ -107,9 +107,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getWarehouseList, getOwnerList, getLocationPage } from '@/api/modules/masterdata'
-import { pagePutaways, createPutaway, submitPutaway } from '@/api/modules/operations'
-import request from '@/api/request'
+import { getWarehouseList, getOwnerList, getLocationPage } from '@/api/masterdata'
+import { pagePutaways, createPutaway, submitPutaway, getPutaway } from '@/api/inbound'
 
 const statusMap: Record<string, string> = { CREATED: '已创建', PUTAWAYING: '上架中', PARTIAL_DONE: '部分完成', DONE: '已完成' }
 
@@ -163,7 +162,7 @@ async function saveGen() { saving.value = true; try { await createPutaway(genFor
 async function saveConfirm() { saving.value = true; try { await submitPutaway(confirmForm); ElMessage.success('上架确认完成'); confirmVisible.value = false; fetchData() } finally { saving.value = false } }
 
 async function viewDetail(id: number) {
-  const res = await request.get(`/inbound/putaways/${id}`)
+  const res = await getPutaway(id)
   detailPw.value = {
     ...res.data,
     warehouseName: warehouseMap.value[res.data.warehouseId] || '',

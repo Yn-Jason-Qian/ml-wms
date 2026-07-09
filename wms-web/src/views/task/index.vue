@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { pageTasks, claimTask, startTask, completeTask, cancelTask } from '@/api/modules/operations'
+import { pageTasks, claimTask, startTask, completeTask, cancelTask } from '@/api/task'
 
 const typeMap: Record<string, string> = { PUTAWAY: '上架', PICK: '拣货', MOVE: '移库', REPLENISH: '补货', STOCKTAKE: '盘点' }
 const statusMap: Record<string, string> = { CREATED: '已创建', RELEASED: '已释放', ASSIGNED: '已领取', EXECUTING: '执行中', DONE: '已完成', CANCELLED: '已取消' }

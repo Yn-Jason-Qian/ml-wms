@@ -116,9 +116,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getWarehouseList } from '@/api/modules/masterdata'
-import { pageWaves, createWave, createPickFromWave } from '@/api/modules/operations'
-import request from '@/api/request'
+import { getWarehouseList } from '@/api/masterdata'
+import { pageWaves, createWave, createPickFromWave, getWave } from '@/api/outbound'
 
 const typeMap: Record<string, string> = { ORDER_POOL: '订单池', PRIORITY: '优先级' }
 const statusMap: Record<string, string> = { CREATED: '已创建', RELEASED: '已释放', CLOSED: '已关闭' }
@@ -172,7 +171,7 @@ async function handleSave() {
 }
 
 async function viewDetail(row: any) {
-  const res = await request.get(`/outbound/waves/${row.id}`)
+  const res = await getWave(row.id)
   detail.value = {
     ...res.data,
     warehouseName: row.warehouseName || ''

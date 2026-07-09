@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import request from '@/api/request'
+import { getStrategyConfigsByType, createStrategyConfig, deleteStrategyConfig, getStrategyConfig, createStrategyRule, deleteStrategyRule } from '@/api/strategy'
 import RuleEditor from './RuleEditor.vue'
 
 const activeTab = ref('PUTAWAY')
@@ -102,7 +102,7 @@ watch(ruleEditorModel, (v) => {
 })
 
 async function fetchConfigs() {
-  const res = await request.get(`/strategy/configs/type/${activeTab.value}`)
+  const res = await getStrategyConfigsByType(activeTab.value)
   configs.value = res.data || []
 }
 
@@ -113,18 +113,18 @@ function openConfigDialog() {
 
 async function saveConfig() {
   cfgSaving.value = true
-  try { await request.post('/strategy/configs', configForm); ElMessage.success('创建成功'); configDialogVisible.value = false; fetchConfigs() }
+  try { await createStrategyConfig(configForm); ElMessage.success('创建成功'); configDialogVisible.value = false; fetchConfigs() }
   finally { cfgSaving.value = false }
 }
 
 async function deleteConfig(id: number) {
   await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
-  await request.delete(`/strategy/configs/${id}`); ElMessage.success('删除成功'); fetchConfigs()
+  await deleteStrategyConfig(id); ElMessage.success('删除成功'); fetchConfigs()
 }
 
 async function openRuleDialog(config: any) {
   currentConfig.value = config; ruleFormVisible.value = false
-  const res = await request.get(`/strategy/configs/${config.id}`)
+  const res = await getStrategyConfig(config.id)
   currentRules.value = res.data.rules || []; ruleDialogVisible.value = true
 }
 
@@ -138,12 +138,12 @@ function openRuleForm() {
 async function saveRule() {
   if (!ruleForm.ruleName) { ElMessage.warning('请输入规则名'); return }
   ruleSaving.value = true
-  try { await request.post('/strategy/rules', ruleForm); ElMessage.success('已添加'); ruleFormVisible.value = false; openRuleDialog(currentConfig.value) }
+  try { await createStrategyRule(ruleForm); ElMessage.success('已添加'); ruleFormVisible.value = false; openRuleDialog(currentConfig.value) }
   finally { ruleSaving.value = false }
 }
 
 async function deleteRule(id: number) {
-  await request.delete(`/strategy/rules/${id}`); ElMessage.success('已删除'); openRuleDialog(currentConfig.value)
+  await deleteStrategyRule(id); ElMessage.success('已删除'); openRuleDialog(currentConfig.value)
 }
 
 onMounted(fetchConfigs)

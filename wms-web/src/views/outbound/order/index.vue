@@ -121,8 +121,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWarehouseList, getOwnerList, getSkuPage } from '@/api/modules/masterdata'
-import request from '@/api/request'
+import { getWarehouseList, getOwnerList, getSkuPage } from '@/api/masterdata'
+import { pageOrders, createOrder, getOrder, createWave } from '@/api/outbound'
 
 const typeMap: Record<string, string> = { SALE: '销售', TRANSFER: '调拨', RETURN_SUPPLIER: '退供' }
 const statusMap: Record<string, string> = { CREATED: '已创建', ALLOCATED: '已分配', PICKING: '拣货中', PICKED: '已拣货', CHECKED: '已复核', SHIPPED: '已发货', CANCELLED: '已取消' }
@@ -159,7 +159,7 @@ async function fetchData() {
     const params: any = { pageNum: pageNum.value, pageSize: pageSize.value }
     if (query.warehouseId) params.warehouseId = query.warehouseId
     if (query.status) params.status = query.status
-    const res = await request.post('/outbound/orders/page', params)
+    const res = await pageOrders(params)
     tableData.value = (res.data.records || []).map((r: any) => ({
       ...r,
       warehouseName: r.warehouseId ? (warehouseMap.value[r.warehouseId] || '') : '',
@@ -183,7 +183,7 @@ async function handleSave() {
   if (!await formRef.value?.validate().catch(() => false)) return
   saving.value = true
   try {
-    await request.post('/outbound/orders', form)
+    await createOrder(form)
     ElMessage.success('订单创建成功，库存已自动分配')
     dialogVisible.value = false
     fetchData()
@@ -192,7 +192,7 @@ async function handleSave() {
 }
 
 async function viewDetail(row: any) {
-  const res = await request.get(`/outbound/orders/${row.id}`)
+  const res = await getOrder(row.id)
   detail.value = {
     ...res.data,
     warehouseName: row.warehouseName || '',
@@ -204,7 +204,7 @@ async function viewDetail(row: any) {
 async function createWaveForOrder(row: any) {
   try {
     await ElMessageBox.confirm('确定为此订单生成波次？', '提示')
-    await request.post('/outbound/waves', { warehouseId: row.warehouseId, waveType: 'ORDER_POOL', orderIds: [row.id] })
+    await createWave({ warehouseId: row.warehouseId, waveType: 'ORDER_POOL', orderIds: [row.id] })
     ElMessage.success('波次已生成')
     fetchData()
   } catch { /* 用户取消或出错，全局错误处理 */ }

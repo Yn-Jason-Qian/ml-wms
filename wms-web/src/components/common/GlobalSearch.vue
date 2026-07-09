@@ -14,7 +14,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, markRaw } from 'vue'; import { useRouter } from 'vue-router'; import { globalSearch } from '@/api/modules/search'; import { Search } from '@element-plus/icons-vue'
+import { ref, computed, markRaw } from 'vue'; import { useRouter } from 'vue-router'; import { globalSearch } from '@/api/search'; import { Search } from '@element-plus/icons-vue'
 const router=useRouter();const keyword=ref('');const visible=ref(false);const results=ref<any[]>([]);let timer:any=null
 const labelMap:Record<string,string>={ASN:'📥 ASN',ORDER:'📤 订单',SKU:'📦 SKU',LOCATION:'📍 库位',OWNER:'🏢 货主',WAVE:'🌊 波次'}
 const grouped=computed(()=>{const g:Record<string,any[]>={};results.value.forEach(r=>{(g[r.type]||=[]).push(r)});return Object.values(g)})

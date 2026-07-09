@@ -70,7 +70,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import request from '@/api/request'
+import { getDictTypes, getDictItems, createDict, updateDict, deleteDict, enableDict, disableDict, createDictType } from '@/api/masterdata'
 
 const dictTypes = ref<{ typeCode: string; typeName: string; status: number }[]>([])
 const currentType = ref('')
@@ -97,21 +97,21 @@ const pagedItems = computed(() => {
 })
 
 async function loadTypes() {
-  const res = await request.get('/masterdata/dict/types')
+  const res = await getDictTypes()
   dictTypes.value = res.data || []
 }
 
 async function selectType(typeCode: string) {
   currentType.value = typeCode
   pageNum.value = 1
-  const res = await request.get(`/masterdata/dict/items/${typeCode}`)
+  const res = await getDictItems(typeCode)
   items.value = res.data || []
 }
 
 async function handleDisable(row: any) {
   try {
     await ElMessageBox.confirm(`确定禁用字典项「${row.dictName}」？`, '提示', { type: 'warning' })
-    await request.post(`/masterdata/dict/${row.id}/disable`)
+    await disableDict(row.id)
     ElMessage.success('禁用成功')
     selectType(currentType.value)
   } catch { /* 用户取消 */ }
@@ -119,7 +119,7 @@ async function handleDisable(row: any) {
 async function handleEnable(row: any) {
   try {
     await ElMessageBox.confirm(`确定启用字典项「${row.dictName}」？`, '提示', { type: 'warning' })
-    await request.post(`/masterdata/dict/${row.id}/enable`)
+    await enableDict(row.id)
     ElMessage.success('启用成功')
     selectType(currentType.value)
   } catch { /* 用户取消 */ }
@@ -127,7 +127,7 @@ async function handleEnable(row: any) {
 
 async function addType() {
   if (!newTypeCode.value || !newTypeName.value) return
-  await request.post('/masterdata/dict/types', { typeCode: newTypeCode.value, typeName: newTypeName.value })
+  await createDictType({ typeCode: newTypeCode.value, typeName: newTypeName.value })
   ElMessage.success('字典类型添加成功')
   await loadTypes()
   newTypeCode.value = ''
@@ -147,9 +147,9 @@ async function handleSave() {
   saving.value = true
   try {
     if (isEdit.value && editId.value) {
-      await request.put(`/masterdata/dict/${editId.value}`, form); ElMessage.success('更新成功')
+      await updateDict(editId.value, form); ElMessage.success('更新成功')
     } else {
-      await request.post('/masterdata/dict', form); ElMessage.success('创建成功')
+      await createDict(form); ElMessage.success('创建成功')
     }
     dialogVisible.value = false; selectType(currentType.value)
   } finally { saving.value = false }
@@ -157,7 +157,7 @@ async function handleSave() {
 
 async function handleDelete(id: number) {
   await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
-  await request.delete(`/masterdata/dict/${id}`)
+  await deleteDict(id)
   ElMessage.success('删除成功'); selectType(currentType.value)
 }
 

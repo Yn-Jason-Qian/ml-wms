@@ -118,7 +118,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOwnerList, getUnitList, getSkuPage, createSku, updateSku, deleteSku, getSkuPackages, createSkuPackage, deleteSkuPackage } from '@/api/modules/masterdata'
+import { getOwnerList, getUnitList, getSkuPage, createSku, updateSku, deleteSku, getSkuPackages, createSkuPackage, deleteSkuPackage } from '@/api/masterdata'
 
 const pkgLevelMap: Record<string, string> = { EA: '件(each)', CASE: '箱(case)', PALLET: '托盘(pallet)' }
 

@@ -121,9 +121,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getWarehouseList, getOwnerList, getSkuPage, getLocationPage } from '@/api/modules/masterdata'
-import { pageReceives, createReceive } from '@/api/modules/operations'
-import request from '@/api/request'
+import { getWarehouseList, getOwnerList, getSkuPage, getLocationPage } from '@/api/masterdata'
+import { pageReceives, createReceive, getReceive } from '@/api/inbound'
 
 const loading = ref(false), saving = ref(false), dialogVisible = ref(false), detailVisible = ref(false)
 const tableData = ref<any[]>([]), warehouses = ref<any[]>([]), owners = ref<any[]>([]), skuList = ref<any[]>([]), locations = ref<any[]>([])
@@ -183,7 +182,7 @@ async function handleSave() {
 }
 
 async function viewDetail(id: number) {
-  const res = await request.get(`/inbound/receives/${id}`)
+  const res = await getReceive(id)
   detailRecv.value = {
     ...res.data,
     warehouseName: warehouseMap.value[res.data.warehouseId] || '',

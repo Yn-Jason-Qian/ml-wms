@@ -98,9 +98,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getWarehouseList } from '@/api/modules/masterdata'
-import { pagePicks, submitPick } from '@/api/modules/operations'
-import request from '@/api/request'
+import { getWarehouseList } from '@/api/masterdata'
+import { pagePicks, submitPick, getPick } from '@/api/outbound'
 
 const typeMap: Record<string, string> = { PIECE: '按件', PALLET: '按托', PAPER: '按单', RF: 'RF' }
 const statusMap: Record<string, string> = { CREATED: '已创建', ASSIGNED: '已分配', PICKING: '拣货中', PICKED: '已拣货', DONE: '已完成', CANCELLED: '已取消' }
@@ -141,7 +140,7 @@ async function openDlg(row: any) {
   dialogVisible.value = true
   detailLoading.value = true
   try {
-    const res = await request.get(`/outbound/picks/${row.id}`)
+    const res = await getPick(row.id)
     detail.value = res.data
     // add temp fields for each line
     if (detail.value?.lines) {

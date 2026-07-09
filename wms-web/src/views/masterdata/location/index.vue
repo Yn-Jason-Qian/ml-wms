@@ -161,7 +161,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWarehouseList, getAreasByWarehouse, getAreaPage, getLocationPage, createLocation, batchCreateLocations, updateLocation, deleteLocation, enableLocation, disableLocation } from '@/api/modules/masterdata'
+import { getWarehouseList, getAreasByWarehouse, getAreaPage, getLocationPage, createLocation, batchCreateLocations, updateLocation, deleteLocation, enableLocation, disableLocation } from '@/api/masterdata'
 
 const locTypeMap: Record<string, string> = { FLOOR: '地堆位', RACK: '货架位', SHELF: '隔板位', BIN: '周转箱位' }
 

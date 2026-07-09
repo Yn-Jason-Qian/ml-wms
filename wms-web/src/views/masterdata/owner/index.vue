@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOwnerPage, createOwner, updateOwner, deleteOwner, enableOwner, disableOwner } from '@/api/modules/masterdata'
+import { getOwnerPage, createOwner, updateOwner, deleteOwner, enableOwner, disableOwner } from '@/api/masterdata'
 
 const loading = ref(false), saving = ref(false), dialogVisible = ref(false), isEdit = ref(false)
 const tableData = ref<any[]>([]), formRef = ref(), editId = ref<number>()

@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref,reactive} from 'vue';import {ElMessage} from 'element-plus';import {pageShips,createShip} from '@/api/modules/operations'
+import {ref,reactive} from 'vue';import {ElMessage} from 'element-plus';import {pageShips,createShip} from '@/api/outbound'
 const loading=ref(false),saving=ref(false),dialogVisible=ref(false),tableData=ref<any[]>([]),total=ref(0)
 const query=reactive({pageNum:1,pageSize:20})
 const form=reactive({warehouseId:1,ownerId:1,waveHeaderId:'',deliveryMethod:'EXPRESS',carrierName:'',trackingNo:'',packageCount:1,grossWeight:0,volume:0})

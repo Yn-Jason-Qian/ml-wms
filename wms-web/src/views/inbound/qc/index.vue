@@ -110,9 +110,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getWarehouseList, getOwnerList } from '@/api/modules/masterdata'
-import { pageQcs, createQc, submitQc } from '@/api/modules/operations'
-import request from '@/api/request'
+import { getWarehouseList, getOwnerList } from '@/api/masterdata'
+import { pageQcs, createQc, submitQc, getQc } from '@/api/inbound'
 
 const qcTypeMap: Record<string, string> = { FULL: '全检', SAMPLE: '抽检', NONE: '免检' }
 const statusMap: Record<string, string> = { CREATED: '已创建', QCING: '质检中', PASS: '合格', REJECT: '不合格' }
@@ -175,7 +174,7 @@ async function saveSubmit() {
 }
 
 async function viewDetail(id: number) {
-  const res = await request.get(`/inbound/qcs/${id}`)
+  const res = await getQc(id)
   detailQc.value = {
     ...res.data,
     warehouseName: warehouseMap.value[res.data.warehouseId] || '',

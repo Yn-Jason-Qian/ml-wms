@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { login as loginApi, type LoginParams } from '@/api/modules/auth'
+import { login as loginApi, type LoginParams } from '@/api/auth'
 import { setToken, removeToken } from '@/utils/auth'
 import router from '@/router'
 

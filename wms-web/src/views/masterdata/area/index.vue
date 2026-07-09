@@ -89,7 +89,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWarehouseList, getAreaPage, createArea, updateArea, deleteArea, enableArea, disableArea } from '@/api/modules/masterdata'
+import { getWarehouseList, getAreaPage, createArea, updateArea, deleteArea, enableArea, disableArea } from '@/api/masterdata'
 
 const areaTypeMap: Record<string, string> = {
   RECEIVE: '收货区', SHIPPING: '发货区', STORAGE: '存储区', PICKING: '拣货区', RETURN: '退货区', QC: '质检区'

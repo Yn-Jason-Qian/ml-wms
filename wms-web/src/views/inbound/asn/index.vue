@@ -116,8 +116,8 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getWarehouseList, getOwnerList, getSkuListByOwner } from '@/api/modules/masterdata'
-import request from '@/api/request'
+import { getWarehouseList, getOwnerList, getSkuListByOwner } from '@/api/masterdata'
+import { pageAsns, createAsn, getAsn } from '@/api/inbound'
 
 const asnTypeMap: Record<string, string> = { PURCHASE: '采购入库', RETURN: '退货入库', TRANSFER: '调拨入库', ADJUST: '调整入库' }
 const statusMap: Record<string, string> = { CREATED: '已创建', RECEIVING: '收货中', PARTIAL_RECEIVED: '部分收货', RECEIVED: '已收货', CANCELLED: '已取消', CLOSED: '已关闭' }
@@ -156,7 +156,7 @@ async function fetchData() {
       warehouseId: query.warehouseId || undefined,
       ownerId: query.ownerId || undefined
     }
-    const res = await request.post('/inbound/asns/page', params)
+    const res = await pageAsns(params)
     total.value = res.data.total || 0
     tableData.value = (res.data.records || []).map((r: any) => ({
       ...r,
@@ -220,14 +220,14 @@ async function handleSave() {
   }
   saving.value = true
   try {
-    await request.post('/inbound/asns', form)
+    await createAsn(form)
     ElMessage.success('ASN创建成功')
     dialogVisible.value = false; fetchData()
   } finally { saving.value = false }
 }
 
 async function viewDetail(id: number) {
-  const res = await request.get(`/inbound/asns/${id}`)
+  const res = await getAsn(id)
   detailAsn.value = {
     ...res.data,
     warehouseName: warehouseMap.value[res.data.warehouseId] || res.data.warehouseId,

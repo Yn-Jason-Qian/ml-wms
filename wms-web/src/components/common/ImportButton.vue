@@ -11,7 +11,7 @@
   </span>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'; import { ElMessage } from 'element-plus'; import { downloadTemplate, importData } from '@/api/modules/import'
+import { ref } from 'vue'; import { ElMessage } from 'element-plus'; import { downloadTemplate, importData } from '@/api/import'
 const props=defineProps<{type:string}>();const emit=defineEmits(['done'])
 const previewVisible=ref(false);const fileName=ref('');const importing=ref(false);let pendingFile:File|null=null
 function handleFile(file:any){pendingFile=file.raw;fileName.value=file.name;previewVisible.value=true}

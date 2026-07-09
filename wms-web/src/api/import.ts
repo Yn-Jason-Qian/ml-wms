@@ -1,4 +1,4 @@
-import request from '../request'
+import request from './request'
 
 export function downloadTemplate(entity: string) {
   window.open(`/api/v1/template/${entity}`, '_blank')
