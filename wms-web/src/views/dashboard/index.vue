@@ -1,11 +1,235 @@
-<template><div class="dashboard"><el-row :gutter="16"><el-col :span="6" v-for="s in stats" :key="s.label"><el-card><div class="stat-card"><div class="stat-icon" :style="{background:s.color}"><el-icon :size="24"><component :is="s.icon"/></el-icon></div><div class="stat-info"><div class="stat-value">{{ s.today }}</div><div class="stat-label">{{ s.label }}<span :class="s.trend>=0?'trend-up':'trend-down'">{{ s.trend>=0?'↑':'↓' }}{{ Math.abs(s.trend) }}</span></div></div></div></el-card></el-col></el-row><el-row :gutter="16" style="margin-top:16px"><el-col :span="15"><el-card><template #header>📈 近30天出入库趋势</template><div ref="trendRef" style="height:300px"></div></el-card></el-col><el-col :span="9"><el-card><template #header>🍩 库龄分布</template><div ref="agingRef" style="height:300px"></div></el-card></el-col></el-row><el-row :gutter="16" style="margin-top:16px"><el-col :span="15"><el-card><template #header>⚡ 今日作业效率</template><div ref="effRef" style="height:250px"></div></el-card></el-col><el-col :span="9"><el-card><template #header>⚠️ 效期预警 Top5</template><el-table :data="expiryList" size="small" v-loading="expLoading"><el-table-column prop="sku_code" label="SKU" width="120"/><el-table-column prop="batch_no" label="批次" width="100"/><el-table-column prop="days_left" label="剩余" width="70"><template #default="{row}"><el-tag size="small" :type="row.days_left<=7?'danger':row.days_left<=15?'warning':'info'">{{row.days_left}}天</el-tag></template></el-table-column><el-table-column prop="qty_on_hand" label="库存" width="70"/></el-table></el-card></el-col></el-row></div></template>
+<template>
+  <div class="dashboard">
+    <!-- 统计卡片 -->
+    <el-row :gutter="16">
+      <el-col :span="6" v-for="s in stats" :key="s.label">
+        <el-card>
+          <div class="stat-card">
+            <div class="stat-icon" :style="{ background: s.color }">
+              <el-icon :size="24">
+                <component :is="s.icon" />
+              </el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ s.today }}</div>
+              <div class="stat-label">
+                {{ s.label }}
+                <span :class="s.trend >= 0 ? 'trend-up' : 'trend-down'">
+                  {{ s.trend >= 0 ? '↑' : '↓' }}{{ Math.abs(s.trend) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 趋势图 + 库龄饼图 -->
+    <el-row :gutter="16" style="margin-top: 16px">
+      <el-col :span="15">
+        <el-card>
+          <template #header>📈 近30天出入库趋势</template>
+          <div ref="trendRef" style="height: 300px"></div>
+        </el-card>
+      </el-col>
+      <el-col :span="9">
+        <el-card>
+          <template #header>🍩 库龄分布</template>
+          <div ref="agingRef" style="height: 300px"></div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 作业效率 + 效期预警 -->
+    <el-row :gutter="16" style="margin-top: 16px">
+      <el-col :span="15">
+        <el-card>
+          <template #header>⚡ 今日作业效率</template>
+          <div ref="effRef" style="height: 250px"></div>
+        </el-card>
+      </el-col>
+      <el-col :span="9">
+        <el-card>
+          <template #header>⚠️ 效期预警 Top5</template>
+          <el-table :data="expiryList" size="small" v-loading="expLoading">
+            <el-table-column prop="sku_code" label="SKU" width="120" />
+            <el-table-column prop="batch_no" label="批次" width="100" />
+            <el-table-column prop="days_left" label="剩余" width="70">
+              <template #default="{ row }">
+                <el-tag
+                  size="small"
+                  :type="
+                    row.days_left <= 7
+                      ? 'danger'
+                      : row.days_left <= 15
+                        ? 'warning'
+                        : 'info'
+                  "
+                >
+                  {{ row.days_left }}天
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="qty_on_hand" label="库存" width="70" />
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
+  </div>
+</template>
+
 <script setup lang="ts">
-import {ref,onMounted,onUnmounted} from 'vue';import * as echarts from 'echarts';import {getDashboardStats,getDashboardTrend,getExpiryAlert} from '@/api/dashboard';import {useWebSocket} from '@/composables/useWebSocket'
-const {connected:wsConnected,onTask}=useWebSocket()
-const stats=ref([{label:'待收货',today:0,yesterday:0,trend:0,color:'#409eff',icon:'Download'},{label:'待上架',today:0,yesterday:0,trend:0,color:'#e6a23c',icon:'Place'},{label:'待拣货',today:0,yesterday:0,trend:0,color:'#67c23a',icon:'Upload'},{label:'待发货',today:0,yesterday:0,trend:0,color:'#f56c6c',icon:'Van'}])
-const trendRef=ref(),agingRef=ref(),effRef=ref(),expiryList=ref<any[]>([]),expLoading=ref(false)
+import { ref, onMounted } from 'vue'
+import * as echarts from 'echarts'
+import { getDashboardStats, getDashboardTrend, getExpiryAlert } from '@/api/dashboard'
+import { useWebSocket } from '@/composables/useWebSocket'
+
+const { connected: wsConnected, onTask } = useWebSocket()
+
+const stats = ref([
+  { label: '待收货', today: 0, yesterday: 0, trend: 0, color: '#409eff', icon: 'Download' },
+  { label: '待上架', today: 0, yesterday: 0, trend: 0, color: '#e6a23c', icon: 'Place' },
+  { label: '待拣货', today: 0, yesterday: 0, trend: 0, color: '#67c23a', icon: 'Upload' },
+  { label: '待发货', today: 0, yesterday: 0, trend: 0, color: '#f56c6c', icon: 'Van' },
+])
+
+const trendRef = ref()
+const agingRef = ref()
+const effRef = ref()
+const expiryList = ref<any[]>([])
+const expLoading = ref(false)
+
 // WebSocket 实时更新任务计数
-onTask(n=>{if(n.eventType==='COMPLETED'){stats.value.forEach(s=>{if(s.label.includes('收货')&&n.taskType==='INBOUND')s.today=Math.max(0,s.today-1);if(s.label.includes('上架')&&n.taskType==='PUTAWAY')s.today=Math.max(0,s.today-1);if(s.label.includes('拣货')&&n.taskType==='PICK')s.today=Math.max(0,s.today-1);if(s.label.includes('发货')&&n.taskType==='SHIP')s.today=Math.max(0,s.today-1)})}})
-onMounted(async()=>{try{const r=await getDashboardStats();const d=(r as any).data;stats.value[0].today=d.todayReceive;stats.value[0].yesterday=d.yesterdayReceive;stats.value[1].today=d.todayPutaway;stats.value[1].yesterday=d.yesterdayPutaway;stats.value[2].today=d.todayPick;stats.value[2].yesterday=d.yesterdayPick;stats.value[3].today=d.todayShip;stats.value[3].yesterday=d.yesterdayShip;stats.value.forEach(s=>s.trend=s.today-s.yesterday)}catch{};try{const r=await getDashboardTrend(30);const d=(r as any).data||[];const c=echarts.init(trendRef.value!);c.setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:d.map((i:any)=>i.date?.slice(5))},yAxis:{type:'value'},series:[{name:'入库',type:'bar',data:d.map((i:any)=>i.inboundQty),itemStyle:{color:'#409eff'}},{name:'出库',type:'line',data:d.map((i:any)=>i.outboundQty),itemStyle:{color:'#67c23a'}}]});window.addEventListener('resize',()=>c.resize())}catch{};try{const c=echarts.init(agingRef.value!);c.setOption({tooltip:{trigger:'item'},series:[{type:'pie',radius:['40%','70%'],data:[{value:335,name:'0-30天'},{value:234,name:'30-60天'},{value:120,name:'60-90天'},{value:56,name:'90天以上'}]}]})}catch{};try{const c=echarts.init(effRef.value!);c.setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:['收货','拣货','上架','复核','发货']},yAxis:{type:'value'},series:[{type:'bar',data:[45,82,30,28,15],itemStyle:{color:'#409eff'}}]})}catch{};expLoading.value=true;try{const r=await getExpiryAlert();expiryList.value=(r as any).data||[]}finally{expLoading.value=false}})
+onTask((n) => {
+  if (n.eventType === 'COMPLETED') {
+    stats.value.forEach((s) => {
+      if (s.label.includes('收货') && n.taskType === 'INBOUND') s.today = Math.max(0, s.today - 1)
+      if (s.label.includes('上架') && n.taskType === 'PUTAWAY') s.today = Math.max(0, s.today - 1)
+      if (s.label.includes('拣货') && n.taskType === 'PICK') s.today = Math.max(0, s.today - 1)
+      if (s.label.includes('发货') && n.taskType === 'SHIP') s.today = Math.max(0, s.today - 1)
+    })
+  }
+})
+
+onMounted(async () => {
+  // 加载统计数据
+  try {
+    const r = await getDashboardStats()
+    const d = (r as any).data
+    stats.value[0].today = d.todayReceive
+    stats.value[0].yesterday = d.yesterdayReceive
+    stats.value[1].today = d.todayPutaway
+    stats.value[1].yesterday = d.yesterdayPutaway
+    stats.value[2].today = d.todayPick
+    stats.value[2].yesterday = d.yesterdayPick
+    stats.value[3].today = d.todayShip
+    stats.value[3].yesterday = d.yesterdayShip
+    stats.value.forEach((s) => (s.trend = s.today - s.yesterday))
+  } catch {}
+
+  // 出入库趋势图
+  try {
+    const r = await getDashboardTrend(30)
+    const d = (r as any).data || []
+    const c = echarts.init(trendRef.value!)
+    c.setOption({
+      tooltip: { trigger: 'axis' },
+      xAxis: { type: 'category', data: d.map((i: any) => i.date?.slice(5)) },
+      yAxis: { type: 'value' },
+      series: [
+        {
+          name: '入库',
+          type: 'bar',
+          data: d.map((i: any) => i.inboundQty),
+          itemStyle: { color: '#409eff' },
+        },
+        {
+          name: '出库',
+          type: 'line',
+          data: d.map((i: any) => i.outboundQty),
+          itemStyle: { color: '#67c23a' },
+        },
+      ],
+    })
+    window.addEventListener('resize', () => c.resize())
+  } catch {}
+
+  // 库龄分布饼图
+  try {
+    const c = echarts.init(agingRef.value!)
+    c.setOption({
+      tooltip: { trigger: 'item' },
+      series: [
+        {
+          type: 'pie',
+          radius: ['40%', '70%'],
+          data: [
+            { value: 335, name: '0-30天' },
+            { value: 234, name: '30-60天' },
+            { value: 120, name: '60-90天' },
+            { value: 56, name: '90天以上' },
+          ],
+        },
+      ],
+    })
+  } catch {}
+
+  // 作业效率柱图
+  try {
+    const c = echarts.init(effRef.value!)
+    c.setOption({
+      tooltip: { trigger: 'axis' },
+      xAxis: { type: 'category', data: ['收货', '拣货', '上架', '复核', '发货'] },
+      yAxis: { type: 'value' },
+      series: [{ type: 'bar', data: [45, 82, 30, 28, 15], itemStyle: { color: '#409eff' } }],
+    })
+  } catch {}
+
+  // 效期预警列表
+  expLoading.value = true
+  try {
+    const r = await getExpiryAlert()
+    expiryList.value = (r as any).data || []
+  } finally {
+    expLoading.value = false
+  }
+})
 </script>
-<style scoped>.stat-card{display:flex;align-items:center;gap:12px}.stat-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff}.stat-value{font-size:28px;font-weight:bold}.stat-label{font-size:13px;color:#999}.trend-up{color:#67c23a;margin-left:8px}.trend-down{color:#f56c6c;margin-left:8px}</style>
+
+<style scoped>
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #999;
+}
+
+.trend-up {
+  color: #67c23a;
+  margin-left: 8px;
+}
+
+.trend-down {
+  color: #f56c6c;
+  margin-left: 8px;
+}
+</style>

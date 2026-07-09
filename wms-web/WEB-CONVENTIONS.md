@@ -75,6 +75,12 @@ import request from '@/api/request'
 - 每个领域子目录含 `index.ts` barrel 文件，`export * from './xxx'` 统一导出
 - 横切功能（auth/dashboard/search/import）放在 `api/` 顶层，不建子目录
 
+## 代码格式
+
+- 禁止压缩/混淆代码（`node_modules`、`dist` 除外）
+- `<template>` `<script>` `<style>` 必须分行缩进，禁止单行堆砌
+- `import` 每条独立一行
+
 ## 视图层约定
 
 - 视图目录结构与 `api/` 领域目录一一对应
