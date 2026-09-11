@@ -45,7 +45,8 @@ mybatis-plus:
     default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
 
 jwt:
-  secret: your-256-bit-secret-key-change-in-production
+  # 生产环境请通过 JWT_SECRET 环境变量覆盖（参见 .env.example 与 SECURITY.md）
+  secret: ${JWT_SECRET:your-256-bit-secret-key-change-in-production}
   expiration: 86400000
 
 hashids:
