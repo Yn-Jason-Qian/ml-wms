@@ -13,7 +13,7 @@
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-alpha-5010320260611001",
     "@dcloudio/uni-components": "3.0.0-alpha-5010320260611001",
-    "dayjs": "^1.11.13",
+    "dayjs": "^1.11.23",
     "pinia": "^2.3.1",
     "pinia-plugin-persistedstate": "^3.2.1",
     "uview-plus": "^3.8.55",
