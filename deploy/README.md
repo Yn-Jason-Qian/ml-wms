@@ -1,9 +1,9 @@
-# 部署说明（tencent-test）
+# 部署说明
 
 ## 架构
 
 ```
-tencent-test (124.222.189.203)
+<your-host> (<your-server-ip>)
 ├── mysql8      ← 已有容器（另一份 compose 管理），本部署只复用，不接管
 ├── redis7      ← 已有容器（另一份 compose 管理），本部署只复用，不接管
 ├── wms-server  ← 本部署管理（Spring Boot，端口 8080）
@@ -28,15 +28,32 @@ docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{e
 
 探测不到时才会退化为创建/使用 `backend` 网络。想手动确认，可执行上面的命令。
 
-## Jenkins 主机配置（建议）
+## Jenkins 侧配置
 
-Manage Jenkins → Configure System → Publish over SSH → 主机 `tencent-test`，把 **Remote Directory** 设为：
+流水线与仓库里**不含任何主机名、IP、口令**，这些都在 Jenkins 上配，共两处。
 
-```
-/opt/wms
-```
+### 1. 全局环境变量（必配，否则部署阶段会被跳过）
 
-**不设也能部署**（流水线对落点做了兼容），但设了以后路径最直观。原因是 Publish over SSH 的路径语义：
+Manage Jenkins → System → **Global properties** → ☑ Environment variables：
+
+| 名称 | 值 | 说明 |
+|---|---|---|
+| `WMS_DEPLOY_HOST` | 下一步配置的 SSH 主机名，例如 `my-wms-test` | **为空时 `Deploy` 阶段自动跳过** |
+| `WMS_DEPLOY_HOME` | 远端部署目录，例如 `/opt/wms` | 不配则默认 `/opt/wms` |
+
+这样一来，别人 fork 仓库后不需要任何配置也能跑通构建（只跳过部署），想部署时自己填这两个变量即可。
+
+### 2. Publish over SSH 主机
+
+Manage Jenkins → Configure System → **Publish over SSH** → SSH Servers 新增一台：
+
+| 字段 | 值 |
+|---|---|
+| Name | 与上面的 `WMS_DEPLOY_HOST` 保持一致 |
+| Hostname / Username / Password（或 SSH Key） | 目标服务器 |
+| Remote Directory | 建议填 `/opt/wms`，与 `WMS_DEPLOY_HOME` 一致 |
+
+**Remote Directory 留空也能部署**（流水线对落点做了兼容），但填了以后路径最直观。原因是 Publish over SSH 的路径语义：
 
 - Remote Directory 留空时，所有远端路径都相对 SSH 用户家目录（root 即 `/root`）
 - `remoteDirectory` 的前导 `/` 会被剥掉，`/opt/wms` 会变成 `opt/wms`
@@ -46,13 +63,13 @@ Manage Jenkins → Configure System → Publish over SSH → 主机 `tencent-tes
 
 ## 首次部署
 
-正常情况下由 Jenkins 的 `Deploy to tencent-test` 阶段自动完成：工作区组装 `wms-deploy.tar.gz`
+正常情况下由 Jenkins 的 `Deploy` 阶段自动完成：工作区组装 `wms-deploy.tar.gz`
 → SFTP 传输 → 远端 `tar xzf` 到 `/opt/wms` → 执行 `deploy.sh`。
 
 首次部署前建议先做的准备：
 
 ```bash
-ssh root@124.222.189.203
+ssh root@<your-server-ip>
 # 确认基础设施容器在线
 docker ps --format '{{.Names}}\t{{.Status}}' | grep -E 'mysql8|redis7'
 # 提前拉基础镜像，减少首次构建时间

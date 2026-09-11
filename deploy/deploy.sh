@@ -1,5 +1,5 @@
 #!/bin/sh
-# ── WMS 部署脚本（在目标服务器 tencent-test 上执行）──
+# ── WMS 部署脚本（在目标服务器上执行）──
 # 由 Jenkins 通过 Publish over SSH 传输文件后调用: sh /opt/wms/deploy.sh
 # 刻意使用 POSIX sh 语法，不依赖服务器一定装有 bash。
 #

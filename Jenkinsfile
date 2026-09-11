@@ -1,18 +1,22 @@
 // ── WMS CI/CD Pipeline ──
-// 触发: 任务(ml-wms)上配置的 SCM 轮询
-// 阶段: Checkout → 后端构建&测试 → SonarQube → OWASP → 前端构建 → npm Audit → 部署到 tencent-test
+// 触发: 任务上配置的 SCM 轮询（见下方 triggers）
+// 阶段: Checkout → 后端构建&测试 → SonarQube → OWASP → 前端构建 → npm Audit → 部署(可选)
 //
-// 与 Jenkins 实际环境的对齐说明（改动前请先核对）:
+// 说明: 环境相关内容（主机名、路径、口令）一律放在 Jenkins 侧，仓库里只保留通用逻辑。
+//
 //   - Jenkins 容器自带 Temurin JDK 21 → 不声明 jdk 工具
-//   - Maven 全局工具的实际安装名是 "maven"
-//   - NodeJS 需在 Manage Jenkins → Tools 中新增安装名 "node-20"
-//   - 部署通过已配置的 Publish over SSH 主机 "tencent-test" 完成
-//   - 本流水线不在 Jenkins 侧构建镜像: 该 Jenkins 容器没有可用的 docker daemon
-//     （DOCKER_HOST=tcp://docker:2376 指向不存在的 dind），镜像在目标服务器上构建
+//   - Maven 全局工具安装名: maven
+//   - NodeJS 全局工具安装名: node-20（Manage Jenkins → Tools 中新增）
+//   - 部署目标由全局环境变量提供
+//     （Manage Jenkins → System → Global properties → Environment variables）:
+//         WMS_DEPLOY_HOST = 在 Publish over SSH 里配置的主机名；未配置时部署阶段自动跳过
+//         WMS_DEPLOY_HOME = 远端部署目录，默认 /opt/wms
+//   - 本流水线不在 Jenkins 侧构建镜像（Jenkins 容器通常没有可用的 docker daemon），
+//     镜像在目标服务器上由 deploy/deploy.sh 执行 docker compose build 生成
 //
 // Jenkins 插件要求:
 //   - Maven Integration / NodeJS / SonarQube Scanner
-//   - Publish over SSH（已配置主机 tencent-test）
+//   - Publish over SSH（仅在需要自动部署时）
 //   - Workspace Cleanup（cleanWs）
 
 pipeline {
@@ -32,9 +36,10 @@ pipeline {
         NODE_VERSION = 'node-20'
         // SonarQube 排除项
         SONAR_EXCLUSIONS = '**/node_modules/**,**/target/**,**/dist/**,**/*.xml,**/*.json'
-        // 部署目标
-        DEPLOY_HOST = 'tencent-test'
-        DEPLOY_HOME = '/opt/wms'
+        // 部署目标：从 Jenkins 全局环境变量读取，仓库里不写死具体主机/路径。
+        // 未配置 WMS_DEPLOY_HOST 时（例如刚 fork 的人），Stage 7 会自动跳过。
+        DEPLOY_HOST = "${env.WMS_DEPLOY_HOST ?: ''}"
+        DEPLOY_HOME = "${env.WMS_DEPLOY_HOME ?: '/opt/wms'}"
     }
 
     triggers {
@@ -233,11 +238,15 @@ pipeline {
         }
 
         // ──────────────────────────────────────
-        // Stage 7: 部署到 tencent-test
+        // Stage 7: 部署（可选）
         //   传输后端 fat jar + 前端 dist + 部署脚本，
-        //   由目标服务器执行 docker compose build & up（服务器上有可用的 docker daemon）
+        //   由目标服务器执行 docker compose build & up（服务器上需有可用的 docker daemon）。
+        //   未配置 WMS_DEPLOY_HOST 时本阶段跳过，其余阶段不受影响 —— fork 后开箱即可通过构建。
         // ──────────────────────────────────────
-        stage('Deploy to tencent-test') {
+        stage('Deploy') {
+            when {
+                expression { return (env.DEPLOY_HOST ?: '').trim() != '' }
+            }
             options {
                 timeout(time: 15, unit: 'MINUTES')
             }

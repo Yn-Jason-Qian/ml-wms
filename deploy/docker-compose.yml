@@ -1,4 +1,4 @@
-# ── WMS 部署编排（目标服务器 tencent-test 使用）──
+# ── WMS 部署编排（在目标服务器上使用）──
 # 只管理后端与前端两个容器；MySQL / Redis 复用服务器上已有的容器：
 #   mysql8 (mysql:8.0)  /  redis7 (redis:7-alpine)  —— 由另一份 compose 管理，不在此接管
 #
