@@ -28,23 +28,44 @@ docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{e
 
 探测不到时才会退化为创建/使用 `backend` 网络。想手动确认，可执行上面的命令。
 
+## Jenkins 主机配置（建议）
+
+Manage Jenkins → Configure System → Publish over SSH → 主机 `tencent-test`，把 **Remote Directory** 设为：
+
+```
+/opt/wms
+```
+
+**不设也能部署**（流水线对落点做了兼容），但设了以后路径最直观。原因是 Publish over SSH 的路径语义：
+
+- Remote Directory 留空时，所有远端路径都相对 SSH 用户家目录（root 即 `/root`）
+- `remoteDirectory` 的前导 `/` 会被剥掉，`/opt/wms` 会变成 `opt/wms`
+- `sourceFiles` 带目录前缀时，会在远端重现该层级（曾导致文件落到 `/root/opt/wms/deploy/...`）
+
+因此流水线改为**只传一个 tar 包**，在远端解包，绕开上述所有歧义。
+
 ## 首次部署
 
-正常情况下由 Jenkins 的 `Deploy to tencent-test` 阶段自动完成。等价的手工步骤：
+正常情况下由 Jenkins 的 `Deploy to tencent-test` 阶段自动完成：工作区组装 `wms-deploy.tar.gz`
+→ SFTP 传输 → 远端 `tar xzf` 到 `/opt/wms` → 执行 `deploy.sh`。
+
+首次部署前建议先做的准备：
 
 ```bash
 ssh root@124.222.189.203
-mkdir -p /opt/wms/server /opt/wms/web
 # 确认基础设施容器在线
 docker ps --format '{{.Names}}\t{{.Status}}' | grep -E 'mysql8|redis7'
 # 提前拉基础镜像，减少首次构建时间
 docker pull eclipse-temurin:21-jre-alpine
 docker pull nginx:1.27-alpine
+# 清理早期版本误传的目录（如果存在）
+rm -rf /root/opt
 ```
 
-然后把 Jenkins 构建产物与 `deploy/` 目录传到 `/opt/wms`，执行：
+手工部署等价于把发布包解到 `/opt/wms` 后执行：
 
 ```bash
+mkdir -p /opt/wms && tar xzf wms-deploy.tar.gz -C /opt/wms
 sh /opt/wms/deploy.sh
 ```
 

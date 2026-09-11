@@ -243,6 +243,37 @@ pipeline {
             }
             steps {
                 echo "🚀 发布到 ${DEPLOY_HOST} (build #${env.BUILD_NUMBER})"
+
+                // 1) 在工作区组装发布包。
+                //    只传一个 tar 包，规避 Publish over SSH 的目录语义：
+                //      - 主机的 Remote Directory 留空时，所有路径都相对 SSH 用户家目录（/root）
+                //      - remoteDirectory 的前导 "/" 会被剥掉
+                //      - sourceFiles 带目录时，会在远端重现该目录层级
+                sh '''
+                    rm -rf .deploy-staging
+                    mkdir -p .deploy-staging/server .deploy-staging/web
+
+                    cp deploy/docker-compose.yml .deploy-staging/
+                    cp deploy/deploy.sh           .deploy-staging/
+                    cp wms-server/wms-web/src/main/resources/db/init.sql .deploy-staging/
+
+                    cp deploy/server/Dockerfile .deploy-staging/server/
+                    NEWEST_JAR=$(ls -1t wms-server/wms-web/target/wms-web-*.jar | head -1)
+                    cp "$NEWEST_JAR" .deploy-staging/server/
+
+                    cp deploy/web/Dockerfile .deploy-staging/web/
+                    cp deploy/web/nginx.conf .deploy-staging/web/
+                    cp -r wms-web/dist       .deploy-staging/web/dist
+
+                    tar czf wms-deploy.tar.gz -C .deploy-staging .
+                    echo "发布包内容:"
+                    tar tzf wms-deploy.tar.gz | head -20
+                    ls -lh wms-deploy.tar.gz
+                '''
+
+                // 2) 传输发布包 → 解包 → 执行部署脚本。
+                //    解包命令兼容三种落点：已按推荐配置 Remote Directory=/opt/wms，
+                //    或未配置（落到 /root/opt/wms 或 /root）。
                 sshPublisher(
                     failOnError: true,
                     publishers: [
@@ -250,50 +281,11 @@ pipeline {
                             configName: "${DEPLOY_HOST}",
                             verbose: true,
                             transfers: [
-                                // 1) 准备目录
                                 sshTransfer(
-                                    sourceFiles: '',
-                                    execCommand: "mkdir -p ${DEPLOY_HOME}/server ${DEPLOY_HOME}/web"
-                                ),
-                                // 2) 编排文件 + 部署脚本
-                                sshTransfer(
-                                    sourceFiles: 'deploy/docker-compose.yml',
-                                    remoteDirectory: "${DEPLOY_HOME}"
-                                ),
-                                sshTransfer(
-                                    sourceFiles: 'deploy/deploy.sh',
-                                    remoteDirectory: "${DEPLOY_HOME}"
-                                ),
-                                sshTransfer(
-                                    sourceFiles: 'wms-server/wms-web/src/main/resources/db/init.sql',
-                                    remoteDirectory: "${DEPLOY_HOME}"
-                                ),
-                                // 3) 后端：运行时 Dockerfile + fat jar
-                                sshTransfer(
-                                    sourceFiles: 'deploy/server/Dockerfile',
-                                    remoteDirectory: "${DEPLOY_HOME}/server"
-                                ),
-                                sshTransfer(
-                                    sourceFiles: 'wms-server/wms-web/target/wms-web-*.jar',
-                                    remoteDirectory: "${DEPLOY_HOME}/server"
-                                ),
-                                // 4) 前端：Dockerfile + nginx 配置 + 构建产物
-                                sshTransfer(
-                                    sourceFiles: 'deploy/web/Dockerfile',
-                                    remoteDirectory: "${DEPLOY_HOME}/web"
-                                ),
-                                sshTransfer(
-                                    sourceFiles: 'deploy/web/nginx.conf',
-                                    remoteDirectory: "${DEPLOY_HOME}/web"
-                                ),
-                                sshTransfer(
-                                    sourceFiles: 'wms-web/dist/**',
-                                    remoteDirectory: "${DEPLOY_HOME}/web/dist"
-                                ),
-                                // 5) 构建镜像并重启容器
-                                sshTransfer(
-                                    sourceFiles: '',
-                                    execCommand: "sh ${DEPLOY_HOME}/deploy.sh"
+                                    sourceFiles: 'wms-deploy.tar.gz',
+                                    remoteDirectory: "${DEPLOY_HOME}",
+                                    flatten: true,
+                                    execCommand: "mkdir -p ${DEPLOY_HOME} && (tar xzf ${DEPLOY_HOME}/wms-deploy.tar.gz -C ${DEPLOY_HOME} || tar xzf /root${DEPLOY_HOME}/wms-deploy.tar.gz -C ${DEPLOY_HOME} || tar xzf /root/wms-deploy.tar.gz -C ${DEPLOY_HOME}) && sh ${DEPLOY_HOME}/deploy.sh"
                                 )
                             ]
                         )
