@@ -37,8 +37,17 @@ pipeline {
         DEPLOY_HOME = '/opt/wms'
     }
 
-    // 不声明 triggers: 任务本身已配置每分钟 SCM 轮询。
-    // 之前这里的 pollSCM('') 是空 cron（等于关闭轮询），会把任务上的配置覆盖掉。
+    triggers {
+        // 显式声明每分钟轮询。
+        //
+        // 为什么必须在这里声明：任务上原有的 SCMTrigger 实际没有绑定到 Git SCM，每次轮询都是
+        //   "Done. Took 0 ms / No changes"（连 git ls-remote 都没执行），因此永远不会自动触发。
+        // 对比同环境下正常的任务："> git ls-remote ... / Done. Took 0.74 sec"。
+        //
+        // 在 Jenkinsfile 中声明 triggers，构建时会通过 properties() 重新注册触发器并绑定当前 SCM，
+        // 所以手动触发一次之后即可自愈。注意切勿写成 pollSCM('') —— 空 cron 等于关闭轮询。
+        pollSCM('* * * * *')
+    }
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '5'))
