@@ -33,7 +33,7 @@
         <!-- Framework versions -->
         <spring-boot.version>3.3.7</spring-boot.version>
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
-        <mysql-connector.version>8.4.0</mysql-connector.version>
+        <mysql-connector.version>26.7.0</mysql-connector.version>
 
         <!-- Utility versions -->
         <lombok.version>1.18.38</lombok.version>
