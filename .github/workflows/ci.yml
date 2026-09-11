@@ -64,12 +64,9 @@ jobs:
         run: npm run build
 
   # ── PDA 前端: 构建 ──
-  # wms-pda 依赖 uni-app alpha 工具链，构建稳定性不如 PC 端，
-  # 因此标记为非阻断（失败只提示，不阻止 PR 合并）。工具链稳定后可去掉 continue-on-error。
   pda:
-    name: 前端 wms-pda (build, 非阻断)
+    name: 前端 wms-pda (build)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 

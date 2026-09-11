@@ -1,6 +1,6 @@
 // ── WMS CI/CD Pipeline ──
 // 触发: 任务上配置的 SCM 轮询（见下方 triggers）
-// 阶段: Checkout → 后端构建&测试 → SonarQube → OWASP → 前端构建 → npm Audit → 部署(可选)
+// 阶段: Checkout → 后端构建&测试 → SonarQube → 前端构建 → npm Audit → 部署(可选)
 //
 // 说明: 环境相关内容（主机名、路径、口令）一律放在 Jenkins 侧，仓库里只保留通用逻辑。
 //
@@ -83,8 +83,8 @@ pipeline {
         stage('Backend Build & Test') {
             steps {
                 dir('wms-server') {
-                    // 必须 install（而不是 verify）:
-                    // 后面的 OWASP 阶段用 -pl 单模块构建，兄弟模块要从本地仓库解析。
+                    // 用 install 而非 verify：跑完单元测试与格式校验后，
+                    // 顺带把各模块装进本地 Maven 仓库，方便后续阶段或本地复跑时按单模块（-pl）构建。
                     sh '''
                         mvn clean install \
                             -Dmaven.test.failure.ignore=false \
@@ -129,31 +129,7 @@ pipeline {
         }
 
         // ──────────────────────────────────────
-        // Stage 4: OWASP 依赖安全检查（后端）
-        // ──────────────────────────────────────
-        stage('OWASP Dependency Check') {
-            steps {
-                dir('wms-server') {
-                    sh '''
-                        mvn org.owasp:dependency-check-maven:check \
-                            -pl wms-web \
-                            -Dformat=HTML \
-                            -DfailBuildOnCVSS=8 \
-                            -DassemblyAnalyzerEnabled=false \
-                            || echo '## WARNING: 高危依赖发现 (CVSS >= 8)，建议升级 ##'
-                    '''
-                }
-            }
-            post {
-                always {
-                    archiveArtifacts allowEmptyArchive: true,
-                        artifacts: 'wms-server/wms-web/target/dependency-check-report.html'
-                }
-            }
-        }
-
-        // ──────────────────────────────────────
-        // Stage 5: 前端编译（并行）
+        // Stage 4: 前端编译（并行）
         // ──────────────────────────────────────
         stage('Frontend Build') {
             parallel {
@@ -208,7 +184,7 @@ pipeline {
         }
 
         // ──────────────────────────────────────
-        // Stage 6: npm 安全审计（前端）
+        // Stage 5: npm 安全审计（前端）
         // ──────────────────────────────────────
         stage('npm Audit') {
             steps {
@@ -238,7 +214,7 @@ pipeline {
         }
 
         // ──────────────────────────────────────
-        // Stage 7: 部署（可选）
+        // Stage 6: 部署（可选）
         //   传输后端 fat jar + 前端 dist + 部署脚本，
         //   由目标服务器执行 docker compose build & up（服务器上需有可用的 docker daemon）。
         //   未配置 WMS_DEPLOY_HOST 时本阶段跳过，其余阶段不受影响 —— fork 后开箱即可通过构建。

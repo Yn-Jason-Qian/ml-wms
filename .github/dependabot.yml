@@ -1,3 +1,13 @@
+# ── 依赖更新策略：只保留安全更新 ──
+#
+# open-pull-requests-limit: 0 表示**不再自动开版本升级 PR**（首次启用时它一次刷出了 19 个，
+# 含 Spring Boot 3.3 → 4.1 这类跨大版本的升级），但 CVE 驱动的「安全更新」不受此限制，仍会开 PR。
+#
+# 注意：安全更新还需在仓库设置里打开：
+#   Settings → Security → Dependabot alerts / Dependabot security updates
+#
+# 想恢复常规的版本升级 PR 时，把各段落的 open-pull-requests-limit 改回 5 即可
+# （建议同时加 groups 按 minor/patch 分组，避免刷屏）。
 version: 2
 updates:
   # 后端 Maven 依赖
@@ -5,44 +15,29 @@ updates:
     directory: /wms-server
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
-    labels: [dependencies]
-    groups:
-      # 小版本与补丁合并成一个 PR，避免刷屏；大版本仍单独开 PR，便于逐个评估
-      maven-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
+    open-pull-requests-limit: 0
+    labels: [dependencies, security]
 
   # PC 前端
   - package-ecosystem: npm
     directory: /wms-web
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
-    labels: [dependencies]
-    groups:
-      web-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
+    open-pull-requests-limit: 0
+    labels: [dependencies, security]
 
   # PDA 前端
   - package-ecosystem: npm
     directory: /wms-pda
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
-    labels: [dependencies]
-    groups:
-      pda-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
+    open-pull-requests-limit: 0
+    labels: [dependencies, security]
 
-  # 让 GitHub Actions 自身保持更新
+  # GitHub Actions 自身
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
-    labels: [dependencies]
-    groups:
-      actions:
-        patterns: ["*"]
+    open-pull-requests-limit: 0
+    labels: [dependencies, security]
