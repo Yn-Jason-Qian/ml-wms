@@ -7,6 +7,11 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     labels: [dependencies]
+    groups:
+      # 小版本与补丁合并成一个 PR，避免刷屏；大版本仍单独开 PR，便于逐个评估
+      maven-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
 
   # PC 前端
   - package-ecosystem: npm
@@ -15,6 +20,10 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     labels: [dependencies]
+    groups:
+      web-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
 
   # PDA 前端
   - package-ecosystem: npm
@@ -23,6 +32,10 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     labels: [dependencies]
+    groups:
+      pda-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
 
   # 让 GitHub Actions 自身保持更新
   - package-ecosystem: github-actions
@@ -30,3 +43,6 @@ updates:
     schedule:
       interval: monthly
     labels: [dependencies]
+    groups:
+      actions:
+        patterns: ["*"]
