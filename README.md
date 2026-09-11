@@ -1,7 +1,13 @@
 <p align="center">
   <h1 align="center">ML-WMS</h1>
   <p align="center">国内仓库管理系统（WMS），从 0 到 1 构建</p>
+  <p align="center">
+    <a href="https://github.com/Yn-Jason-Qian/ml-wms/actions/workflows/ci.yml"><img src="https://github.com/Yn-Jason-Qian/ml-wms/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  </p>
 </p>
+
+> 想参与开发？请先阅读 [贡献指南](CONTRIBUTING.md)。
 
 ---
 
