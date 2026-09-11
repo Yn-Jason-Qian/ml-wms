@@ -1,54 +1,49 @@
-// ── WMS CI Pipeline ──
-// Triggers: push to master / develop
-// Stages: Checkout → Backend Build&Test → SonarQube → OWASP DC → Frontend Build → npm Audit → Docker Build → Trivy Scan
+// ── WMS CI/CD Pipeline ──
+// 触发: 任务(ml-wms)上配置的 SCM 轮询
+// 阶段: Checkout → 后端构建&测试 → SonarQube → OWASP → 前端构建 → npm Audit → 部署到 tencent-test
+//
+// 与 Jenkins 实际环境的对齐说明（改动前请先核对）:
+//   - Jenkins 容器自带 Temurin JDK 21 → 不声明 jdk 工具
+//   - Maven 全局工具的实际安装名是 "maven"
+//   - NodeJS 需在 Manage Jenkins → Tools 中新增安装名 "node-20"
+//   - 部署通过已配置的 Publish over SSH 主机 "tencent-test" 完成
+//   - 本流水线不在 Jenkins 侧构建镜像: 该 Jenkins 容器没有可用的 docker daemon
+//     （DOCKER_HOST=tcp://docker:2376 指向不存在的 dind），镜像在目标服务器上构建
 //
 // Jenkins 插件要求:
-//   - Maven Integration
-//   - SonarQube Scanner (配置 SonarQube Server 并命名为 'SonarQube')
-//   - Docker Pipeline
-//   - NodeJS Plugin (配置 NodeJS 20 安装并命名为 'node-20')
-//   - OWASP Dependency-Check (可选，不安装则通过 Maven 命令执行)
-//
-// 工具配置 (Jenkins → Manage Jenkins → Tools):
-//   - JDK: jdk-21 (Java 21)
-//   - Maven: maven-3.9
+//   - Maven Integration / NodeJS / SonarQube Scanner
+//   - Publish over SSH（已配置主机 tencent-test）
+//   - Workspace Cleanup（cleanWs）
 
 pipeline {
-    agent {
-        // 需要 Docker 的 Jenkins agent，按实际环境调整 label
-        label 'docker'
-    }
+    // 当前 Jenkins 只有内置控制器一个执行器，没有任何带 label 的 agent
+    agent any
 
     tools {
-        maven 'maven-3.9'
-        jdk 'jdk-21'
+        maven 'maven'
     }
 
     environment {
-        // Maven 配置 — 使用本地仓库缓存加速构建
-        MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository -Xmx2048m -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
-        // Docker 镜像名称（不推送远程仓库，仅本地构建）
-        DOCKER_SERVER_IMAGE = 'wms-server:${BRANCH_NAME}-${BUILD_NUMBER}'
-        DOCKER_WEB_IMAGE    = 'wms-web:${BRANCH_NAME}-${BUILD_NUMBER}'
-        // 前端 Node 版本
+        // 使用容器内 ~/.m2（持久化在 jenkins-data 卷）；
+        // 不要再指定 -Dmaven.repo.local=.m2/repository —— 工作区每次构建都会被 cleanWs 清掉，
+        // 等于每次都重新下载全部依赖。
+        MAVEN_OPTS = '-Xmx2048m -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
+        // NodeJS 工具安装名（需在 Jenkins 全局工具中配置）
         NODE_VERSION = 'node-20'
         // SonarQube 排除项
         SONAR_EXCLUSIONS = '**/node_modules/**,**/target/**,**/dist/**,**/*.xml,**/*.json'
+        // 部署目标
+        DEPLOY_HOST = 'tencent-test'
+        DEPLOY_HOME = '/opt/wms'
     }
 
-    triggers {
-        // Webhook 触发；Multibranch Pipeline 模式下此配置会被忽略
-        pollSCM('')
-    }
+    // 不声明 triggers: 任务本身已配置每分钟 SCM 轮询。
+    // 之前这里的 pollSCM('') 是空 cron（等于关闭轮询），会把任务上的配置覆盖掉。
 
     options {
-        // 保留最近 30 次构建记录和日志
         buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '5'))
-        // 禁止并行构建同一个分支
         disableConcurrentBuilds()
-        // 添加时间戳到控制台输出
         timestamps()
-        // 超时 1 小时
         timeout(time: 1, unit: 'HOURS')
     }
 
@@ -60,9 +55,9 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                // 在 Multibranch Pipeline 中自动匹配分支
                 script {
-                    echo "Branch: ${env.BRANCH_NAME}"
+                    // 普通 Pipeline 任务不会设置 BRANCH_NAME，用 GIT_BRANCH 兜底
+                    echo "Branch: ${env.GIT_BRANCH ?: env.BRANCH_NAME ?: 'unknown'}"
                     echo "Build:  #${env.BUILD_NUMBER}"
                 }
             }
@@ -74,17 +69,18 @@ pipeline {
         stage('Backend Build & Test') {
             steps {
                 dir('wms-server') {
-                    // 编译 + 运行单元测试 + 代码格式校验
+                    // 必须 install（而不是 verify）:
+                    // 后面的 OWASP 阶段用 -pl 单模块构建，兄弟模块要从本地仓库解析。
                     sh '''
-                        mvn clean verify \
+                        mvn clean install \
                             -Dmaven.test.failure.ignore=false \
                             -Dfmt.skip=false
                     '''
                 }
             }
             post {
-                success {
-                    // 归档测试报告
+                always {
+                    // 放在 always: 测试失败时更需要对报告
                     junit allowEmptyResults: true,
                         testResults: 'wms-server/**/target/surefire-reports/*.xml'
                 }
@@ -99,12 +95,9 @@ pipeline {
         // ──────────────────────────────────────
         stage('SonarQube Analysis') {
             when {
-                // 仅在 master / develop 分支执行，PR 构建可跳过
-                anyOf {
-                    branch 'master'
-                    branch 'develop'
-                }
-                // 仅在有 SonarQube 配置时执行
+                // 注意: 这是普通 Pipeline 任务（非 Multibranch），env.BRANCH_NAME 为空，
+                // when { branch 'master' } 永远不成立 → 会导致整个阶段被静默跳过。
+                // 任务本身已限定只构建 master，这里只保留"是否配置了 SonarQube"的判断。
                 expression { env.SONAR_HOST_URL != null }
             }
             steps {
@@ -114,8 +107,7 @@ pipeline {
                             mvn sonar:sonar \
                                 -Dsonar.projectKey=wms-server \
                                 -Dsonar.java.binaries=**/target/classes \
-                                -Dsonar.exclusions=${SONAR_EXCLUSIONS} \
-                                -Dsonar.coverage.jacoco.xmlReportPaths=**/target/site/jacoco/jacoco.xml
+                                -Dsonar.exclusions=${SONAR_EXCLUSIONS}
                         '''
                     }
                 }
@@ -123,18 +115,11 @@ pipeline {
         }
 
         // ──────────────────────────────────────
-        // Stage 4: OWASP 依赖安全检查 (后端)
+        // Stage 4: OWASP 依赖安全检查（后端）
         // ──────────────────────────────────────
         stage('OWASP Dependency Check') {
-            when {
-                anyOf {
-                    branch 'master'
-                    branch 'develop'
-                }
-            }
             steps {
                 dir('wms-server') {
-                    // 用 Maven 直接运行 OWASP Dependency Check 插件
                     sh '''
                         mvn org.owasp:dependency-check-maven:check \
                             -pl wms-web \
@@ -147,7 +132,6 @@ pipeline {
             }
             post {
                 always {
-                    // 归档 OWASP 报告
                     archiveArtifacts allowEmptyArchive: true,
                         artifacts: 'wms-server/wms-web/target/dependency-check-report.html'
                 }
@@ -155,14 +139,14 @@ pipeline {
         }
 
         // ──────────────────────────────────────
-        // Stage 5: 前端编译 (并行)
+        // Stage 5: 前端编译（并行）
         // ──────────────────────────────────────
         stage('Frontend Build') {
             parallel {
                 // --- wms-web (PC) ---
                 stage('wms-web') {
                     steps {
-                        nodejs(configId: "${NODE_VERSION}") {
+                        nodejs(nodeJSInstallationName: "${NODE_VERSION}") {
                             dir('wms-web') {
                                 sh '''
                                     echo "📦 Installing dependencies..."
@@ -186,7 +170,7 @@ pipeline {
                 // --- wms-pda (Android H5) ---
                 stage('wms-pda') {
                     steps {
-                        nodejs(configId: "${NODE_VERSION}") {
+                        nodejs(nodeJSInstallationName: "${NODE_VERSION}") {
                             dir('wms-pda') {
                                 sh '''
                                     echo "📦 Installing dependencies..."
@@ -210,21 +194,13 @@ pipeline {
         }
 
         // ──────────────────────────────────────
-        // Stage 6: npm 安全审计 (前端)
+        // Stage 6: npm 安全审计（前端）
         // ──────────────────────────────────────
         stage('npm Audit') {
-            when {
-                anyOf {
-                    branch 'master'
-                    branch 'develop'
-                }
-            }
             steps {
-                nodejs(configId: "${NODE_VERSION}") {
+                nodejs(nodeJSInstallationName: "${NODE_VERSION}") {
                     script {
-                        def auditFailed = false
                         dir('wms-web') {
-                            // npm audit 发现高危漏洞时仅警告，不阻断构建
                             def result = sh(
                                 script: 'npm audit --audit-level=high 2>&1 || true',
                                 returnStatus: true
@@ -248,119 +224,93 @@ pipeline {
         }
 
         // ──────────────────────────────────────
-        // Stage 7: Docker 镜像构建 (并行)
+        // Stage 7: 部署到 tencent-test
+        //   传输后端 fat jar + 前端 dist + 部署脚本，
+        //   由目标服务器执行 docker compose build & up（服务器上有可用的 docker daemon）
         // ──────────────────────────────────────
-        stage('Docker Build') {
-            when {
-                anyOf {
-                    branch 'master'
-                    branch 'develop'
-                }
-            }
-            parallel {
-                stage('wms-server Image') {
-                    steps {
-                        dir('wms-server') {
-                            sh """
-                                docker build \
-                                    -t ${DOCKER_SERVER_IMAGE} \
-                                    -t wms-server:latest \
-                                    .
-                            """
-                        }
-                    }
-                    post {
-                        success {
-                            echo "🐳 wms-server image: ${DOCKER_SERVER_IMAGE}"
-                        }
-                    }
-                }
-
-                stage('wms-web Image') {
-                    steps {
-                        dir('wms-web') {
-                            sh """
-                                docker build \
-                                    -t ${DOCKER_WEB_IMAGE} \
-                                    -t wms-web:latest \
-                                    .
-                            """
-                        }
-                    }
-                    post {
-                        success {
-                            echo "🐳 wms-web image: ${DOCKER_WEB_IMAGE}"
-                        }
-                    }
-                }
-            }
-        }
-
-        // ──────────────────────────────────────
-        // Stage 8: Docker 镜像安全扫描 (Trivy)
-        // ──────────────────────────────────────
-        stage('Trivy Security Scan') {
-            when {
-                anyOf {
-                    branch 'master'
-                    branch 'develop'
-                }
+        stage('Deploy to tencent-test') {
+            options {
+                timeout(time: 15, unit: 'MINUTES')
             }
             steps {
-                script {
-                    def trivyInstalled = sh(
-                        script: 'which trivy || echo "NOT_FOUND"',
-                        returnStdout: true
-                    ).trim()
-
-                    if (trivyInstalled != 'NOT_FOUND') {
-                        sh """
-                            echo '🔍 Scanning wms-server image...'
-                            trivy image ${DOCKER_SERVER_IMAGE} \
-                                --severity HIGH,CRITICAL \
-                                --ignore-unfixed \
-                                --no-progress \
-                                --timeout 10m \
-                                || echo '## WARNING: Trivy found vulnerabilities in wms-server ##'
-
-                            echo '🔍 Scanning wms-web image...'
-                            trivy image ${DOCKER_WEB_IMAGE} \
-                                --severity HIGH,CRITICAL \
-                                --ignore-unfixed \
-                                --no-progress \
-                                --timeout 10m \
-                                || echo '## WARNING: Trivy found vulnerabilities in wms-web ##'
-                        """
-                    } else {
-                        echo '⚠️ Trivy not installed, skipping container image scan.'
-                        echo '   安装指引: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh'
-                    }
-                }
+                echo "🚀 发布到 ${DEPLOY_HOST} (build #${env.BUILD_NUMBER})"
+                sshPublisher(
+                    failOnError: true,
+                    publishers: [
+                        sshPublisherDesc(
+                            configName: "${DEPLOY_HOST}",
+                            verbose: true,
+                            transfers: [
+                                // 1) 准备目录
+                                sshTransfer(
+                                    sourceFiles: '',
+                                    execCommand: "mkdir -p ${DEPLOY_HOME}/server ${DEPLOY_HOME}/web"
+                                ),
+                                // 2) 编排文件 + 部署脚本
+                                sshTransfer(
+                                    sourceFiles: 'deploy/docker-compose.yml',
+                                    remoteDirectory: "${DEPLOY_HOME}"
+                                ),
+                                sshTransfer(
+                                    sourceFiles: 'deploy/deploy.sh',
+                                    remoteDirectory: "${DEPLOY_HOME}"
+                                ),
+                                sshTransfer(
+                                    sourceFiles: 'wms-server/wms-web/src/main/resources/db/init.sql',
+                                    remoteDirectory: "${DEPLOY_HOME}"
+                                ),
+                                // 3) 后端：运行时 Dockerfile + fat jar
+                                sshTransfer(
+                                    sourceFiles: 'deploy/server/Dockerfile',
+                                    remoteDirectory: "${DEPLOY_HOME}/server"
+                                ),
+                                sshTransfer(
+                                    sourceFiles: 'wms-server/wms-web/target/wms-web-*.jar',
+                                    remoteDirectory: "${DEPLOY_HOME}/server"
+                                ),
+                                // 4) 前端：Dockerfile + nginx 配置 + 构建产物
+                                sshTransfer(
+                                    sourceFiles: 'deploy/web/Dockerfile',
+                                    remoteDirectory: "${DEPLOY_HOME}/web"
+                                ),
+                                sshTransfer(
+                                    sourceFiles: 'deploy/web/nginx.conf',
+                                    remoteDirectory: "${DEPLOY_HOME}/web"
+                                ),
+                                sshTransfer(
+                                    sourceFiles: 'wms-web/dist/**',
+                                    remoteDirectory: "${DEPLOY_HOME}/web/dist"
+                                ),
+                                // 5) 构建镜像并重启容器
+                                sshTransfer(
+                                    sourceFiles: '',
+                                    execCommand: "sh ${DEPLOY_HOME}/deploy.sh"
+                                )
+                            ]
+                        )
+                    ]
+                )
             }
         }
     }
 
     // ──────────────────────────────────────
-    // Post Actions: 构建后处理
+    // Post Actions
     // ──────────────────────────────────────
     post {
         success {
             script {
-                def duration = currentBuild.durationString
-                echo "🎉 Build #${env.BUILD_NUMBER} succeeded (${duration})"
+                echo "🎉 Build #${env.BUILD_NUMBER} succeeded (${currentBuild.durationString})"
             }
         }
         failure {
-            script {
-                echo "❌ Build #${env.BUILD_NUMBER} failed!"
-                // 可在此处添加通知，例如:
-                //   - 企业微信/钉钉 webhook
-                //   - Email (emailext plugin)
-                //   - Slack (slackSend)
-            }
+            echo "❌ Build #${env.BUILD_NUMBER} failed!"
+            // 可在此处补充通知:
+            //   - 企业微信/钉钉 webhook
+            //   - Email (emailext plugin)
+            //   - Slack (slackSend)
         }
         always {
-            // 清理工作区，避免磁盘堆积
             cleanWs(
                 cleanWhenNotBuilt: false,
                 deleteDirs: true,

@@ -1,0 +1,138 @@
+#!/bin/sh
+# ── WMS 部署脚本（在目标服务器 tencent-test 上执行）──
+# 由 Jenkins 通过 Publish over SSH 传输文件后调用: sh /opt/wms/deploy.sh
+# 刻意使用 POSIX sh 语法，不依赖服务器一定装有 bash。
+#
+# 服务器目录结构：
+#   /opt/wms/docker-compose.yml
+#   /opt/wms/deploy.sh
+#   /opt/wms/init.sql                       （首次建库用）
+#   /opt/wms/server/Dockerfile + app.jar + wms-web-<ver>.jar
+#   /opt/wms/web/Dockerfile + nginx.conf + dist/
+#
+# 依赖的基础设施（由服务器上已有的 mysql/redis compose 管理，本脚本只复用、不接管）：
+#   mysql8  / redis7  同一个 docker 网络（compose 项目网络，通常叫 <项目名>_backend）
+set -eu
+
+WMS_HOME=/opt/wms
+COMPOSE_PROJECT=wms
+
+DB_CONTAINER=mysql8
+REDIS_CONTAINER=redis7
+DB_NAME=ml_wms
+
+cd "$WMS_HOME"
+
+# 可选：数据库口令等放在 /opt/wms/.env（docker compose 也会自动读取同一文件）
+if [ -f "$WMS_HOME/.env" ]; then
+  . "$WMS_HOME/.env"
+fi
+MYSQL_USER="${MYSQL_USER:-root}"
+MYSQL_PASSWORD="${MYSQL_PASSWORD:-root}"
+export MYSQL_USER MYSQL_PASSWORD
+
+echo "[deploy] ============== WMS 部署开始 =============="
+
+# 1) 取最近一次上传的 jar 作为运行包（避免版本号变化后 Dockerfile 失效）
+NEWEST_JAR=""
+for f in "$WMS_HOME"/server/wms-web-*.jar; do
+  [ -f "$f" ] || continue
+  if [ -z "$NEWEST_JAR" ] || [ "$f" -nt "$NEWEST_JAR" ]; then
+    NEWEST_JAR="$f"
+  fi
+done
+
+if [ -n "$NEWEST_JAR" ]; then
+  cp -f "$NEWEST_JAR" "$WMS_HOME/server/app.jar"
+  echo "[deploy] 构建产物: $(basename "$NEWEST_JAR")"
+else
+  echo "[deploy] 未找到 wms-web-*.jar，沿用已有 server/app.jar"
+fi
+
+# 2) 探测 mysql / redis 所在网络并复用
+NET=""
+for c in "$DB_CONTAINER" "$REDIS_CONTAINER"; do
+  n="$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' "$c" 2>/dev/null | head -1 || true)"
+  if [ -n "$n" ] && [ "$n" != "bridge" ] && [ "$n" != "host" ]; then
+    NET="$n"
+    break
+  fi
+done
+
+if [ -z "$NET" ]; then
+  NET="backend"
+  docker network inspect "$NET" >/dev/null 2>&1 || docker network create "$NET"
+  for c in "$DB_CONTAINER" "$REDIS_CONTAINER"; do
+    docker network connect "$NET" "$c" 2>/dev/null || true
+  done
+fi
+
+WMS_NET="$NET"
+export WMS_NET
+echo "[deploy] 复用 Docker 网络: $WMS_NET"
+
+# 3) 选择 compose 命令（新旧版本兼容）
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE="docker compose"
+else
+  COMPOSE="docker-compose"
+fi
+
+# 4) 首次部署时初始化数据库（仅在 ml_wms 不存在时执行，避免误改线上表结构）
+if docker inspect "$DB_CONTAINER" >/dev/null 2>&1; then
+  EXISTS="$(docker exec "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SHOW DATABASES LIKE '$DB_NAME'" 2>/dev/null || true)"
+  if [ -z "$EXISTS" ] && [ -f "$WMS_HOME/init.sql" ]; then
+    echo "[deploy] 数据库 $DB_NAME 不存在，导入 init.sql ..."
+    docker exec -i "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" < "$WMS_HOME/init.sql"
+    echo "[deploy] 数据库初始化完成"
+  else
+    echo "[deploy] 数据库 $DB_NAME 已存在，跳过初始化"
+  fi
+else
+  echo "[deploy] ⚠️ 未找到容器 $DB_CONTAINER，跳过数据库检查"
+fi
+
+# 5) 清理不属于本 compose 项目的同名旧容器（避免 container name 冲突）
+for c in wms-server wms-web; do
+  if docker inspect "$c" >/dev/null 2>&1; then
+    proj="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$c" 2>/dev/null || true)"
+    if [ "$proj" != "$COMPOSE_PROJECT" ]; then
+      echo "[deploy] 移除旧的同名容器: $c (project=${proj:-none})"
+      docker rm -f "$c" >/dev/null 2>&1 || true
+    fi
+  fi
+done
+
+# 6) 构建镜像并启动（只影响 server / web，不触碰 mysql、redis）
+$COMPOSE -p "$COMPOSE_PROJECT" -f "$WMS_HOME/docker-compose.yml" up -d --build
+
+# 7) 清理悬空镜像，避免磁盘堆积
+docker image prune -f >/dev/null 2>&1 || true
+
+echo "[deploy] 当前容器状态:"
+$COMPOSE -p "$COMPOSE_PROJECT" -f "$WMS_HOME/docker-compose.yml" ps
+
+# 8) 健康检查
+echo "[deploy] 等待后端就绪..."
+i=0
+while [ "$i" -lt 20 ]; do
+  i=$((i + 1))
+  sleep 3
+  if wget -q -O - http://localhost:8080/doc.html >/dev/null 2>&1; then
+    break
+  fi
+done
+
+if wget -q -O - http://localhost:8080/doc.html >/dev/null 2>&1; then
+  echo "[deploy] ✅ 后端 8080 可达"
+else
+  echo "[deploy] ⚠️ 后端 8080 未响应，请查看: docker logs wms-server --tail 100"
+fi
+
+if wget -q -O - http://localhost/ >/dev/null 2>&1; then
+  echo "[deploy] ✅ 前端 80 可达"
+else
+  echo "[deploy] ⚠️ 前端 80 未响应，请查看: docker logs wms-web --tail 50"
+fi
+
+echo "[deploy] ============== 部署完成 =============="

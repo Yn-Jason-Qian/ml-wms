@@ -1,0 +1,47 @@
+# ── WMS 部署编排（目标服务器 tencent-test 使用）──
+# 只管理后端与前端两个容器；MySQL / Redis 复用服务器上已有的容器：
+#   mysql8 (mysql:8.0)  /  redis7 (redis:7-alpine)  —— 由另一份 compose 管理，不在此接管
+#
+# 运行前需导出 Docker 网络名（deploy.sh 会自动探测并导出）：
+#   WMS_NET=<mysql8/redis7 所在网络> docker compose -p wms -f /opt/wms/docker-compose.yml up -d --build
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: wms-server:latest
+    container_name: wms-server
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # 主机名用容器名 mysql8 / redis7（同一个 docker 网络内可直接解析）
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql8:3306/ml_wms?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_general_ci&serverTimezone=Asia/Shanghai&sslMode=DISABLED&allowPublicKeyRetrieval=true&tinyInt1isBit=false
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-root}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-root}
+      SPRING_DATA_REDIS_HOST: redis7
+      SPRING_DATA_REDIS_PORT: "6379"
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    networks:
+      - wms
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    image: wms-web:latest
+    container_name: wms-web
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "80:80"
+    networks:
+      - wms
+
+networks:
+  # 复用 mysql8 / redis7 已加入的网络（compose 生成的网络名通常为 <项目名>_backend）
+  wms:
+    external: true
+    name: ${WMS_NET:-backend}
