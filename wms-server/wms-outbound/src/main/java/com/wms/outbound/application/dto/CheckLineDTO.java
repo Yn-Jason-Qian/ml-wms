@@ -1,17 +1,12 @@
-package com.wms.outbound.domain.entity;
-
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.wms.common.base.BaseEntity;
+package com.wms.outbound.application.dto;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-@TableName("wms_outbound_check_line")
-public class CheckLine extends BaseEntity {
+public class CheckLineDTO {
+    private Long id;
     private Long checkHeaderId;
     private Integer lineNo;
     private Long orderHeaderId;

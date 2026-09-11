@@ -171,6 +171,7 @@ const authStore = useAuthStore()
 const filterTab = ref('all')
 const taskList = ref<any[]>([])
 const currentTask = ref<any>(null)
+const currentCheck = ref<any>(null)
 const containerCode = ref('')
 const recentContainers = ref<string[]>([])
 
@@ -189,43 +190,58 @@ const passCount = computed(() => checkLines.value.filter(l => l.isMatch === 1).l
 const diffCount = computed(() => checkLines.value.filter(l => l.isMatch === 0).length)
 
 const filteredTasks = computed(() => {
-  if (filterTab.value === 'pending') return taskList.value.filter(t => t.status === 'CREATED' || t.status === 'CHECKING')
+  // 待复核 = 已拣货完成的波次
+  if (filterTab.value === 'pending') return taskList.value.filter(t => t.status === 'PICKED')
   return taskList.value
 })
 
 async function loadTasks() {
   try {
     // 复核关联波次 — 加载可复核的波次列表
-    const res = await request.get('/outbound/waves/page', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId })
+    const res = await request.post('/outbound/waves/page', {
+      pageNum: 1,
+      pageSize: 50,
+      warehouseId: authStore.warehouseId
+    })
     taskList.value = (res.data?.records || []).map((t: any) => ({
       ...t,
-      statusText: statusMap(t.waveStatus || t.status),
-      statusType: typeMap(t.waveStatus || t.status)
+      status: t.waveStatus,
+      statusText: statusMap(t.waveStatus),
+      statusType: typeMap(t.waveStatus)
     }))
   } catch { /* handled */ }
 }
 
 function statusMap(s: string) {
-  const m: Record<string, string> = { CREATED: '待复核', WAVED: '可复核', CHECKING: '复核中', PASS: '通过', DONE: '完成' }
+  const m: Record<string, string> = {
+    CREATED: '待拣货',
+    RELEASED: '已释放',
+    PICKING: '拣货中',
+    PICKED: '待复核',
+    DONE: '已完成'
+  }
   return m[s] || s
 }
-function typeMap(s: string): 'warning' | 'primary' | 'success' {
-  if (s === 'DONE' || s === 'PASS') return 'success'
-  if (s === 'CHECKING') return 'primary'
-  return 'warning'
+function typeMap(s: string): 'warning' | 'primary' | 'success' | 'info' {
+  if (s === 'PICKED') return 'warning'
+  if (s === 'DONE') return 'success'
+  if (s === 'PICKING') return 'primary'
+  return 'info'
 }
 
 async function selectTask(task: any) {
   currentTask.value = task
-  // 加载波次下的订单行作为复核明细
   try {
-    const res = await request.get(`/outbound/waves/${task.id}/lines`)
-    checkLines.value = (res.data?.records || res.data || []).map((l: any) => ({
-      ...l, isMatch: null, actualSku: ''
-    }))
+    // 按波次生成复核单（已存在则复用），再加载复核明细
+    const created = await request.post(`/outbound/checks/from-wave/${task.id}`)
+    const res = await request.get(`/outbound/checks/${created.data?.checkId}`)
+    currentCheck.value = res.data
+    checkLines.value = (res.data?.lines || []).map((l: any) => ({ ...l, actualSku: '' }))
+    containerCode.value = ''
+    recentContainers.value = []
   } catch {
-    // fallback: 使用模拟数据
-    checkLines.value = [{ skuCode: '-', skuName: '-', orderQty: 0, isMatch: null }]
+    currentCheck.value = null
+    checkLines.value = []
   }
   lineIdx.value = 0
   resetLineState()
@@ -233,6 +249,7 @@ async function selectTask(task: any) {
 
 function backToList() {
   currentTask.value = null
+  currentCheck.value = null
   containerCode.value = ''
   checkLines.value = []
   loadTasks()
@@ -293,7 +310,7 @@ async function confirmCheck() {
   try {
     // 提交复核结果到后端
     await request.post('/outbound/checks/submit', {
-      checkHeaderId: currentTask.value?.id,
+      checkHeaderId: currentCheck.value?.id,
       checkLineId: line.id,
       checkQty: safeQty,
       isMatch: matchResult.value ? 1 : 0,

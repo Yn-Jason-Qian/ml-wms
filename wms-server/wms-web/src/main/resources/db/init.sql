@@ -783,7 +783,7 @@ CREATE TABLE wms_outbound_check_line (
     sku_name VARCHAR(256) NOT NULL,
     order_qty DECIMAL(18,4) COMMENT '订单数量',
     check_qty DECIMAL(18,4) NOT NULL COMMENT '复核数量',
-    is_match TINYINT NOT NULL DEFAULT 1 COMMENT '是否一致: 0=差异 1=一致',
+    is_match TINYINT NULL COMMENT '是否一致: 0=差异 1=一致 NULL=未复核',
     diff_reason VARCHAR(256) COMMENT '差异原因',
     from_container VARCHAR(64) COMMENT '来源容器',
     to_container VARCHAR(64) COMMENT '发货容器',
