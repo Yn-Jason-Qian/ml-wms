@@ -21,6 +21,10 @@ DB_CONTAINER=mysql8
 REDIS_CONTAINER=redis7
 DB_NAME=ml_wms
 
+# mysql 官方镜像里 mysql 客户端默认字符集是 latin1（容器无 LANG 环境变量）。
+# 不带这个参数导入 init.sql 会把中文写成双重编码（乱码），必须显式指定。
+MYSQL_CHARSET=--default-character-set=utf8mb4
+
 cd "$WMS_HOME"
 
 # 可选：数据库口令等放在 /opt/wms/.env（docker compose 也会自动读取同一文件）
@@ -81,19 +85,19 @@ fi
 # 4) 数据库：不存在则导入 init.sql；存在但结构不完整（失败导入留下的半成品）则明确失败，
 #    避免"库里没有表却每次都跳过初始化"这种静默故障。
 if docker inspect "$DB_CONTAINER" >/dev/null 2>&1; then
-  EXISTS="$(docker exec "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SHOW DATABASES LIKE '$DB_NAME'" 2>/dev/null || true)"
+  EXISTS="$(docker exec "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" $MYSQL_CHARSET -N -B -e "SHOW DATABASES LIKE '$DB_NAME'" 2>/dev/null || true)"
 
   if [ -z "$EXISTS" ]; then
     if [ -f "$WMS_HOME/init.sql" ]; then
       echo "[deploy] 数据库 $DB_NAME 不存在，导入 init.sql ..."
-      docker exec -i "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" < "$WMS_HOME/init.sql"
+      docker exec -i "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" $MYSQL_CHARSET < "$WMS_HOME/init.sql"
       echo "[deploy] 数据库初始化完成"
     else
       echo "[deploy] ⚠️ 未找到 init.sql，跳过数据库初始化"
     fi
   else
     # 用建表顺序里最后一张表判断结构是否完整
-    COMPLETE="$(docker exec "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='wms_print_record'" 2>/dev/null || echo 0)"
+    COMPLETE="$(docker exec "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" $MYSQL_CHARSET -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='wms_print_record'" 2>/dev/null || echo 0)"
     if [ "$COMPLETE" = "1" ]; then
       echo "[deploy] 数据库 $DB_NAME 已存在且结构完整，跳过初始化"
     else

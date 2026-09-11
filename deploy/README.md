@@ -77,6 +77,31 @@ sh /opt/wms/deploy.sh
 > 项目约定：任何表结构变更都必须同步 `wms-server/wms-web/src/main/resources/db/init.sql`。
 > 已存在的库需要手工执行对应的 `ALTER TABLE`。
 
+### 字符集（重要）
+
+`mysql:8.0` 官方镜像里的 `mysql` 客户端默认字符集是 **latin1**（容器没有 LANG 环境变量），
+而服务器端点若未设置 `--skip-character-set-client-handshake`，就会按 latin1 解释导入的 UTF-8 字节，
+把中文写成**双重编码**（界面上显示成 `ç³»ç»Ÿç®¡ç†å‘˜` 这种乱码）。
+
+因此 `deploy.sh` 导入时显式带上 `--default-character-set=utf8mb4`。
+
+若库里已经写入了乱码数据，且确认没有需要保留的业务数据，重建即可：
+
+```bash
+docker exec mysql8 mysql -uroot -proot -e "DROP DATABASE ml_wms"
+# 重新触发部署，deploy.sh 会用正确的字符集重新导入
+```
+
+另外建议给服务器上的 mysql8 加上 `--skip-character-set-client-handshake`（项目自带的
+`docker-compose.yml` 里就有），可从根本上避免客户端字符集覆盖服务器设置：
+
+```yaml
+command:
+  - --character-set-server=utf8mb4
+  - --collation-server=utf8mb4_unicode_ci
+  - --skip-character-set-client-handshake   # 新增
+```
+
 ## 数据库口令
 
 默认使用 `root/root`。要覆盖的话，在 `/opt/wms/.env` 中写：
