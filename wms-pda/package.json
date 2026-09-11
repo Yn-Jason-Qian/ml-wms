@@ -15,7 +15,7 @@
     "@dcloudio/uni-components": "3.0.0-alpha-5010320260611001",
     "dayjs": "^1.11.13",
     "pinia": "^2.3.1",
-    "pinia-plugin-persistedstate": "^3.2.1",
+    "pinia-plugin-persistedstate": "^4.7.1",
     "uview-plus": "^3.8.55",
     "vue": "3.5.13"
   },
