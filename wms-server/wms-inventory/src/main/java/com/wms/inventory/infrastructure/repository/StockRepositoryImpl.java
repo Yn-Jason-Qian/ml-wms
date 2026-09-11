@@ -51,6 +51,16 @@ public class StockRepositoryImpl implements StockRepository {
     }
 
     @Override
+    public List<Stock> findByWarehouse(Long tenantId, Long warehouseId) {
+        return mapper.selectList(
+                new LambdaQueryWrapper<Stock>()
+                        .eq(Stock::getTenantId, tenantId)
+                        .eq(Stock::getWarehouseId, warehouseId)
+                        .orderByAsc(Stock::getLocationId)
+                        .orderByAsc(Stock::getSkuId));
+    }
+
+    @Override
     public void update(Stock stock) {
         mapper.updateById(stock);
     }

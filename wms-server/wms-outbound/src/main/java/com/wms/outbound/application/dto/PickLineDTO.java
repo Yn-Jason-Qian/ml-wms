@@ -17,6 +17,10 @@ public class PickLineDTO {
     private BigDecimal pickQty;
     private BigDecimal pickedQty;
     private Long locationId;
+
+    /** 库位编码（详情接口按 locationId 反查填充） */
+    private String locationCode;
+
     private String batchNo;
     private String lotAttrs;
     private String toContainer;

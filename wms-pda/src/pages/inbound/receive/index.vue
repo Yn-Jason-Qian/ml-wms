@@ -254,7 +254,7 @@ async function onAsnScanned() {
   if (!asnNo) return
   try {
     // 根据 ASN 号查询 ASN 信息
-    const res = await request.get('/inbound/asns/page', { asnNo, pageNum: 1, pageSize: 1 })
+    const res = await request.post('/inbound/asns/page', { asnNo, pageNum: 1, pageSize: 1 })
     if (res.data?.records?.length > 0) {
       asnInfo.value = res.data.records[0]
     } else {
@@ -303,7 +303,7 @@ async function onSkuScanned() {
   const code = skuInput.value.trim()
   if (!code) return
   try {
-    const res = await request.get('/masterdata/skus/page', { skuCode: code, pageNum: 1, pageSize: 1 })
+    const res = await request.post('/masterdata/skus/page', { skuCode: code, pageNum: 1, pageSize: 1 })
     if (res.data?.records?.length > 0) {
       currentSku.value = res.data.records[0]
       form.skuCode = code

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
+import com.wms.common.util.DocNoUtil;
 import com.wms.inbound.application.assembler.AsnAssembler;
 import com.wms.inbound.application.dto.AsnCreateCmd;
 import com.wms.inbound.application.dto.AsnDTO;
@@ -22,8 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -37,8 +36,7 @@ public class AsnAppService {
     public AsnDTO createAsn(AsnCreateCmd cmd) {
         Long tenantId = UserContext.getTenantId();
         Long userId = UserContext.getUserId();
-        String asnNo =
-                "ASN-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String asnNo = DocNoUtil.next("ASN");
 
         AsnHeader h = new AsnHeader();
         h.setTenantId(tenantId);

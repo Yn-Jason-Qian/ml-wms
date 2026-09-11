@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
+import com.wms.common.util.DocNoUtil;
 import com.wms.outbound.application.assembler.OrderAssembler;
 import com.wms.outbound.application.assembler.WaveAssembler;
 import com.wms.outbound.application.dto.*;
@@ -19,8 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -68,8 +67,7 @@ public class WaveAppService {
     public WaveResultDTO createWave(WaveCreateCmd cmd) {
         Long tenantId = UserContext.getTenantId();
         Long userId = UserContext.getUserId();
-        String waveNo =
-                "WAV-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String waveNo = DocNoUtil.next("WAV");
 
         WaveHeader h = new WaveHeader();
         h.setTenantId(tenantId);

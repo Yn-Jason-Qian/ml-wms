@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
+import com.wms.common.util.DocNoUtil;
 import com.wms.inventory.application.assembler.MoveAssembler;
 import com.wms.inventory.application.dto.MoveCreateCmd;
 import com.wms.inventory.application.dto.MoveDTO;
@@ -12,10 +13,12 @@ import com.wms.inventory.application.dto.MovePageQuery;
 import com.wms.inventory.domain.entity.MoveHeader;
 import com.wms.inventory.domain.entity.MoveLine;
 import com.wms.inventory.domain.entity.Stock;
+import com.wms.inventory.domain.gateway.MasterDataGateway;
 import com.wms.inventory.domain.repository.MoveRepository;
 import com.wms.inventory.domain.repository.StockRepository;
 import com.wms.inventory.domain.service.StockDomainService;
 import com.wms.inventory.infrastructure.mapper.MoveHeaderMapper;
+import com.wms.masterdata.domain.entity.Sku;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -34,6 +36,7 @@ public class MoveAppService {
     private final StockRepository stockRepository;
     private final StockDomainService stockDomainService;
     private final MoveAssembler assembler;
+    private final MasterDataGateway masterDataGateway;
 
     public IPage<MoveDTO> pageMove(MovePageQuery query) {
         IPage<MoveHeader> result =
@@ -56,8 +59,7 @@ public class MoveAppService {
     public MoveDTO createMove(MoveCreateCmd cmd) {
         Long tenantId = UserContext.getTenantId();
         Long userId = UserContext.getUserId();
-        String moveNo =
-                "MV-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String moveNo = DocNoUtil.next("MV");
 
         // 创建移库单头
         MoveHeader header = new MoveHeader();
@@ -71,14 +73,33 @@ public class MoveAppService {
         header.setUpdatedBy(userId);
         moveRepository.saveHeader(header);
 
+        // 扫码场景：前端可能传编码而非 ID，统一在此解析
+        Sku sku = masterDataGateway.resolveSku(cmd.getSkuId(), cmd.getSkuCode(), tenantId);
+        Long fromLocationId =
+                masterDataGateway
+                        .resolveLocation(
+                                cmd.getFromLocationId(),
+                                cmd.getFromLocationCode(),
+                                cmd.getWarehouseId(),
+                                tenantId)
+                        .getId();
+        Long toLocationId =
+                masterDataGateway
+                        .resolveLocation(
+                                cmd.getToLocationId(),
+                                cmd.getToLocationCode(),
+                                cmd.getWarehouseId(),
+                                tenantId)
+                        .getId();
+
         // 创建移库单行 + 执行移动
         Stock fromStock =
                 stockRepository
                         .findByKey(
                                 tenantId,
                                 cmd.getWarehouseId(),
-                                cmd.getFromLocationId(),
-                                cmd.getSkuId(),
+                                fromLocationId,
+                                sku.getId(),
                                 cmd.getBatchNo())
                         .orElseThrow(() -> BusinessException.notFound("来源库位库存不存在或不足"));
         Stock toStock =
@@ -86,25 +107,25 @@ public class MoveAppService {
                         .findByKey(
                                 tenantId,
                                 cmd.getWarehouseId(),
-                                cmd.getToLocationId(),
-                                cmd.getSkuId(),
+                                toLocationId,
+                                sku.getId(),
                                 cmd.getBatchNo())
                         .orElse(null);
 
         stockDomainService.moveStock(
-                fromStock, toStock, cmd.getMoveQty(), header.getId(), moveNo, userId);
+                fromStock, toStock, toLocationId, cmd.getMoveQty(), header.getId(), moveNo, userId);
 
         MoveLine line = new MoveLine();
         line.setTenantId(tenantId);
         line.setMoveHeaderId(header.getId());
         line.setLineNo(1);
-        line.setSkuId(cmd.getSkuId());
+        line.setSkuId(sku.getId());
         line.setSkuCode(fromStock.getSkuCode());
         line.setSkuName(fromStock.getSkuName());
         line.setMoveQty(cmd.getMoveQty());
-        line.setFromLocationId(cmd.getFromLocationId());
+        line.setFromLocationId(fromLocationId);
         line.setFromStockId(fromStock.getId());
-        line.setToLocationId(cmd.getToLocationId());
+        line.setToLocationId(toLocationId);
         line.setBatchNo(cmd.getBatchNo());
         line.setStatus("DONE");
         line.setMoveBy(userId);

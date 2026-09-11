@@ -274,9 +274,8 @@ const canConfirm = computed(() => {
 // ── 加载任务 ──
 async function loadTasks() {
   try {
-    const res = await request.get('/outbound/picks/page', {
-      pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId,
-      assignTo: authStore.username || undefined
+    const res = await request.post('/outbound/picks/page', {
+      pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId
     })
     const records = res.data?.records || []
     taskList.value = records.map((t: any) => ({
@@ -306,14 +305,21 @@ function statusTypeMap(status: string): 'warning' | 'primary' | 'success' {
 
 // ── 领取任务 ──
 async function claimNewTask() {
-  // 查找第一个待领取的任务
-  const pending = taskList.value.find(t => t.status === 'CREATED')
-  if (!pending) {
-    uni.showToast({ title: '暂无可领取的任务', icon: 'none' })
-    return
-  }
   try {
-    await request.post(`/tasks/${pending.id}/claim`)
+    // 领取入口在任务域：取一条待领取的拣货任务再领取
+    const res = await request.post('/tasks/page', {
+      pageNum: 1,
+      pageSize: 1,
+      warehouseId: authStore.warehouseId,
+      taskType: 'PICK',
+      status: 'CREATED'
+    })
+    const task = res.data?.records?.[0]
+    if (!task) {
+      uni.showToast({ title: '暂无可领取的任务', icon: 'none' })
+      return
+    }
+    await request.post(`/tasks/${task.id}/claim`)
     uni.showToast({ title: '任务已领取', icon: 'success' })
     await loadTasks()
   } catch { /* handled */ }
@@ -324,8 +330,8 @@ async function selectTask(task: any) {
   currentTask.value = task
   // 加载拣货行（按库位路径排序）
   try {
-    const res = await request.get(`/outbound/picks/${task.id}/lines`)
-    const lines = (res.data?.records || res.data || []).map((l: any) => ({
+    const res = await request.get(`/outbound/picks/${task.id}`)
+    const lines = (res.data?.lines || []).map((l: any) => ({
       ...l,
       done: l.status === 'PICKED' || l.status === 'DONE' || l.pickedQty >= l.pickQty,
       skip: false

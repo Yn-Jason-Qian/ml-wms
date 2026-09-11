@@ -12,6 +12,8 @@ public interface LocationRepository {
 
     List<Location> findByWarehouse(Long tenantId, Long warehouseId);
 
+    Optional<Location> findByCode(Long tenantId, Long warehouseId, String locationCode);
+
     void save(Location location);
 
     void batchSave(List<Location> locations);

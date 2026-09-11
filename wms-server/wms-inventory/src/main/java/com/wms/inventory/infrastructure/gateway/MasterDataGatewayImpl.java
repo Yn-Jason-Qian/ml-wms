@@ -1,10 +1,10 @@
-package com.wms.outbound.infrastructure.gateway;
+package com.wms.inventory.infrastructure.gateway;
 
+import com.wms.inventory.domain.gateway.MasterDataGateway;
 import com.wms.masterdata.application.service.LocationAppService;
 import com.wms.masterdata.application.service.SkuAppService;
 import com.wms.masterdata.domain.entity.Location;
 import com.wms.masterdata.domain.entity.Sku;
-import com.wms.outbound.domain.gateway.MasterDataGateway;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.Collection;
 import java.util.Map;
 
-@Component("outboundMasterDataGateway")
+@Component("inventoryMasterDataGateway")
 @RequiredArgsConstructor
 public class MasterDataGatewayImpl implements MasterDataGateway {
 

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
+import com.wms.common.util.DocNoUtil;
 import com.wms.inbound.application.assembler.QcAssembler;
 import com.wms.inbound.application.dto.*;
 import com.wms.inbound.domain.entity.QcHeader;
@@ -22,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -75,8 +75,7 @@ public class QcAppService {
     public QcResultDTO createQc(QcCreateCmd cmd) {
         Long tenantId = UserContext.getTenantId();
         Long userId = UserContext.getUserId();
-        String qcNo =
-                "QC-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String qcNo = DocNoUtil.next("QC");
 
         QcHeader h = new QcHeader();
         h.setTenantId(tenantId);

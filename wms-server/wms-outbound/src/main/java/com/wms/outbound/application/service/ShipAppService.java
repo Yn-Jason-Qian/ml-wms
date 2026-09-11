@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
+import com.wms.common.util.DocNoUtil;
 import com.wms.outbound.application.assembler.ShipAssembler;
 import com.wms.outbound.application.dto.*;
 import com.wms.outbound.domain.entity.*;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -52,8 +52,7 @@ public class ShipAppService {
     public ShipResultDTO createShip(ShipCreateCmd cmd) {
         Long tenantId = UserContext.getTenantId();
         Long userId = UserContext.getUserId();
-        String shipNo =
-                "SHP-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String shipNo = DocNoUtil.next("SHP");
 
         ShipHeader h = new ShipHeader();
         h.setTenantId(tenantId);

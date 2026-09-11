@@ -112,13 +112,29 @@ async function onSkuScanned() {
   const code = skuInput.value.trim()
   if (!code) return
   try {
-    // 查询该 SKU 在来源库位的库存（可能返回多个批次）
-    const res = await request.get('/inventory/search', { skuCode: code, locationCode: fromLocation.value })
-    const records = res.data?.records || []
+    // 先解析来源库位编码，再查询该库位上该 SKU 的库存（可能返回多个批次）
+    const locRes = await request.post('/masterdata/locations/page', {
+      warehouseId: authStore.warehouseId,
+      locationCode: fromLocation.value,
+      pageNum: 1,
+      pageSize: 1
+    })
+    const locationId = locRes.data?.records?.[0]?.id
+    let records: any[] = []
+    if (locationId) {
+      const res = await request.post('/inventory/stocks/page', {
+        warehouseId: authStore.warehouseId,
+        locationId,
+        skuCode: code,
+        pageNum: 1,
+        pageSize: 20
+      })
+      records = res.data?.records || []
+    }
     if (records.length > 1) {
       // 多批次：弹出选择器
       const batchNames = records.map((r: any) =>
-        `${r.batchNo || '无批次'} | 库存: ${r.qty || 0} 件 | ${r.lotAttrs || ''}`
+        `${r.batchNo || '无批次'} | 可用: ${r.qtyAvailable ?? r.qtyOnHand ?? 0} 件 | ${r.lotAttrs || ''}`
       )
       uni.showActionSheet({
         itemList: batchNames.slice(0, 6),
@@ -129,8 +145,8 @@ async function onSkuScanned() {
     } else if (records.length === 1) {
       skuInfo.value = records[0]
     } else {
-      // 如果库位库存查询失败，尝试 SKU 查询
-      const skuRes = await request.get('/masterdata/skus/page', { skuCode: code, pageNum: 1, pageSize: 1 })
+      // 该库位无此 SKU 库存时，退回 SKU 主数据查询
+      const skuRes = await request.post('/masterdata/skus/page', { skuCode: code, pageNum: 1, pageSize: 1 })
       if (skuRes.data?.records?.length > 0) {
         skuInfo.value = { ...skuRes.data.records[0], qty: 0 }
       } else {
@@ -157,7 +173,8 @@ async function confirmMove() {
   try {
     await request.post('/inventory/moves', {
       warehouseId: authStore.warehouseId,
-      skuId: skuInfo.value?.id,
+      moveType: 'MANUAL',
+      skuCode: skuInfo.value?.skuCode,
       moveQty: moveQty.value,
       fromLocationCode: fromLocation.value,
       toLocationCode: toLocation.value,

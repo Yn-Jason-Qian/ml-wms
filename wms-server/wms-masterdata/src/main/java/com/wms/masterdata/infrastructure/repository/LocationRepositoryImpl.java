@@ -44,6 +44,18 @@ public class LocationRepositoryImpl implements LocationRepository {
     }
 
     @Override
+    public Optional<Location> findByCode(Long tenantId, Long warehouseId, String locationCode) {
+        return Optional.ofNullable(
+                mapper.selectOne(
+                        new LambdaQueryWrapper<Location>()
+                                .eq(Location::getTenantId, tenantId)
+                                .eq(warehouseId != null, Location::getWarehouseId, warehouseId)
+                                .eq(Location::getLocationCode, locationCode)
+                                .orderByAsc(Location::getId)
+                                .last("LIMIT 1")));
+    }
+
+    @Override
     public void batchSave(List<Location> locations) {
         locations.forEach(mapper::insert);
     }

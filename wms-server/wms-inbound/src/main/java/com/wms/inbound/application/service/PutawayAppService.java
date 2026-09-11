@@ -5,12 +5,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
+import com.wms.common.util.DocNoUtil;
 import com.wms.inbound.application.assembler.PutawayAssembler;
 import com.wms.inbound.application.dto.*;
 import com.wms.inbound.domain.entity.PutawayHeader;
 import com.wms.inbound.domain.entity.PutawayLine;
 import com.wms.inbound.domain.entity.ReceiveHeader;
 import com.wms.inbound.domain.entity.ReceiveLine;
+import com.wms.inbound.domain.gateway.MasterDataGateway;
 import com.wms.inbound.domain.repository.PutawayRepository;
 import com.wms.inbound.domain.repository.ReceiveRepository;
 import com.wms.inbound.domain.service.PutawayDomainService;
@@ -23,8 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,7 @@ public class PutawayAppService {
     private final PutawayAssembler assembler;
     private final PutawayDomainService putawayDomainService;
     private final ReceiveRepository receiveRepository;
+    private final MasterDataGateway masterDataGateway;
 
     public IPage<PutawayDTO> pagePutaways(PutawayPageQuery query) {
         IPage<PutawayHeader> result =
@@ -70,10 +73,13 @@ public class PutawayAppService {
         if (dto.getReceiveNo() == null) {
             dto.setReceiveNo("");
         }
-        dto.setLines(
-                putawayRepository.findLinesByHeader(id).stream()
-                        .map(assembler::toLineDTO)
-                        .toList());
+        List<PutawayLineDTO> lines =
+                putawayRepository.findLinesByHeader(id).stream().map(assembler::toLineDTO).toList();
+        Map<Long, String> locationCodes =
+                masterDataGateway.resolveLocationCodes(
+                        lines.stream().map(PutawayLineDTO::getFromLocationId).toList());
+        lines.forEach(l -> l.setFromLocationCode(locationCodes.get(l.getFromLocationId())));
+        dto.setLines(lines);
         return dto;
     }
 
@@ -81,8 +87,7 @@ public class PutawayAppService {
     public PutawayResultDTO createPutaway(PutawayCreateCmd cmd) {
         Long tenantId = UserContext.getTenantId();
         Long userId = UserContext.getUserId();
-        String paNo =
-                "PA-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String paNo = DocNoUtil.next("PA");
 
         ReceiveHeader rcv =
                 receiveRepository
@@ -140,8 +145,24 @@ public class PutawayAppService {
                         .findFirst()
                         .orElseThrow(() -> BusinessException.notFound("上架行不存在"));
 
-        if (cmd.getToLocationId() != null) {
-            line.setToLocationId(cmd.getToLocationId());
+        Long toLocationId = cmd.getToLocationId();
+        if (toLocationId == null
+                && cmd.getToLocationCode() != null
+                && !cmd.getToLocationCode().isBlank()) {
+            toLocationId =
+                    masterDataGateway
+                            .resolveLocation(
+                                    null,
+                                    cmd.getToLocationCode(),
+                                    paHeader.getWarehouseId(),
+                                    UserContext.getTenantId())
+                            .getId();
+        }
+        if (toLocationId == null) {
+            throw BusinessException.badRequest("toLocationId 或 toLocationCode 必须提供一个");
+        }
+        if (!toLocationId.equals(line.getToLocationId())) {
+            line.setToLocationId(toLocationId);
         }
 
         Long warehouseId = paHeader.getWarehouseId();

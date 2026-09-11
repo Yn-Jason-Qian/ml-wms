@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
+import com.wms.common.util.DocNoUtil;
 import com.wms.masterdata.domain.entity.Sku;
 import com.wms.outbound.application.assembler.OrderAssembler;
 import com.wms.outbound.application.dto.*;
@@ -21,8 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -66,8 +65,7 @@ public class OrderAppService {
     public OrderResultDTO createOrder(OrderCreateCmd cmd) {
         Long tenantId = UserContext.getTenantId();
         Long userId = UserContext.getUserId();
-        String orderNo =
-                "ORD-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String orderNo = DocNoUtil.next("ORD");
 
         OrderHeader h = new OrderHeader();
         h.setTenantId(tenantId);

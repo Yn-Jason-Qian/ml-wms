@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
+import com.wms.common.util.DocNoUtil;
 import com.wms.outbound.application.assembler.PickAssembler;
 import com.wms.outbound.application.dto.*;
 import com.wms.outbound.domain.entity.*;
 import com.wms.outbound.domain.gateway.InventoryGateway;
+import com.wms.outbound.domain.gateway.MasterDataGateway;
 import com.wms.outbound.domain.repository.OrderRepository;
 import com.wms.outbound.domain.repository.PickRepository;
 import com.wms.outbound.domain.repository.WaveRepository;
@@ -21,7 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class PickAppService {
     private final WaveRepository waveRepository;
     private final OrderRepository orderRepository;
     private final InventoryGateway inventoryGateway;
+    private final MasterDataGateway masterDataGateway;
     private final PickAssembler assembler;
 
     public IPage<PickDTO> pagePicks(PickPageQuery query) {
@@ -54,7 +58,13 @@ public class PickAppService {
         PickHeader h =
                 pickRepository.findById(id).orElseThrow(() -> BusinessException.notFound("拣货单不存在"));
         PickDTO dto = assembler.toDTO(h);
-        dto.setLines(pickRepository.findLines(id).stream().map(assembler::toLineDTO).toList());
+        List<PickLineDTO> lines =
+                pickRepository.findLines(id).stream().map(assembler::toLineDTO).toList();
+        Map<Long, String> locationCodes =
+                masterDataGateway.resolveLocationCodes(
+                        lines.stream().map(PickLineDTO::getLocationId).toList());
+        lines.forEach(l -> l.setLocationCode(locationCodes.get(l.getLocationId())));
+        dto.setLines(lines);
         return dto;
     }
 
@@ -62,8 +72,7 @@ public class PickAppService {
     public PickResultDTO createPickForWave(Long waveHeaderId) {
         Long tenantId = UserContext.getTenantId();
         Long userId = UserContext.getUserId();
-        String pickNo =
-                "PICK-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String pickNo = DocNoUtil.next("PICK");
 
         WaveHeader wave =
                 waveRepository

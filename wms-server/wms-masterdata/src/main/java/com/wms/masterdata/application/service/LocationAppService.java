@@ -18,7 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,6 +44,47 @@ public class LocationAppService {
         return locationRepository.findByArea(UserContext.getTenantId(), areaId).stream()
                 .map(assembler::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    // ───── 跨域调用（供其他模块 Gateway Adapter 使用）─────
+
+    /**
+     * 根据 ID 或 code 查找库位（支持 PDA 扫码传 code 的场景）。
+     *
+     * @param locationId 库位 ID，可为 null
+     * @param locationCode 库位编码，可为 null
+     * @param warehouseId 仓库 ID，按编码查找时用于限定范围，可为 null
+     * @param tenantId 租户 ID
+     * @return 库位实体
+     */
+    public Location resolveLocation(
+            Long locationId, String locationCode, Long warehouseId, Long tenantId) {
+        if (locationId != null) {
+            return locationRepository
+                    .findById(locationId)
+                    .orElseThrow(() -> BusinessException.notFound("库位不存在: id=" + locationId));
+        }
+        if (locationCode != null && !locationCode.isBlank()) {
+            return locationRepository
+                    .findByCode(tenantId, warehouseId, locationCode)
+                    .orElseThrow(() -> BusinessException.notFound("库位不存在: code=" + locationCode));
+        }
+        throw BusinessException.badRequest("locationId 或 locationCode 必须提供一个");
+    }
+
+    /** 批量查询库位编码，供其他域在列表场景补全展示字段。 */
+    public Map<Long, String> findCodeMap(Collection<Long> locationIds) {
+        if (locationIds == null || locationIds.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = locationIds.stream().filter(Objects::nonNull).distinct().toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return locationMapper
+                .selectList(new LambdaQueryWrapper<Location>().in(Location::getId, ids))
+                .stream()
+                .collect(Collectors.toMap(Location::getId, Location::getLocationCode, (a, b) -> a));
     }
 
     public IPage<LocationDTO> page(LocationPageQuery query) {

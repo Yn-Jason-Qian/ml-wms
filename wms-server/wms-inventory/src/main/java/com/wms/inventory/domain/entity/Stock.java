@@ -79,6 +79,15 @@ public class Stock extends BaseEntity {
         // qtyAvailable 不变（已在 allocate 时扣减）
     }
 
+    /** 移库转出：减少在手与可用数量（不影响已分配） */
+    public void transferOut(BigDecimal qty) {
+        if (qty.compareTo(this.qtyAvailable) > 0) {
+            throw new IllegalArgumentException("移出数量不能超过可用数量");
+        }
+        this.qtyOnHand = this.qtyOnHand.subtract(qty);
+        this.qtyAvailable = this.qtyAvailable.subtract(qty);
+    }
+
     /** 增加在手库存（入库/上架） */
     public void add(BigDecimal qty) {
         this.qtyOnHand = this.qtyOnHand.add(qty);

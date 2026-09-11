@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
+import com.wms.common.util.DocNoUtil;
 import com.wms.inbound.application.assembler.ReceiveAssembler;
 import com.wms.inbound.application.dto.ReceiveCreateCmd;
 import com.wms.inbound.application.dto.ReceiveDTO;
@@ -27,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -104,13 +104,21 @@ public class ReceiveAppService {
     public ReceiveResultDTO receive(ReceiveCreateCmd cmd) {
         Long tenantId = UserContext.getTenantId();
         Long userId = UserContext.getUserId();
-        String receiveNo =
-                "RCV-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String receiveNo = DocNoUtil.next("RCV");
 
         Sku sku = masterDataGateway.resolveSku(cmd.getSkuId(), cmd.getSkuCode(), tenantId);
-        Long locationId = cmd.getReceiveLocationId();
-        if (locationId == null && cmd.getReceiveLocationCode() != null) {
-            locationId = 0L;
+        Long locationId = null;
+        if (cmd.getReceiveLocationId() != null
+                || (cmd.getReceiveLocationCode() != null
+                        && !cmd.getReceiveLocationCode().isBlank())) {
+            locationId =
+                    masterDataGateway
+                            .resolveLocation(
+                                    cmd.getReceiveLocationId(),
+                                    cmd.getReceiveLocationCode(),
+                                    cmd.getWarehouseId(),
+                                    tenantId)
+                            .getId();
         }
 
         ReceiveHeader h = new ReceiveHeader();

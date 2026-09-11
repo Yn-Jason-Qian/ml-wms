@@ -98,8 +98,14 @@ const tasks = ref<TaskItem[]>([])
 
 const filteredTasks = computed(() => {
   if (currentTab.value === 0) return tasks.value
-  const statusMap = ['', 'pending', 'executing', 'done']
-  return tasks.value.filter(t => t.status === statusMap[currentTab.value])
+  // 后端任务状态: CREATED/RELEASED/ASSIGNED/EXECUTING/DONE/CANCELLED
+  const statusMap: Record<number, string[]> = {
+    1: ['CREATED', 'RELEASED'],
+    2: ['ASSIGNED', 'EXECUTING'],
+    3: ['DONE']
+  }
+  const wanted = statusMap[currentTab.value] || []
+  return tasks.value.filter(t => wanted.includes(t.status))
 })
 
 function onTabChange(e: { index: number }) {
@@ -140,7 +146,7 @@ function handleStart(task: TaskItem) {
 
 async function loadTasks() {
   try {
-    const res = await request.get<any>('/tasks', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId })
+    const res = await request.post<any>('/tasks/page', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId })
     tasks.value = (res.data?.records || []).map((t: any) => ({
       ...t,
       statusType: statusTypeMap(t.status)
@@ -150,9 +156,9 @@ async function loadTasks() {
 
 function statusTypeMap(status: string): 'warning' | 'primary' | 'success' {
   switch (status) {
-    case 'pending': return 'warning'
-    case 'executing': case 'assigned': return 'primary'
-    case 'done': return 'success'
+    case 'CREATED': case 'RELEASED': return 'warning'
+    case 'EXECUTING': case 'ASSIGNED': return 'primary'
+    case 'DONE': return 'success'
     default: return 'warning'
   }
 }

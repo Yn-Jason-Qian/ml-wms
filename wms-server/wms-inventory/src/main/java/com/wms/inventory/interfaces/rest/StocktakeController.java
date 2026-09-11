@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.wms.common.base.ApiResponse;
 import com.wms.common.base.PageResponse;
 import com.wms.common.log.OperationLog;
+import com.wms.inventory.application.dto.CountSubmitCmd;
 import com.wms.inventory.application.dto.StocktakeCreateCmd;
 import com.wms.inventory.application.dto.StocktakeDTO;
 import com.wms.inventory.application.dto.StocktakePageQuery;
@@ -37,5 +38,17 @@ public class StocktakeController {
     @OperationLog(module = "库存管理", action = "创建盘点单")
     public ApiResponse<StocktakeDTO> create(@Valid @RequestBody StocktakeCreateCmd cmd) {
         return ApiResponse.ok(stocktakeAppService.createStocktake(cmd));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<StocktakeDTO> getById(@PathVariable("id") Long id) {
+        return ApiResponse.ok(stocktakeAppService.getStocktake(id));
+    }
+
+    @PostMapping("/submit")
+    @OperationLog(module = "库存管理", action = "盘点录入")
+    public ApiResponse<Void> submit(@Valid @RequestBody CountSubmitCmd cmd) {
+        stocktakeAppService.submitCount(cmd);
+        return ApiResponse.ok();
     }
 }

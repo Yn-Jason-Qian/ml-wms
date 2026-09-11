@@ -12,6 +12,7 @@ import com.wms.inventory.application.dto.StockTransactionDTO;
 import com.wms.inventory.application.dto.TransactionQuery;
 import com.wms.inventory.domain.entity.Stock;
 import com.wms.inventory.domain.entity.StockTransaction;
+import com.wms.inventory.domain.gateway.MasterDataGateway;
 import com.wms.inventory.domain.repository.StockRepository;
 import com.wms.inventory.domain.repository.StockTransactionRepository;
 import com.wms.inventory.domain.service.StockDomainService;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +36,7 @@ public class StockAppService {
     private final StockTransactionRepository txnRepository;
     private final StockDomainService stockDomainService;
     private final StockAssembler assembler;
+    private final MasterDataGateway masterDataGateway;
 
     // Mappers — 仅用于分页查询
     private final StockMapper stockMapper;
@@ -69,7 +72,13 @@ public class StockAppService {
             qw.gt(Stock::getQtyOnHand, BigDecimal.ZERO);
         }
         IPage<Stock> result = stockMapper.selectPage(page, qw);
-        return result.convert(assembler::toDTO);
+        IPage<StockDTO> dtos = result.convert(assembler::toDTO);
+        // 补齐库位编码，前端无需再自行反查
+        Map<Long, String> locationCodes =
+                masterDataGateway.resolveLocationCodes(
+                        dtos.getRecords().stream().map(StockDTO::getLocationId).toList());
+        dtos.getRecords().forEach(d -> d.setLocationCode(locationCodes.get(d.getLocationId())));
+        return dtos;
     }
 
     public StockDTO findStockById(Long id) {

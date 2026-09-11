@@ -185,7 +185,7 @@ async function loadTasks(receiveNo?: string) {
     const params: any = { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId }
     if (receiveNo) params.receiveNo = receiveNo
 
-    const res = await request.get('/inbound/putaways/page', params)
+    const res = await request.post('/inbound/putaways/page', params)
     const records = res.data?.records || []
 
     taskList.value = records.map((t: any) => ({
@@ -238,10 +238,10 @@ async function selectTask(task: any) {
   currentTask.value = task
   // 加载上架行
   try {
-    const res = await request.get(`/inbound/putaways/${task.id}/lines`)
+    const res = await request.get(`/inbound/putaways/${task.id}`)
     // 竞态守卫：如果用户已切换到其他任务，丢弃此响应
     if (seq !== selectTaskSeq) return
-    const lines = (res.data?.records || res.data || []).map((l: any) => ({
+    const lines = (res.data?.lines || []).map((l: any) => ({
       ...l,
       done: l.status === 'DONE' || l.doneQty >= l.putawayQty
     }))

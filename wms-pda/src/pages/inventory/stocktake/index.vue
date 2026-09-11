@@ -169,7 +169,7 @@ const filteredTasks = computed(() => {
 
 async function loadTasks() {
   try {
-    const res = await request.get('/inventory/stocktakes/page', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId })
+    const res = await request.post('/inventory/stocktakes/page', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId })
     taskList.value = (res.data?.records || []).map((t: any) => ({
       ...t,
       statusText: sMap(t.status), statusType: tMap(t.status)
@@ -189,12 +189,12 @@ function tMap(s: string): 'warning' | 'primary' | 'success' {
 async function selectTask(task: any) {
   currentTask.value = task
   try {
-    const res = await request.get(`/inventory/stocktakes/${task.id}/lines`)
-    lines.value = (res.data?.records || res.data || []).map((l: any) => ({
+    const res = await request.get(`/inventory/stocktakes/${task.id}`)
+    lines.value = (res.data?.lines || []).map((l: any) => ({
       ...l, status: l.status || null, countQty: l.firstCountQty || null, diffQty: l.diffQty || null
     }))
   } catch {
-    lines.value = [{ locationCode: '-', skuCode: '-', skuName: '', bookQty: 0, batchNo: '', status: null }]
+    lines.value = []
   }
   lineIdx.value = lines.value.findIndex(l => !l.status || l.status === 'DIFF')
   if (lineIdx.value < 0) lineIdx.value = 0
@@ -215,9 +215,9 @@ async function confirmStocktake() {
     if (!line) return
     // 调用盘点提交API
     await request.post(`/inventory/stocktakes/submit`, {
-      stocktakeHeaderId: currentTask.value.id,
-      stocktakeLineId: line.id,
-      countQty: countQty.value
+      lineId: line.id,
+      countQty: countQty.value,
+      countRound: 1
     })
 
     line.status = countQty.value === (line.bookQty || 0) ? 'COUNTED' : 'DIFF'

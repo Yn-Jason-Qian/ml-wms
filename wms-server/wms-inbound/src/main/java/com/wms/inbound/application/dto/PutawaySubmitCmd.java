@@ -10,4 +10,7 @@ public class PutawaySubmitCmd {
     @NotNull private Long putawayHeaderId;
     @NotNull private Long putawayLineId;
     private Long toLocationId;
+
+    /** 目标库位编码（PDA 扫码场景，与 toLocationId 二选一） */
+    private String toLocationCode;
 }

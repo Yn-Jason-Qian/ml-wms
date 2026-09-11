@@ -23,9 +23,15 @@ public class StockDomainService {
 
     /** 库存移动：来源扣减 → 目标增加 → 两条流水 */
     public Stock moveStock(
-            Stock fromStock, Stock toStock, BigDecimal qty, Long refId, String refNo, Long moveBy) {
+            Stock fromStock,
+            Stock toStock,
+            Long toLocationId,
+            BigDecimal qty,
+            Long refId,
+            String refNo,
+            Long moveBy) {
         // 来源扣减
-        fromStock.deduct(qty);
+        fromStock.transferOut(qty);
         stockRepository.updateWithVersion(fromStock);
         writeTxn(
                 fromStock,
@@ -34,8 +40,8 @@ public class StockDomainService {
                 qty,
                 refNo,
                 refId,
-                null,
-                toStock.getLocationId(),
+                fromStock.getLocationId(),
+                toLocationId,
                 moveBy);
 
         // 目标增加（若不存在则创建）
@@ -43,6 +49,7 @@ public class StockDomainService {
             toStock = new Stock();
             toStock.setWarehouseId(fromStock.getWarehouseId());
             toStock.setOwnerId(fromStock.getOwnerId());
+            toStock.setLocationId(toLocationId);
             toStock.setSkuId(fromStock.getSkuId());
             toStock.setSkuCode(fromStock.getSkuCode());
             toStock.setSkuName(fromStock.getSkuName());
@@ -50,6 +57,10 @@ public class StockDomainService {
             toStock.setLotAttrs(fromStock.getLotAttrs());
             toStock.setProductionDate(fromStock.getProductionDate());
             toStock.setExpiryDate(fromStock.getExpiryDate());
+            toStock.setQtyOnHand(BigDecimal.ZERO);
+            toStock.setQtyAllocated(BigDecimal.ZERO);
+            toStock.setQtyAvailable(BigDecimal.ZERO);
+            toStock.setQtyFrozen(BigDecimal.ZERO);
             toStock.setTenantId(fromStock.getTenantId());
             toStock.setCreatedBy(moveBy);
             toStock.setUpdatedBy(moveBy);

@@ -1,4 +1,4 @@
-package com.wms.outbound.domain.gateway;
+package com.wms.inventory.domain.gateway;
 
 import com.wms.masterdata.domain.entity.Location;
 import com.wms.masterdata.domain.entity.Sku;
@@ -7,9 +7,9 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * 出库域访问主数据域的网关端口。
+ * 库存域访问主数据域的网关端口。
  *
- * <p>封装 SKU 解析逻辑，避免直接依赖主数据域 Repository。
+ * <p>封装 SKU / 库位解析逻辑，避免库存域直接依赖主数据域 Repository。
  */
 public interface MasterDataGateway {
 

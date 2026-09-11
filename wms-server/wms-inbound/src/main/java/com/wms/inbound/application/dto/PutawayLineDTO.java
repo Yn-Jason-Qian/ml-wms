@@ -15,6 +15,10 @@ public class PutawayLineDTO {
     private BigDecimal putawayQty;
     private BigDecimal doneQty;
     private Long fromLocationId;
+
+    /** 来源库位编码（详情接口按 fromLocationId 反查填充） */
+    private String fromLocationCode;
+
     private Long toLocationId;
     private String batchNo;
     private String lotAttrs;

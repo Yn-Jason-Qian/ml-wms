@@ -130,8 +130,8 @@ const filteredTasks = computed(() => {
 async function loadTasks() {
   // 并行加载 ships 和 waves，合并结果
   const [shipsRes, wavesRes] = await Promise.allSettled([
-    request.get('/outbound/ships/page', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId }),
-    request.get('/outbound/waves/page', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId })
+    request.post('/outbound/ships/page', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId }),
+    request.post('/outbound/waves/page', { pageNum: 1, pageSize: 50, warehouseId: authStore.warehouseId })
   ])
 
   const ships = shipsRes.status === 'fulfilled'
@@ -142,10 +142,10 @@ async function loadTasks() {
     : []
 
   const shipTasks = ships.map((t: any) => ({
-    ...t, statusText: sMap(t.status), statusType: tMap(t.status)
+    ...t, source: 'ship', statusText: sMap(t.status), statusType: tMap(t.status)
   }))
   const waveTasks = waves.map((t: any) => ({
-    ...t, id: t.id, shipNo: t.waveNo, status: t.waveStatus, statusText: '可发货', statusType: 'warning' as const
+    ...t, id: t.id, source: 'wave', shipNo: t.waveNo, status: t.waveStatus, statusText: '可发货', statusType: 'warning' as const
   }))
 
   // 合并去重（以 shipNo 为 key）
@@ -179,6 +179,10 @@ async function onScanClick(target: string) {
 }
 
 async function confirmShip() {
+  if (currentTask.value?.source !== 'wave') {
+    uni.showToast({ title: '该波次已生成发货单', icon: 'none' })
+    return
+  }
   confirming.value = true
   try {
     await request.post('/outbound/ships', {

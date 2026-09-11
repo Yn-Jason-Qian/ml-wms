@@ -12,10 +12,23 @@ import java.math.BigDecimal;
 public class MoveCreateCmd {
     @NotNull private Long warehouseId;
     @NotNull private MoveType moveType;
-    @NotNull private Long skuId;
     @NotNull private BigDecimal moveQty;
-    @NotNull private Long fromLocationId;
-    @NotNull private Long toLocationId;
+
+    /** SKU ID，与 skuCode 二选一（PDA 扫码传编码） */
+    private Long skuId;
+
+    private String skuCode;
+
+    /** 来源库位 ID，与 fromLocationCode 二选一 */
+    private Long fromLocationId;
+
+    private String fromLocationCode;
+
+    /** 目标库位 ID，与 toLocationCode 二选一 */
+    private Long toLocationId;
+
+    private String toLocationCode;
+
     private String batchNo;
     private String remark;
 }

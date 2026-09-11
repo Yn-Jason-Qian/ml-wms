@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.context.UserContext;
 import com.wms.common.exception.BusinessException;
+import com.wms.common.util.DocNoUtil;
 import com.wms.outbound.application.assembler.CheckAssembler;
 import com.wms.outbound.application.dto.*;
 import com.wms.outbound.domain.entity.*;
@@ -20,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -76,8 +76,7 @@ public class CheckAppService {
                         .findById(waveHeaderId)
                         .orElseThrow(() -> BusinessException.notFound("波次不存在"));
 
-        String checkNo =
-                "CHK-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String checkNo = DocNoUtil.next("CHK");
         CheckHeader h = new CheckHeader();
         h.setTenantId(tenantId);
         h.setWarehouseId(wave.getWarehouseId());

@@ -46,6 +46,24 @@ class StockTest {
     }
 
     @Test
+    void testTransferOutKeepsAllocatedUntouched() {
+        stock.allocate(BigDecimal.valueOf(30));
+
+        stock.transferOut(BigDecimal.valueOf(20));
+
+        assertEquals(BigDecimal.valueOf(80), stock.getQtyOnHand());
+        assertEquals(BigDecimal.valueOf(30), stock.getQtyAllocated());
+        assertEquals(BigDecimal.valueOf(50), stock.getQtyAvailable());
+    }
+
+    @Test
+    void testTransferOutMoreThanAvailableShouldFail() {
+        stock.allocate(BigDecimal.valueOf(30));
+        assertThrows(
+                IllegalArgumentException.class, () -> stock.transferOut(BigDecimal.valueOf(80)));
+    }
+
+    @Test
     void testAllocateMoreThanAvailableShouldFail() {
         assertThrows(IllegalArgumentException.class, () -> stock.allocate(BigDecimal.valueOf(200)));
     }

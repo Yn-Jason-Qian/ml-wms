@@ -15,6 +15,8 @@ public interface StockRepository {
 
     List<Stock> findBySku(Long tenantId, Long skuId);
 
+    List<Stock> findByWarehouse(Long tenantId, Long warehouseId);
+
     void save(Stock stock);
 
     void update(Stock stock);
