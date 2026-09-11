@@ -78,15 +78,31 @@ else
   COMPOSE="docker-compose"
 fi
 
-# 4) 首次部署时初始化数据库（仅在 ml_wms 不存在时执行，避免误改线上表结构）
+# 4) 数据库：不存在则导入 init.sql；存在但结构不完整（失败导入留下的半成品）则明确失败，
+#    避免"库里没有表却每次都跳过初始化"这种静默故障。
 if docker inspect "$DB_CONTAINER" >/dev/null 2>&1; then
   EXISTS="$(docker exec "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SHOW DATABASES LIKE '$DB_NAME'" 2>/dev/null || true)"
-  if [ -z "$EXISTS" ] && [ -f "$WMS_HOME/init.sql" ]; then
-    echo "[deploy] 数据库 $DB_NAME 不存在，导入 init.sql ..."
-    docker exec -i "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" < "$WMS_HOME/init.sql"
-    echo "[deploy] 数据库初始化完成"
+
+  if [ -z "$EXISTS" ]; then
+    if [ -f "$WMS_HOME/init.sql" ]; then
+      echo "[deploy] 数据库 $DB_NAME 不存在，导入 init.sql ..."
+      docker exec -i "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" < "$WMS_HOME/init.sql"
+      echo "[deploy] 数据库初始化完成"
+    else
+      echo "[deploy] ⚠️ 未找到 init.sql，跳过数据库初始化"
+    fi
   else
-    echo "[deploy] 数据库 $DB_NAME 已存在，跳过初始化"
+    # 用建表顺序里最后一张表判断结构是否完整
+    COMPLETE="$(docker exec "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='wms_print_record'" 2>/dev/null || echo 0)"
+    if [ "$COMPLETE" = "1" ]; then
+      echo "[deploy] 数据库 $DB_NAME 已存在且结构完整，跳过初始化"
+    else
+      echo "[deploy] ❌ 数据库 $DB_NAME 存在但结构不完整（缺少 wms_print_record 等表）"
+      echo "[deploy]    通常是一次失败导入留下的半成品库。确认可以重建后执行："
+      echo "[deploy]      docker exec $DB_CONTAINER mysql -u$MYSQL_USER -p****** -e 'DROP DATABASE $DB_NAME'"
+      echo "[deploy]    再重新部署即可自动重建。"
+      exit 1
+    fi
   fi
 else
   echo "[deploy] ⚠️ 未找到容器 $DB_CONTAINER，跳过数据库检查"
