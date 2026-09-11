@@ -46,6 +46,8 @@ cd wms-web && npm run build
 
 CI（GitHub Actions）会在 PR 上运行同样的检查，本地先跑一遍能省一次往返。
 
+涉及页面的改动，建议按 [Web 全页面功能检查清单](docs/web-verification-checklist.md) 手工过一遍再提交。
+
 ## 代码规范
 
 ### 后端

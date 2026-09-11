@@ -1,3 +1,7 @@
+# ── 本地开发基础设施 ──
+#
+# 只负责 MySQL + Redis（开发时后端用 mvn spring-boot:run、前端用 npm run dev）。
+# 应用容器的编排在 deploy/ 目录，那里才是 server + web 部署配置的唯一来源。
 services:
   mysql:
     image: mysql:8.0.35
@@ -40,38 +44,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  server:
-    build:
-      context: ./wms-server
-      dockerfile: Dockerfile
-    container_name: wms-server
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ml_wms?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&sslMode=DISABLED&allowPublicKeyRetrieval=true&tinyInt1isBit=false
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  web:
-    build:
-      context: ./wms-web
-      dockerfile: Dockerfile
-    container_name: wms-web
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    depends_on:
-      - server
 
 volumes:
   mysql-data:

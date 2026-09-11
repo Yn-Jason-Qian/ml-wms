@@ -1,7 +1,0 @@
-# 构建上下文瘦身：不要把构建产物、IDE 文件传给 docker daemon
-**/target/
-.m2/
-.git/
-.idea/
-*.iml
-*.log
