@@ -23,12 +23,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // 原生 WebSocket 端点：PDA（uni.connectSocket）和 PC 前端都直接发送 STOMP 帧，
         // 不经过 SockJS 的帧封装，所以必须单独注册一个不带 withSockJS() 的端点。
-        registry.addEndpoint("/ws-stomp")
-                .setAllowedOriginPatterns("*");
+        registry.addEndpoint("/ws-stomp").setAllowedOriginPatterns("*");
 
         // SockJS 回退端点：给不支持原生 WebSocket 的环境（老浏览器、部分企业代理）
-        registry.addEndpoint("/ws-stomp")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+        registry.addEndpoint("/ws-stomp").setAllowedOriginPatterns("*").withSockJS();
     }
 }
