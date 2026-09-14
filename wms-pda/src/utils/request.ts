@@ -3,7 +3,8 @@
  * 复用 wms-web 的 request.ts 模式（拦截器 + JWT + 统一错误处理）
  */
 
-import { getToken, removeToken } from './auth'
+import { AUTH_STORE_KEY, getToken, removeToken } from './auth'
+import { API_BASE } from './env'
 
 // ── 基础类型 ──
 export interface ApiResponse<T = unknown> {
@@ -21,12 +22,33 @@ export interface PageResponse<T> {
 }
 
 // ── 配置 ──
-const BASE_URL = '/api/v1'
 const TIMEOUT = 30000
 
 /** 确保 url 以 / 开头 */
 function normalizeUrl(url: string): string {
   return url.startsWith('/') ? url : '/' + url
+}
+
+/**
+ * 匿名接口：不带 Authorization。
+ * 否则一旦本地残留了过期 token，后端 JWT 过滤器会在进入登录逻辑之前
+ * 直接把请求判成 401，导致「拿着旧 token 就永远登不进来」。
+ */
+const ANONYMOUS_PATHS = ['/auth/login']
+
+function isAnonymous(url: string): boolean {
+  return ANONYMOUS_PATHS.includes(normalizeUrl(url))
+}
+
+/**
+ * 清理登录态。
+ * 除了删除请求层用的 token，还要清掉 Pinia 的持久化状态——
+ * 否则 App 下次启动时 restoreSession() 会把旧 token 又写回 uni.storage，
+ * 变成「清掉了但刷新后复活」。
+ */
+function clearSession(): void {
+  removeToken()
+  uni.removeStorageSync(AUTH_STORE_KEY)
 }
 
 // ── 内部请求方法 ──
@@ -38,7 +60,7 @@ function request<T = unknown>(
 ): Promise<ApiResponse<T>> {
   return new Promise((resolve, reject) => {
     // 构建完整 URL
-    let fullUrl = BASE_URL + normalizeUrl(url)
+    let fullUrl = API_BASE + normalizeUrl(url)
     if (params) {
       const query = Object.entries(params)
         .filter(([, v]) => v !== undefined && v !== null)
@@ -47,7 +69,7 @@ function request<T = unknown>(
       if (query) fullUrl += `?${query}`
     }
 
-    const token = getToken()
+    const token = isAnonymous(url) ? null : getToken()
 
     uni.request({
       url: fullUrl,
@@ -69,7 +91,7 @@ function request<T = unknown>(
         if (isSuccess) {
           resolve(body)
         } else if (res.statusCode === 401 || (body && body.code === 401)) {
-          removeToken()
+          clearSession()
           uni.reLaunch({ url: '/pages/login/index' })
           reject(new Error(body.message || '登录已过期'))
         } else {

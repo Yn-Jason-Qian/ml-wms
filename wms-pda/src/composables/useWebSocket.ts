@@ -7,8 +7,11 @@
  * 或通过简易 WebSocket 订阅 /topic/tasks
  */
 import { ref, onMounted, onUnmounted } from 'vue'
+import { WS_URL } from '@/utils/env'
 
-const WS_URL = 'ws://localhost:8080/ws-stomp'
+/** 重连退避：3s 起，逐次翻倍，最长 30s */
+const RECONNECT_BASE_DELAY = 3000
+const RECONNECT_MAX_DELAY = 30000
 
 export interface TaskNotification {
   eventType: string  // CLAIMED | STARTED | COMPLETED | CANCELLED | NEW
@@ -26,18 +29,37 @@ export function useWebSocket() {
   const notifications = ref<TaskNotification[]>([])
   let socketTask: UniApp.SocketTask | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let reconnectDelay = RECONNECT_BASE_DELAY
+  let stopped = false
+  let warned = false
   let callbacks: Array<(n: TaskNotification) => void> = []
 
+  /** 只在状态真的变化时改 ref —— 否则每次失败都会触发一轮页面重渲染 */
+  function setConnected(value: boolean) {
+    if (connected.value !== value) {
+      connected.value = value
+    }
+  }
+
   function connect() {
-    if (socketTask) return
+    if (socketTask || stopped) return
+
+    if (!WS_URL) {
+      if (!warned) {
+        warned = true
+        console.warn('[PDA] 未配置 WebSocket 地址，实时推送已禁用')
+      }
+      return
+    }
 
     socketTask = uni.connectSocket({
       url: WS_URL,
-      success: () => { connected.value = true }
+      success: () => { setConnected(true) }
     })
 
     socketTask.onOpen(() => {
-      connected.value = true
+      setConnected(true)
+      reconnectDelay = RECONNECT_BASE_DELAY
       // 订阅 STOMP 格式
       const subscribeFrame = [
         'CONNECT\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n\0',
@@ -65,23 +87,33 @@ export function useWebSocket() {
     })
 
     socketTask.onClose(() => {
-      connected.value = false
+      setConnected(false)
       socketTask = null
-      // 3秒后自动重连
-      reconnectTimer = setTimeout(connect, 3000)
+      scheduleReconnect()
     })
 
     socketTask.onError(() => {
-      connected.value = false
-      socketTask?.close()
+      // 不在这里 close()：close 事件会自己到达，重复调用会触发两轮重连
+      setConnected(false)
     })
   }
 
+  function scheduleReconnect() {
+    if (stopped || reconnectTimer || !WS_URL) return
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      connect()
+    }, reconnectDelay)
+    reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX_DELAY)
+  }
+
   function disconnect() {
+    stopped = true
     if (reconnectTimer) clearTimeout(reconnectTimer)
+    reconnectTimer = null
     socketTask?.close({ code: 1000, reason: 'user disconnect' })
     socketTask = null
-    connected.value = false
+    setConnected(false)
   }
 
   function onNotification(cb: (n: TaskNotification) => void) {
