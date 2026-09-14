@@ -10,16 +10,12 @@
 #   /opt/wms/server/Dockerfile + app.jar + wms-web-<ver>.jar
 #   /opt/wms/web/Dockerfile + nginx.conf + dist/
 #
-# 依赖的基础设施（由服务器上已有的 mysql/redis compose 管理，本脚本只复用、不接管）：
-#   mysql8  / redis7  同一个 docker 网络（compose 项目网络，通常叫 <项目名>_backend）
+# 依赖的基础设施（由服务器上已有的 mysql/redis compose 管理，本脚本只复用、不接管）。
+# 容器名、库名等环境相关的值都有默认值，可在 /opt/wms/.env 中覆盖，见 deploy/.env.example。
 set -eu
 
-WMS_HOME=/opt/wms
-COMPOSE_PROJECT=wms
-
-DB_CONTAINER=mysql8
-REDIS_CONTAINER=redis7
-DB_NAME=ml_wms
+WMS_HOME="${WMS_HOME:-/opt/wms}"
+COMPOSE_PROJECT="${COMPOSE_PROJECT:-wms}"
 
 # mysql 官方镜像里 mysql 客户端默认字符集是 latin1（容器无 LANG 环境变量）。
 # 不带这个参数导入 init.sql 会把中文写成双重编码（乱码），必须显式指定。
@@ -27,13 +23,28 @@ MYSQL_CHARSET=--default-character-set=utf8mb4
 
 cd "$WMS_HOME"
 
-# 可选：数据库口令等放在 /opt/wms/.env（docker compose 也会自动读取同一文件）
+# 先加载 /opt/wms/.env（deploy.sh 与 docker compose 读的是同一个文件）
 if [ -f "$WMS_HOME/.env" ]; then
   . "$WMS_HOME/.env"
 fi
+
+# ───── 以下均为默认值，可在 /opt/wms/.env 中覆盖 ─────
+# 已有的基础设施容器名（本部署只复用，不接管）
+DB_CONTAINER="${WMS_DB_CONTAINER:-mysql8}"
+REDIS_CONTAINER="${WMS_REDIS_CONTAINER:-redis7}"
+DB_NAME="${WMS_DB_NAME:-ml_wms}"
+
 MYSQL_USER="${MYSQL_USER:-root}"
 MYSQL_PASSWORD="${MYSQL_PASSWORD:-root}"
 export MYSQL_USER MYSQL_PASSWORD
+
+# 后端连接用的主机名默认取容器名（同一个 docker 网络内可直接解析容器名）；
+# 数据库在宿主机或别处时，用 WMS_DB_HOST / WMS_REDIS_HOST 显式指定。
+export WMS_DB_HOST="${WMS_DB_HOST:-$DB_CONTAINER}"
+export WMS_REDIS_HOST="${WMS_REDIS_HOST:-$REDIS_CONTAINER}"
+export WMS_DB_PORT="${WMS_DB_PORT:-3306}"
+export WMS_REDIS_PORT="${WMS_REDIS_PORT:-6379}"
+export WMS_DB_NAME="$DB_NAME"
 
 echo "[deploy] ============== WMS 部署开始 =============="
 
@@ -110,6 +121,7 @@ if docker inspect "$DB_CONTAINER" >/dev/null 2>&1; then
   fi
 else
   echo "[deploy] ⚠️ 未找到容器 $DB_CONTAINER，跳过数据库检查"
+  echo "[deploy]    容器名不对的话，请在 /opt/wms/.env 里设置 WMS_DB_CONTAINER / WMS_REDIS_CONTAINER"
 fi
 
 # 5) 清理不属于本 compose 项目的同名旧容器（避免 container name 冲突）

@@ -240,6 +240,7 @@ pipeline {
 
                     cp deploy/docker-compose.yml .deploy-staging/
                     cp deploy/deploy.sh           .deploy-staging/
+                    cp deploy/.env.example        .deploy-staging/
                     cp wms-server/wms-web/src/main/resources/db/init.sql .deploy-staging/
 
                     cp deploy/server/Dockerfile .deploy-staging/server/
