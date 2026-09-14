@@ -48,10 +48,43 @@
         <poi.version>5.4.1</poi.version>
         <commons-compress.version>1.26.2</commons-compress.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
+
+        <!--
+          以下三项用于覆盖 Spring Boot BOM 管理的版本，跟进它尚未合并的上游补丁
+          （本项目是 import BOM 而非继承 spring-boot-starter-parent，因此无法用同名属性覆盖，
+            见 dependencyManagement 中的处理）：
+            tomcat  10.1.55       -> 10.1.59        修复 GHSA-9xv2-5v5q-p794 等（上游跳过了 10.1.58）
+            jackson 2.21.4        -> 2.21.5         修复 GHSA-5gvw-p9qm-jgwh（@JsonView 绕过）等
+            netty   4.1.135.Final -> 4.1.136.Final  修复 GHSA-558v-64gr-wgg4（Bzip2 解码死循环）
+          均为同一次要版本线内的补丁升级，目标版本已用 OSV 核对无已知漏洞。
+          Spring Boot 后续补丁版跟上后，这里即可删除。
+        -->
+        <tomcat.version>10.1.59</tomcat.version>
+        <jackson.version>2.21.5</jackson.version>
+        <netty.version>4.1.136.Final</netty.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!--
+              覆盖 Spring Boot BOM 的版本：这两个 BOM 必须放在 spring-boot-dependencies 之前
+              （Maven 对同一 artifact 采用先声明者优先），才能盖住 Spring Boot 管理的 jackson / netty 版本。
+            -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Spring Boot BOM -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -187,6 +220,23 @@
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi-ooxml-lite</artifactId>
                 <version>${poi.version}</version>
+            </dependency>
+
+            <!-- Tomcat 没有官方 BOM，三个 artifact 需逐个覆盖（见 properties 中的说明） -->
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-el</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>${tomcat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
