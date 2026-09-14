@@ -31,7 +31,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Framework versions -->
-        <spring-boot.version>3.3.7</spring-boot.version>
+        <spring-boot.version>3.5.3</spring-boot.version>
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
         <mysql-connector.version>8.4.0</mysql-connector.version>
 
@@ -39,6 +39,10 @@
         <lombok.version>1.18.38</lombok.version>
         <hutool.version>5.8.35</hutool.version>
         <knife4j.version>4.5.0</knife4j.version>
+        <!-- knife4j 4.5.0 传递依赖 springdoc 2.3.0，它调用 Spring Framework 6.2 中已被移除的
+             ControllerAdviceBean(Object) 构造器（/v3/api-docs 会抛 NoSuchMethodError）。
+             Spring Boot 3.5 对应 Spring Framework 6.2，因此把 springdoc 显式提升到 2.8.x。 -->
+        <springdoc.version>2.8.6</springdoc.version>
         <mapstruct.version>1.6.3</mapstruct.version>
     </properties>
 
@@ -122,6 +126,22 @@
             </dependency>
 
             <!-- Knife4j (API documentation, enhanced Swagger) -->
+            <!-- 以下三项覆盖 knife4j 传递进来的 springdoc 2.3.0，保持三个 artifact 版本一致 -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-common</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.github.xiaoymin</groupId>
                 <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>

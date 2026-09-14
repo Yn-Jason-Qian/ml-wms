@@ -57,6 +57,10 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 knife4j:
-  enable: true
+  # 注意：knife4j 4.5.0 的 Knife4jOpenApiCustomizer 调用了 springdoc 2.4+ 已移除的
+  # SpringDocConfigProperties.getGroupConfigs()，开启后会与 Spring Boot 3.4+/3.5 冲突
+  # （/v3/api-docs 抛 NoSuchMethodError）。因此关闭增强功能，仅保留其 UI 静态资源，
+  # 接口文档仍可通过 /doc.html 访问。
+  enable: false
   setting:
     enable-footer: false
