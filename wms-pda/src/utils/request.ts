@@ -29,6 +29,17 @@ function normalizeUrl(url: string): string {
   return url.startsWith('/') ? url : '/' + url
 }
 
+/**
+ * 匿名接口：不带 Authorization。
+ * 否则一旦本地残留了过期 token，后端 JWT 过滤器会在进入登录逻辑之前
+ * 直接把请求判成 401，导致「拿着旧 token 就永远登不进来」。
+ */
+const ANONYMOUS_PATHS = ['/auth/login']
+
+function isAnonymous(url: string): boolean {
+  return ANONYMOUS_PATHS.includes(normalizeUrl(url))
+}
+
 // ── 内部请求方法 ──
 function request<T = unknown>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -47,7 +58,7 @@ function request<T = unknown>(
       if (query) fullUrl += `?${query}`
     }
 
-    const token = getToken()
+    const token = isAnonymous(url) ? null : getToken()
 
     uni.request({
       url: fullUrl,
