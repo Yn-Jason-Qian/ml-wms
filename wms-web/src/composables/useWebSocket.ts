@@ -8,7 +8,26 @@
 
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const WS_URL = `ws://${window.location.hostname}:8080/ws-stomp`
+/**
+ * WebSocket 地址：默认同源。
+ * 开发期由 vite 的 /ws-stomp 代理转发，生产期由 nginx 反代，
+ * 两种情况都不需要知道后端跑在哪台机器上。
+ * 需要单独指定时用 VITE_WS_BASE_URL 覆盖。
+ */
+function resolveWebSocketUrl(): string {
+  const configured = String(import.meta.env.VITE_WS_BASE_URL || '').trim()
+  if (configured) {
+    return configured
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${window.location.host}/ws-stomp`
+}
+
+const WS_URL = resolveWebSocketUrl()
+
+/** 重连退避：5s 起，逐次翻倍，最长 60s */
+const RECONNECT_BASE_DELAY = 5000
+const RECONNECT_MAX_DELAY = 60000
 
 export interface TaskNotification {
   eventType: string
@@ -25,15 +44,34 @@ export function useWebSocket() {
   const lastTask = ref<TaskNotification | null>(null)
   let ws: WebSocket | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let reconnectDelay = RECONNECT_BASE_DELAY
+  let stopped = false
   const listeners: Array<(n: TaskNotification) => void> = []
 
+  /** 只在状态真的变化时改 ref，避免每次重连失败都触发一轮重渲染 */
+  function setConnected(value: boolean) {
+    if (connected.value !== value) {
+      connected.value = value
+    }
+  }
+
+  function scheduleReconnect() {
+    if (stopped || reconnectTimer) return
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      connect()
+    }, reconnectDelay)
+    reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX_DELAY)
+  }
+
   function connect() {
-    if (ws && ws.readyState === WebSocket.OPEN) return
+    if (stopped || (ws && ws.readyState === WebSocket.OPEN)) return
 
     ws = new WebSocket(WS_URL)
 
     ws.onopen = () => {
-      connected.value = true
+      setConnected(true)
+      reconnectDelay = RECONNECT_BASE_DELAY
       // STOMP CONNECT + SUBSCRIBE frames
       ws!.send('CONNECT\naccept-version:1.1,1.0\n\n\0')
       ws!.send('SUBSCRIBE\nid:sub-0\ndestination:/topic/tasks\n\n\0')
@@ -53,13 +91,14 @@ export function useWebSocket() {
     }
 
     ws.onclose = () => {
-      connected.value = false
+      setConnected(false)
       ws = null
-      reconnectTimer = setTimeout(connect, 5000)
+      scheduleReconnect()
     }
 
     ws.onerror = () => {
-      ws?.close()
+      // 交给 onclose 统一处理重连，这里再 close 一次会触发两轮重连
+      setConnected(false)
     }
   }
 
@@ -74,9 +113,12 @@ export function useWebSocket() {
   onMounted(connect)
 
   onUnmounted(() => {
+    stopped = true
     if (reconnectTimer) clearTimeout(reconnectTimer)
+    reconnectTimer = null
     ws?.close(1000, 'unmount')
     ws = null
+    setConnected(false)
   })
 
   return { connected, lastTask, onTask, connect }
