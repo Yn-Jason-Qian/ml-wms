@@ -13,14 +13,14 @@
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-alpha-5010320260611001",
     "@dcloudio/uni-components": "3.0.0-alpha-5010320260611001",
-    "dayjs": "^1.11.13",
+    "dayjs": "^1.11.23",
     "pinia": "^2.3.1",
     "pinia-plugin-persistedstate": "^3.2.1",
-    "uview-plus": "^3.8.55",
-    "vue": "3.5.13"
+    "uview-plus": "^3.8.120",
+    "vue": "3.5.42"
   },
   "overrides": {
-    "vue": "3.5.13",
+    "vue": "3.5.42",
     "@vue/shared": "3.5.13",
     "@vue/runtime-core": "3.5.13",
     "@vue/runtime-dom": "3.5.13",
@@ -32,10 +32,10 @@
     "@vue/reactivity": "3.5.13"
   },
   "devDependencies": {
-    "@dcloudio/types": "^3.4.31",
+    "@dcloudio/types": "^3.4.32",
     "@dcloudio/uni-cli-shared": "3.0.0-alpha-5010320260611001",
     "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5010320260611001",
-    "sass": "^1.83.4",
+    "sass": "^1.104.0",
     "typescript": "~5.4.5",
     "vite": "5.2.8"
   }
