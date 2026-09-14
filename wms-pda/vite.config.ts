@@ -39,97 +39,14 @@ function wxsCompatPlugin(): Plugin {
 }
 
 /**
- * Vite 插件：兼容 @dcloudio/uni-app 对 Vue 私有内部 API 的引用
- *
- * uni-app 的 Vue 3 发布线只有 3.0.0-alpha-* 预发布版本，其 dist 文件顶部固定写着：
- *
- *   import { shallowRef, ref, getCurrentInstance, isInSSRComponentSetup, injectHook } from 'vue'
- *
- * 其中 isInSSRComponentSetup / injectHook 是 Vue runtime-core 的私有内部 API。
- * 上游 vue 包（3.4 / 3.5 全系）从未公开导出过这两个名字，只有 DCloud 自家 vendored 的
- * Vue（@dcloudio/uni-cli-shared/lib/vapor/@vue）才导出，因此直接用 npm 上的 vue 构建会报
- * "isInSSRComponentSetup is not exported by vue"。
- *
- * 处理方式：构建期只把这一行 import 里的两个名字摘掉，并在模块尾部内联等价实现。
- * 这里刻意不复制整份 dist 文件——那样 uni-app 一升级，构建就会静默运行旧版本代码。
+ * 说明：这里不需要为 @dcloudio/uni-app 引用 Vue 私有 API 做任何补丁。
+ * uni-app 会按平台把 `vue` 指向自家运行时（h5 → @dcloudio/uni-h5-vue，
+ * 小程序 → @dcloudio/uni-mp-vue），它们都导出了 isInSSRComponentSetup / injectHook。
+ * 只有当平台插件没被加载、`vue` 落到 npm 包时，才会报 "is not exported by vue"。
  */
-function buildVueInternalsShim(getCurrentInstanceRef: string): string {
-  return `
-// ── 由 vite.config.ts 的 wms-uni-app-vue-internals 插件注入 ──
-// isInSSRComponentSetup：PDA 是纯客户端，不存在 SSR 组件上下文，恒为 false
-var isInSSRComponentSetup = false;
-// injectHook：等价于 Vue runtime-core 内部的同名函数，只依赖公开的 getCurrentInstance
-function injectHook(type, hook, target) {
-  target = target || ${getCurrentInstanceRef};
-  if (!target) {
-    return;
-  }
-  var hooks = target[type] || (target[type] = []);
-  var wrappedHook = hook.__weh || (hook.__weh = function () {
-    var args = [];
-    for (var i = 0; i < arguments.length; i++) {
-      args[i] = arguments[i];
-    }
-    try {
-      return hook.apply(void 0, args);
-    } catch (e) {
-      console.error('[wms] uni-app 生命周期钩子执行失败:', type, e);
-    }
-  });
-  hooks.push(wrappedHook);
-}
-`
-}
-
-function uniAppVueInternalsPlugin(): Plugin {
-  const targets = [
-    // ESM：Rollup / Vite 构建走的就是这一份
-    { re: /[\\/]@dcloudio[\\/]uni-app[\\/]dist[\\/]uni-app\.es\.js$/, cjs: false },
-    // CJS：Node 侧（编译器、CLI）可能加载这一份
-    { re: /[\\/]@dcloudio[\\/]uni-app[\\/]dist[\\/]uni-app\.cjs\.js$/, cjs: true }
-  ]
-  return {
-    name: 'wms-uni-app-vue-internals',
-    enforce: 'pre',
-    transform(code, id) {
-      const file = id.split('?')[0]
-      const target = targets.find((t) => t.re.test(file))
-      if (!target || !code.includes('isInSSRComponentSetup')) {
-        return null
-      }
-
-      const patched = target.cjs
-        ? code
-            .replace(/\bvue\.isInSSRComponentSetup\b/g, 'isInSSRComponentSetup')
-            .replace(/\bvue\.injectHook\b/g, 'injectHook')
-        : code.replace(
-            /\bimport\s*\{([^}]*)\}\s*from\s*(['"])vue\2/,
-            (statement: string, names: string) => {
-              const kept = names
-                .split(',')
-                .map((name) => name.trim())
-                .filter((name) => name && name !== 'isInSSRComponentSetup' && name !== 'injectHook')
-              return kept.length ? `import { ${kept.join(', ')} } from 'vue'` : ''
-            }
-          )
-
-      if (patched === code) {
-        return null
-      }
-      return {
-        code: `${patched}\n${buildVueInternalsShim(
-          target.cjs ? 'vue.getCurrentInstance()' : 'getCurrentInstance()'
-        )}`,
-        map: null
-      }
-    }
-  }
-}
-
 export default defineConfig({
   plugins: [
     wxsCompatPlugin(),
-    uniAppVueInternalsPlugin(),
     ...(typeof uni === 'function' ? uni() : [])
   ],
   resolve: {
