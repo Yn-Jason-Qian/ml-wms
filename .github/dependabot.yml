@@ -20,6 +20,14 @@ updates:
       maven-minor-patch:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      # netty 必须跟随 Spring Boot 管理的版本线（目前是 4.1.x）：
+      # Redisson 3.40.2 是按 netty 4.1.x 编译的，4.1 -> 4.2 属于未经验证的组合，
+      # 而单元测试覆盖不到 Redis / Netty 链路（CI 绿证明不了运行时没问题）。
+      # 只放行 4.1.x 内的补丁升级，跨小版本 / 大版本不提。
+      # 等 Spring Boot 自己升到 4.2 时，删掉这条即可。
+      - dependency-name: "io.netty:*"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
 
   # PC 前端
   - package-ecosystem: npm
