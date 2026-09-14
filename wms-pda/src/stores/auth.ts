@@ -6,7 +6,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import request, { type ApiResponse } from '@/utils/request'
-import { setToken, removeToken } from '@/utils/auth'
+import { AUTH_STORE_KEY, setToken, removeToken } from '@/utils/auth'
 
 export interface LoginParams {
   username: string
@@ -78,6 +78,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 }, {
   persist: {
+    // 用独立 key，避免与 wms-web 的 `auth` 在同一端口 / 同源下互相覆盖
+    key: AUTH_STORE_KEY,
     // Pinia persistedstate 使用 uni.storage（main.ts 已配置）
     paths: ['token', 'username', 'realName', 'tenantId', 'tenantName', 'warehouseId', 'warehouseName']
   }
