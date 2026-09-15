@@ -1,5 +1,6 @@
 package com.wms.web.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.wms.common.util.HashIdDeserializer;
@@ -43,5 +44,20 @@ public class JacksonConfig {
     public Jackson2ObjectMapperBuilderCustomizer enumCustomizer() {
         return builder ->
                 builder.featuresToEnable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+    }
+
+    /**
+     * 允许空字符串绑定为 null。
+     *
+     * <p>前端的筛选下拉框清空后通常会提交 {@code ""}。Jackson 的 EnumDeserializer 默认拒绝空串 （只有开启 {@link
+     * DeserializationFeature#ACCEPT_EMPTY_STRING_AS_NULL_OBJECT} 才会当作 null）， 于是 {@code
+     * {"status":""}} 这种再普通不过的查询请求会直接抛 {@code HttpMessageNotReadableException}，被全局异常处理器转成 400。
+     *
+     * <p>开启后空串一律按「未传该筛选条件」处理；真正必填的字段交给 JSR-303 校验给出更明确的提示。
+     */
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer emptyStringAsNullCustomizer() {
+        return builder ->
+                builder.featuresToEnable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
     }
 }
