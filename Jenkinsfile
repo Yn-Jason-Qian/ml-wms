@@ -11,7 +11,7 @@
 //     （Manage Jenkins → System → Global properties → Environment variables）:
 //         WMS_DEPLOY_HOST = 在 Publish over SSH 里配置的主机名；未配置时部署阶段自动跳过
 //         WMS_DEPLOY_HOME = 远端部署目录，默认 /opt/wms
-//   - 部署阶段只在 wms-server/**、wms-web/**、deploy/** 有改动时执行
+//   - 部署阶段只在 wms-server/、wms-web/、deploy/ 下有文件改动时执行
 //     （手动 Build Now 总是执行）；纯文档、CI 配置、wms-pda 改动不重新部署
 //   - 本流水线不在 Jenkins 侧构建镜像（Jenkins 容器通常没有可用的 docker daemon），
 //     镜像在目标服务器上由 deploy/deploy.sh 执行 docker compose build 生成
@@ -223,18 +223,39 @@ pipeline {
         // ──────────────────────────────────────
         stage('Deploy') {
             when {
-                allOf {
+                expression {
                     // 未配置部署目标（例如别人 fork 了仓库）→ 跳过
-                    expression { return (env.DEPLOY_HOST ?: '').trim() != '' }
-                    anyOf {
-                        // 手动触发（Build Now）→ 总是部署
-                        triggeredBy 'UserIdCause'
-                        // 自动触发 → 只有影响发布产物的路径有变化才部署。
-                        // PDA 的产物不参与发布包（发布包只有后端 jar + wms-web/dist
-                        // + deploy/ 下的 compose、Dockerfile、nginx.conf），
-                        // 所以纯文档、CI 配置、wms-pda 改动都不需要重新部署。
-                        changeset 'wms-server/**,wms-web/**,deploy/**'
+                    if ((env.DEPLOY_HOST ?: '').trim() == '') {
+                        return false
                     }
+                    // 手动触发（Build Now）→ 总是部署
+                    if (currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')) {
+                        return true
+                    }
+                    // 自动触发 → 只有影响发布产物的路径有变化才部署。
+                    //
+                    // 这里刻意不用声明式的 changeset 条件：它的通配语义不是 Ant 风格，
+                    // 'wms-server/**' 匹配不到 'wms-server/wms-common/...' 这类深层文件，
+                    // 实测构建 #28 对本应部署的后端改动也跳过了（静默漏部署，比多部署更糟）。
+                    // 自己比对路径语义明确，且拿不到变更信息时按「需要部署」处理（失败偏安全）。
+                    def prefixes = ['wms-server/', 'wms-web/', 'deploy/']
+                    def changed = []
+                    try {
+                        currentBuild.changeSets.each { set ->
+                            set.items.each { item ->
+                                item.affectedFiles.each { f ->
+                                    changed << ('/' + f.path.replace('\\', '/'))
+                                }
+                            }
+                        }
+                    } catch (Throwable ignored) {
+                        return true
+                    }
+                    // 拿不到变更信息（例如首次构建）时保守处理：照常部署
+                    if (changed.isEmpty()) {
+                        return true
+                    }
+                    return changed.any { path -> prefixes.any { prefix -> path.contains('/' + prefix) } }
                 }
             }
             options {
