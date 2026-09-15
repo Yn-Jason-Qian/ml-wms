@@ -8,10 +8,18 @@ const request = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
+/**
+ * 匿名接口：不注入 Authorization。
+ * 否则本地一旦残留过期 token，后端 JWT 过滤器会在进入登录逻辑之前就把请求判成 401，
+ * 前端又直接跳回 /login，形成「怎么登都登不进去」的死循环。
+ */
+const ANONYMOUS_PATHS = ['/auth/login']
+
 // 请求拦截器 —— 注入 JWT
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = getToken()
+    const isAnonymous = ANONYMOUS_PATHS.some((path) => config.url?.startsWith(path))
+    const token = isAnonymous ? null : getToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
