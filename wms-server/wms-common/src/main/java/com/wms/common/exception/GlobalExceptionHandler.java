@@ -69,6 +69,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleMessageNotReadable(HttpMessageNotReadableException e) {
+        // 记下根因，否则这类问题在日志里完全不可见（只返回 400，排查时无从下手）
+        log.warn("Malformed request body: {}", e.getMostSpecificCause().getMessage());
         return ApiResponse.badRequest("Request body is malformed or missing");
     }
 
