@@ -168,6 +168,22 @@ async function onScanClick(target: string) {
   }
 }
 
+/** 扫描来源库位回车确认 */
+function onFromLocationDone() {
+  const code = fromLocation.value.trim()
+  if (!code) return
+  fromLocation.value = code
+  uni.showToast({ title: '来源库位: ' + code, icon: 'success', duration: 1000 })
+}
+
+/** 扫描目标库位回车确认 */
+function onToLocationDone() {
+  const code = toLocation.value.trim()
+  if (!code) return
+  toLocation.value = code
+  uni.showToast({ title: '目标库位: ' + code, icon: 'success', duration: 1000 })
+}
+
 async function confirmMove() {
   confirming.value = true
   try {
