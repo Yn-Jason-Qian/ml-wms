@@ -125,6 +125,16 @@ if ! wms_require_images "wms-server:$S_TAG" "wms-web:$W_TAG"; then
   exit 1
 fi
 
+# 编排文件也用该发布当时的快照，保证「镜像 + 编排」一起回到当时的状态
+SNAP="$(wms_state_value "$SF" WMS_COMPOSE_SNAPSHOT || true)"
+if [ -n "$SNAP" ] && [ -f "$SNAP" ]; then
+  WMS_COMPOSE_FILE="$SNAP"
+  export WMS_COMPOSE_FILE
+  wms_log "使用 $TARGET 当时的编排快照: $(basename "$SNAP")"
+else
+  wms_log "⚠️ 该发布没有编排快照（老版本记录），沿用当前编排文件"
+fi
+
 wms_init_network
 
 wms_log "↩️ 回滚 $CURRENT → $TARGET (wms-server:$S_TAG / wms-web:$W_TAG)"

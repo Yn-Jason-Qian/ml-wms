@@ -49,10 +49,18 @@ MySQL / Redis，由 CI 构建产物后推送到目标服务器。
 ```
 .releases/history            # 发布标识列表，第一行是当前版本，新 → 旧
 .releases/<发布标识>.env      # 该版本实际使用的 WMS_SERVER_TAG / WMS_WEB_TAG（+ commit、时间）
+.releases/<发布标识>.compose.yml   # 该版本当时的 docker-compose.yml 快照
 ```
 
+**编排快照**是回滚保真的关键：只回退镜像、却继续用新版本的编排文件，遇到「新发布改了
+compose（增删环境变量、改端口、改依赖）」的情况就可能对不上。所以每次成功发布会把当时的
+`docker-compose.yml` 一起快照下来，回滚时用 `-f <快照> --env-file /opt/wms/.env` 渲染，
+让镜像和编排一起回到当时的状态。
+
+> 快照里的 `build.context` 是相对路径，只用于 `up` / 回滚；不要拿快照文件去 `build`。
+
 保留条数由 `WMS_KEEP_RELEASES`（默认 10）控制，它同时也是可回滚的深度上限：超出范围的记录
-连同它引用的镜像 tag 会被清理。`latest` 会被保留并始终指向当前版本，方便手工执行 compose。
+连同它引用的镜像 tag 与快照会被清理。`latest` 会被保留并始终指向当前版本，方便手工执行 compose。
 
 ### 回滚
 
@@ -195,6 +203,11 @@ sh /opt/wms/deploy.sh --components web      # 只重建前端，后端容器不�
 `deploy.sh` 会检查 `WMS_DB_NAME`（默认 `ml_wms`）对应的库是否存在，**不存在时才**导入
 `init.sql`（`init.sql` 自带 `CREATE DATABASE IF NOT EXISTS`），已存在则跳过，避免误改线上表结构。
 导入用的 `mysql` 客户端命令会显式带上 `--default-character-set=utf8mb4`。
+
+口令不放在命令行上：`deploy.sh` 会把 `MYSQL_USER` / `MYSQL_PASSWORD` 写进**数据库容器内**的
+临时 option 文件（`/tmp/.wms-deploy-my.cnf`，权限 600，脚本退出时删除），再用
+`--defaults-extra-file` 调用客户端 —— 否则口令会出现在 `docker exec` 的命令行里，同一台机器上
+任何用户 `ps` 都能看到。写入失败时才会退回命令行传参并打印告警。
 
 > 项目约定：任何表结构变更都必须同步 `wms-server/wms-web/src/main/resources/db/init.sql`。
 > 已存在的库需要手工执行对应的 `ALTER TABLE`。

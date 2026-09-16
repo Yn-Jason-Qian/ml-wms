@@ -27,10 +27,17 @@ wms_init_compose() {
   fi
 }
 
-# 执行 compose，自动带上 -p / -f
+# 执行 compose，自动带上 -p / --env-file / -f
+#
+# 编排文件默认取部署目录里的那份；WMS_COMPOSE_FILE 指向别处时以它为准 ——
+# 回滚会指向"该发布当时快照下来的那份编排"，让镜像和编排一起回到当时的状态。
 wms_compose() {
+  _wms_args="-p $COMPOSE_PROJECT"
+  if [ -f "$WMS_HOME/.env" ]; then
+    _wms_args="$_wms_args --env-file $WMS_HOME/.env"
+  fi
   # shellcheck disable=SC2086
-  $WMS_COMPOSE -p "$COMPOSE_PROJECT" -f "$WMS_HOME/docker-compose.yml" "$@"
+  $WMS_COMPOSE $_wms_args -f "${WMS_COMPOSE_FILE:-$WMS_HOME/docker-compose.yml}" "$@"
 }
 
 wms_ps() {
@@ -106,15 +113,18 @@ wms_protected_tags() {
   done < "$HISTORY"
 }
 
-# 只保留 history 仍引用的发布记录文件
+# 只保留 history 仍引用的发布记录文件（状态文件 + 编排快照）
 wms_prune_releases() {
   [ -d "$STATE_DIR" ] || return 0
-  for _wms_sf in "$STATE_DIR"/*.env; do
+  for _wms_sf in "$STATE_DIR"/*.env "$STATE_DIR"/*.compose.yml; do
     [ -f "$_wms_sf" ] || continue
-    _wms_r=$(basename "$_wms_sf" .env)
+    case "$_wms_sf" in
+      *.compose.yml) _wms_r=$(basename "$_wms_sf" .compose.yml) ;;
+      *)             _wms_r=$(basename "$_wms_sf" .env) ;;
+    esac
     if ! grep -qxF "$_wms_r" "$HISTORY" 2>/dev/null; then
       rm -f "$_wms_sf"
-      wms_log "清理历史发布记录: $_wms_r"
+      wms_log "清理历史发布记录: $(basename "$_wms_sf")"
     fi
   done
 }
