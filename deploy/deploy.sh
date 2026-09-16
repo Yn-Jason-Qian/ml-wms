@@ -214,19 +214,37 @@ wms_init_network
 #          另外 mysql 官方镜像里 mysql 客户端默认字符集是 latin1（容器无 LANG 环境变量），
 #          不指定 utf8mb4 会把中文写成双重编码（乱码），必须显式指定。
 if docker inspect "$DB_CONTAINER" >/dev/null 2>&1; then
-  EXISTS="$(docker exec "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --default-character-set=utf8mb4 -N -B -e "SHOW DATABASES LIKE '$DB_NAME'" 2>/dev/null || true)"
+  # 口令不放命令行（同机器上任何用户 ps 都能看到）：写进 DB 容器里的临时 option 文件，
+  # 内容经 stdin 传入、权限 600，脚本退出时删除。写不进去才退回命令行传参。
+  MYSQL_CNF="/tmp/.wms-deploy-my.cnf"
+  MYSQL_OPTS="-u$MYSQL_USER"
+  if docker exec -i "$DB_CONTAINER" sh -c "umask 077; cat > $MYSQL_CNF" <<EOF
+[client]
+user=$MYSQL_USER
+password=$MYSQL_PASSWORD
+EOF
+  then
+    # --defaults-extra-file 必须是第一个参数
+    MYSQL_OPTS="--defaults-extra-file=$MYSQL_CNF -u$MYSQL_USER"
+    trap 'docker exec "$DB_CONTAINER" rm -f "$MYSQL_CNF" >/dev/null 2>&1 || true' EXIT
+  else
+    echo "[deploy] ⚠️ 无法写入临时口令文件，本次退回命令行传口令（ps 可见）"
+    MYSQL_OPTS="-u$MYSQL_USER -p$MYSQL_PASSWORD"
+  fi
+
+  EXISTS="$(docker exec "$DB_CONTAINER" mysql $MYSQL_OPTS --default-character-set=utf8mb4 -N -B -e "SHOW DATABASES LIKE '$DB_NAME'" 2>/dev/null || true)"
 
   if [ -z "$EXISTS" ]; then
     if [ -f "$WMS_HOME/init.sql" ]; then
       echo "[deploy] 数据库 $DB_NAME 不存在，导入 init.sql ..."
-      docker exec -i "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --default-character-set=utf8mb4 < "$WMS_HOME/init.sql"
+      docker exec -i "$DB_CONTAINER" mysql $MYSQL_OPTS --default-character-set=utf8mb4 < "$WMS_HOME/init.sql"
       echo "[deploy] 数据库初始化完成"
     else
       echo "[deploy] ⚠️ 未找到 init.sql，跳过数据库初始化"
     fi
   else
     # 用建表顺序里最后一张表判断结构是否完整
-    COMPLETE="$(docker exec "$DB_CONTAINER" mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --default-character-set=utf8mb4 -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='wms_print_record'" 2>/dev/null || echo 0)"
+    COMPLETE="$(docker exec "$DB_CONTAINER" mysql $MYSQL_OPTS --default-character-set=utf8mb4 -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='wms_print_record'" 2>/dev/null || echo 0)"
     if [ "$COMPLETE" = "1" ]; then
       echo "[deploy] 数据库 $DB_NAME 已存在且结构完整，跳过初始化"
     else
@@ -295,6 +313,13 @@ if [ "$HEALTH_FAILED" = 1 ]; then
   else
     echo "[deploy] ↩️ 自动回滚到上一个发布: $CUR_RELEASE (wms-server:$CUR_SERVER_TAG / wms-web:$CUR_WEB_TAG)"
     export WMS_SERVER_TAG="$CUR_SERVER_TAG" WMS_WEB_TAG="$CUR_WEB_TAG"
+    # 编排文件也一起回退（若该发布留有快照），避免用新编排去跑旧镜像
+    PREV_SNAP="$(wms_state_value "$STATE_DIR/$CUR_RELEASE.env" WMS_COMPOSE_SNAPSHOT || true)"
+    if [ -n "$PREV_SNAP" ] && [ -f "$PREV_SNAP" ]; then
+      WMS_COMPOSE_FILE="$PREV_SNAP"
+      export WMS_COMPOSE_FILE
+      echo "[deploy] 使用 $CUR_RELEASE 当时的编排快照"
+    fi
     wms_compose up -d --no-deps server web
     if wms_wait_http "$WMS_SERVER_HEALTH_URL" "后端(回滚后)"; then
       echo "[deploy] ✅ 已回滚到 $CUR_RELEASE，服务恢复"
@@ -306,12 +331,18 @@ if [ "$HEALTH_FAILED" = 1 ]; then
 fi
 
 # ───── 9) 记录发布状态（新版本已在运行，这一步失败不影响线上）─────
+# 快照本次的编排文件：回滚时用它，让「镜像 + 编排」一起回到当时的状态。
+# 注意快照里的 build.context 是相对路径，只用于 up/回滚，不要拿它去 build。
+COMPOSE_SNAPSHOT="$STATE_DIR/$RELEASE.compose.yml"
+cp -f "$WMS_HOME/docker-compose.yml" "$COMPOSE_SNAPSHOT"
+
 cat > "$STATE_DIR/$RELEASE.env" <<EOF
 # 由 deploy.sh 生成：本次发布实际使用的镜像 tag（rollback.sh 依赖此文件）
 WMS_RELEASE=$RELEASE
 WMS_SERVER_TAG=$NEW_SERVER_TAG
 WMS_WEB_TAG=$NEW_WEB_TAG
 WMS_COMPONENTS=$COMPONENTS_LIST
+WMS_COMPOSE_SNAPSHOT=$COMPOSE_SNAPSHOT
 WMS_GIT_SHA=$GIT_SHA
 WMS_BUILD_NUMBER=$BUILD_NUMBER
 WMS_DEPLOYED_AT=$(date '+%Y-%m-%d %H:%M:%S')
