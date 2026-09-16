@@ -361,7 +361,12 @@ WMS_COMPONENTS=${components.join(',')}
                 cleanWhenNotBuilt: false,
                 deleteDirs: true,
                 disableDeferredWipeout: true,
-                notFailBuild: true
+                notFailBuild: true,
+                // 保留 .git：否则每次构建都要把整个仓库重新 clone 一遍（约 50MB 的 pack），
+                // 到 GitHub 网络不稳时会直接卡死/失败（构建 #33 就是死在 clone 上）。
+                // 保留后每次只做增量 fetch，构建更快也更抗网络抖动。
+                // 编译产物（target/、node_modules/、dist/）仍然每次清掉，不受影响。
+                patterns: [[pattern: '**/.git/**', type: 'EXCLUDE']]
             )
         }
     }
