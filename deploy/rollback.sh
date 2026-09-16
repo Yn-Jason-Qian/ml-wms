@@ -54,10 +54,12 @@ fi
 cd "$WMS_HOME"
 wms_load_env
 
-# 网络探测需要这两个容器名（默认值与 deploy.sh 保持一致）
+# 与 deploy.sh 保持完全一致的派生逻辑：容器名 → 连接参数 + docker 网络。
+# 少了这一步，compose 会回落到默认值渲染出不同的容器配置，回滚就会连错库/无谓重启。
 DB_CONTAINER="${WMS_DB_CONTAINER:-mysql8}"
 REDIS_CONTAINER="${WMS_REDIS_CONTAINER:-redis7}"
 
+wms_init_connection_env
 wms_init_health
 wms_init_compose
 

@@ -145,6 +145,25 @@ wms_require_images() {
 
 # ── docker 网络 ──
 
+# ── 后端连接参数 ──
+#
+# deploy.sh 与 rollback.sh 必须派生同一套连接参数：这些值不在 .env 里（.env 里只有
+# WMS_DB_CONTAINER / WMS_REDIS_CONTAINER），而是由脚本从容器名推导后导出给 compose。
+# 漏掉任何一项，compose 就会用默认值（mysql8 / redis7 / root）渲染出与当前运行容器
+# 不同的配置 —— 轻则把没改动的服务也重建一遍，重则让回滚后的实例连错库。
+#
+# 依赖调用方已设置 DB_CONTAINER / REDIS_CONTAINER。
+wms_init_connection_env() {
+  DB_NAME="${WMS_DB_NAME:-ml_wms}"
+  export WMS_DB_NAME="$DB_NAME"
+  export WMS_DB_HOST="${WMS_DB_HOST:-$DB_CONTAINER}"
+  export WMS_REDIS_HOST="${WMS_REDIS_HOST:-$REDIS_CONTAINER}"
+  export WMS_DB_PORT="${WMS_DB_PORT:-3306}"
+  export WMS_REDIS_PORT="${WMS_REDIS_PORT:-6379}"
+  export MYSQL_USER="${MYSQL_USER:-root}"
+  export MYSQL_PASSWORD="${MYSQL_PASSWORD:-root}"
+}
+
 # 探测 mysql / redis 所在网络；.env 中显式设置了 WMS_NET 时直接沿用
 # 依赖调用方已设置 DB_CONTAINER / REDIS_CONTAINER
 wms_init_network() {

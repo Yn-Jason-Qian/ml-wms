@@ -86,19 +86,11 @@ wms_load_env
 # 已有的基础设施容器名（本部署只复用，不接管）
 DB_CONTAINER="${WMS_DB_CONTAINER:-mysql8}"
 REDIS_CONTAINER="${WMS_REDIS_CONTAINER:-redis7}"
-DB_NAME="${WMS_DB_NAME:-ml_wms}"
-
-MYSQL_USER="${MYSQL_USER:-root}"
-MYSQL_PASSWORD="${MYSQL_PASSWORD:-root}"
-export MYSQL_USER MYSQL_PASSWORD
 
 # 后端连接用的主机名默认取容器名（同一个 docker 网络内可直接解析容器名）；
 # 数据库在宿主机或别处时，用 WMS_DB_HOST / WMS_REDIS_HOST 显式指定。
-export WMS_DB_HOST="${WMS_DB_HOST:-$DB_CONTAINER}"
-export WMS_REDIS_HOST="${WMS_REDIS_HOST:-$REDIS_CONTAINER}"
-export WMS_DB_PORT="${WMS_DB_PORT:-3306}"
-export WMS_REDIS_PORT="${WMS_REDIS_PORT:-6379}"
-export WMS_DB_NAME="$DB_NAME"
+# 这段派生逻辑放在 lib.sh 里，rollback.sh 走同一份 —— 两边不一致会导致回滚后连错库。
+wms_init_connection_env
 
 KEEP_JARS="${WMS_KEEP_JARS:-5}"
 KEEP_RELEASES="${WMS_KEEP_RELEASES:-10}"
