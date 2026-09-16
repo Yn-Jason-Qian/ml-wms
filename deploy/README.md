@@ -21,6 +21,64 @@ MySQL / Redis，由 CI 构建产物后推送到目标服务器。
 - 前端同样以容器方式部署：直接复用本目录的 `nginx.conf`（API/WebSocket 反代 + SPA fallback），
   与后端一起 `up -d`，作为单一发布单元
 
+部署目录（默认 `/opt/wms`）里各文件的来历：
+
+```
+/opt/wms/
+├── docker-compose.yml          ← CI 每次覆盖（编排定义）
+├── deploy.sh / rollback.sh / lib.sh   ← CI 每次覆盖（部署与回滚脚本）
+├── .env                        ← 运维自己维护，CI 不会覆盖（模板见 .env.example）
+├── release.env                 ← CI 每次覆盖，记录本次发布的标识/commit/构建号
+├── init.sql                    ← CI 每次覆盖（首次建库用）
+├── .releases/                  ← 脚本维护：history（发布顺序）+ <发布标识>.env（各版本的镜像 tag）
+├── server/  Dockerfile + app.jar + wms-web-<版本>.jar
+└── web/     Dockerfile + nginx.conf + dist/
+```
+
+## 发布、回滚与健康检查
+
+### 镜像 tag 与发布记录
+
+每次发布都用独立 tag：`wms-server:b<构建号>-<短commit>`（`wms-web` 同理），**不再一律用 `latest`**，
+所以旧镜像会留在目标服务器上，回滚不需要重新构建、也不需要重传 jar。
+
+如果本次只改了前端，后端不会被重建，它继续沿用上一版发布记录的 tag —— 也就是说每次发布记录
+存的是「后端用哪个 tag + 前端用哪个 tag」这一组，回滚时整组一起切回去。记录存在
+`/opt/wms/.releases/`：
+
+```
+.releases/history            # 发布标识列表，第一行是当前版本，新 → 旧
+.releases/<发布标识>.env      # 该版本实际使用的 WMS_SERVER_TAG / WMS_WEB_TAG（+ commit、时间）
+```
+
+保留条数由 `WMS_KEEP_RELEASES`（默认 10）控制，它同时也是可回滚的深度上限：超出范围的记录
+连同它引用的镜像 tag 会被清理。`latest` 会被保留并始终指向当前版本，方便手工执行 compose。
+
+### 回滚
+
+```bash
+sh /opt/wms/rollback.sh                 # 回退到上一个发布
+sh /opt/wms/rollback.sh --list          # 列出可回滚的发布（* 为当前版本）
+sh /opt/wms/rollback.sh --to b120-1a2b3c4   # 回退到指定发布
+```
+
+回滚只是把两个容器的镜像 tag 切回历史记录并重启容器（`docker compose up -d`，不带 `--build`），
+所以通常几秒完成。发布顺序会被同步裁剪，连按两次 `rollback.sh` 会继续往回退，不会来回横跳。
+
+### 健康检查与自动回滚
+
+`deploy.sh` 在 `up -d` 之后会轮询探测宿主机上的发布端口（默认后端 `http://127.0.0.1:8080/doc.html`、
+前端 `http://127.0.0.1/`，共等 120 秒），**探测失败就返回非 0**，Jenkins 直接红灯 ——
+不会出现「容器起来了但接口打不开，流水线还是绿色」的情况。
+
+失败时（默认行为）脚本会自动回滚到上一个发布，并打印回滚后的探测结果；构建历史不足
+或上一个版本的镜像已被清理时会明确提示，不再自动回滚。加 `--no-rollback` 可以关掉自动回滚。
+探测地址、次数、间隔都可以在 `.env` 里改（见 `.env.example`）。
+
+`docker-compose.yml` 里也给两个容器配了 `healthcheck`，那个只用来让 `docker ps` 显示健康状态，
+不影响发布成败判定 —— 即使镜像里没有 `wget` 导致 healthcheck 一直是 `unhealthy`，发布判定仍然
+以宿主机侧探测为准（真遇到这种情况，用 `WMS_SERVER_HEALTH_CMD` 换成 curl 版本即可）。
+
 ## 可配置项
 
 全部通过**部署目录下的 `.env`** 覆盖，模板见 [`.env.example`](.env.example)：
@@ -40,6 +98,12 @@ cp /opt/wms/.env.example /opt/wms/.env && vi /opt/wms/.env
 | `WMS_REDIS_PORT` | `6379` | |
 | `MYSQL_USER` / `MYSQL_PASSWORD` | `root` / `root` | 数据库口令 |
 | `WMS_NET` | 自动探测 | Docker 网络名，一般不需要设置 |
+| `WMS_KEEP_RELEASES` | `10` | 发布记录保留条数（同时是可回滚深度上限） |
+| `WMS_KEEP_JARS` | `5` | 本地保留的 `wms-web-*.jar` 份数 |
+| `WMS_ROLLBACK_ON_FAILURE` | `1` | 健康检查失败时是否自动回滚（`0` 只报错不回滚） |
+| `WMS_SERVER_HEALTH_URL` / `WMS_WEB_HEALTH_URL` | `/doc.html` / `/` | 发布后探测的地址 |
+| `WMS_HEALTH_TRIES` / `WMS_HEALTH_INTERVAL` | `40` / `3` | 探测次数 × 间隔秒数（默认共 120 秒） |
+| `WMS_SERVER_HEALTH_CMD` / `WMS_WEB_HEALTH_CMD` | wget 探测 | 容器内 healthcheck 命令，一般不用改 |
 
 **最常见的改动**：如果你的 mysql / redis 容器不叫 `mysql8` / `redis7`，只需要改前两个变量。
 `deploy.sh` 与 `docker compose` 读的是同一个 `.env`，改一处即可。
@@ -93,7 +157,8 @@ Manage Jenkins → Configure System → **Publish over SSH** → SSH Servers 新
 ## 首次部署
 
 正常情况下由 Jenkins 的 `Deploy` 阶段自动完成：工作区组装 `wms-deploy.tar.gz`
-→ SFTP 传输 → 远端 `tar xzf` 到部署目录 → 执行 `deploy.sh`。
+（只放本次重建服务的产物 + 编排文件与脚本）→ SFTP 传输 → 远端 `tar xzf` 到部署目录
+→ 执行 `deploy.sh --release <构建号>-<短commit> --components <server,web>`。
 
 首次部署前建议做的准备：
 
@@ -117,6 +182,12 @@ docker pull nginx:1.27-alpine
 ```bash
 mkdir -p /opt/wms && tar xzf wms-deploy.tar.gz -C /opt/wms
 sh /opt/wms/deploy.sh
+```
+
+不带参数时默认重建 server + web，并用 `manual-<时间戳>` 作为发布标识。想只重建其中一个：
+
+```bash
+sh /opt/wms/deploy.sh --components web      # 只重建前端，后端容器不动
 ```
 
 ## 数据库
@@ -161,3 +232,16 @@ docker logs wms-web --tail 50
 curl -I http://localhost/doc.html     # 后端接口文档
 curl -I http://localhost/             # 前端
 ```
+
+发布相关的状态与回滚：
+
+```bash
+cat /opt/wms/.releases/history          # 发布顺序（第一行是当前版本）
+sh /opt/wms/rollback.sh --list          # 可回滚的版本一览
+sh /opt/wms/rollback.sh                 # 回退到上一个版本
+docker image ls 'wms-*'                 # 本地保留的各版本镜像
+docker compose -p wms -f /opt/wms/docker-compose.yml ps   # 需要 WMS_NET/WMS_*_TAG 时套用 deploy.sh 的环境
+```
+
+磁盘占用超出预期时，先看 `WMS_KEEP_RELEASES` / `WMS_KEEP_JARS`：镜像由发布记录保护，
+两份保留项调小即可（`deploy.sh` 每次发布都会按它们清理）。
