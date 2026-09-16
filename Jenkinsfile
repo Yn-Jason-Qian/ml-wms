@@ -13,8 +13,12 @@
 //         WMS_DEPLOY_HOME = 远端部署目录，默认 /opt/wms
 //   - 部署阶段只在 wms-server/、wms-web/、deploy/ 下有文件改动时执行
 //     （手动 Build Now 总是执行）；纯文档、CI 配置、wms-pda 改动不重新部署
+//   - 部署范围同样按变更路径收窄：只改了 wms-web/ 就只传 dist、只重建 web 容器，
+//     不再为前端改动重传 ~100MB 的后端 fat jar
 //   - 本流水线不在 Jenkins 侧构建镜像（Jenkins 容器通常没有可用的 docker daemon），
 //     镜像在目标服务器上由 deploy/deploy.sh 执行 docker compose build 生成
+//   - 镜像 tag 用 b<构建号>-<短 commit>（不是 latest），远端 deploy.sh 会记录发布顺序，
+//     健康检查失败自动回滚，需要时可在目标服务器执行 deploy/rollback.sh 手工回滚
 //
 // Jenkins 插件要求:
 //   - Maven Integration / NodeJS / SonarQube Scanner
@@ -75,6 +79,34 @@ pipeline {
                     // 普通 Pipeline 任务不会设置 BRANCH_NAME，用 GIT_BRANCH 兜底
                     echo "Branch: ${env.GIT_BRANCH ?: env.BRANCH_NAME ?: 'unknown'}"
                     echo "Build:  #${env.BUILD_NUMBER}"
+
+                    // 发布标识：写进镜像 tag 与远端发布记录，回滚时按它选版本
+                    env.WMS_RELEASE_ID = "b${env.BUILD_NUMBER}-${(env.GIT_COMMIT ?: 'nogit').take(7)}"
+
+                    // 变更路径与发布范围在这里算一次，Deploy 阶段的条件和打包步骤共用同一份结论，
+                    // 避免两处判断逻辑各写一遍、结果对不上。
+                    def paths = wmsChangedPaths()
+                    def comps
+                    if ((env.DEPLOY_HOST ?: '').trim() == '') {
+                        // 未配置部署目标（例如别人 fork 了仓库）→ 跳过部署
+                        comps = []
+                        echo '未配置 WMS_DEPLOY_HOST，Deploy 阶段将跳过'
+                    } else if (currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')) {
+                        // 手动触发（Build Now）→ 总是全量重建，方便随时"就地重发"
+                        comps = ['server', 'web']
+                    } else if (paths == null || paths.isEmpty()) {
+                        // 拿不到变更信息（例如首次构建）→ 保守处理：全部重建
+                        comps = ['server', 'web']
+                    } else {
+                        comps = wmsDeployComponents(paths)
+                    }
+                    env.WMS_DEPLOY_COMPONENTS = comps.join(',')
+                    env.WMS_SHOULD_DEPLOY = (comps.isEmpty() ? 'false' : 'true')
+                    if (comps.isEmpty()) {
+                        echo '本次改动不涉及发布产物，Deploy 阶段将跳过'
+                    } else {
+                        echo "发布标识 ${env.WMS_RELEASE_ID}，重建范围: ${env.WMS_DEPLOY_COMPONENTS}"
+                    }
                 }
             }
         }
@@ -219,73 +251,65 @@ pipeline {
         // Stage 6: 部署（可选）
         //   传输后端 fat jar + 前端 dist + 部署脚本，
         //   由目标服务器执行 docker compose build & up（服务器上需有可用的 docker daemon）。
+        //   每次发布一个独立镜像 tag（b<构建号>-<短 commit>），旧镜像留在目标服务器上，
+        //   健康检查失败时 deploy.sh 会自动回滚到上一个发布 —— 详见 deploy/README.md。
         //   未配置 WMS_DEPLOY_HOST 时本阶段跳过，其余阶段不受影响 —— fork 后开箱即可通过构建。
         // ──────────────────────────────────────
         stage('Deploy') {
             when {
-                expression {
-                    // 未配置部署目标（例如别人 fork 了仓库）→ 跳过
-                    if ((env.DEPLOY_HOST ?: '').trim() == '') {
-                        return false
-                    }
-                    // 手动触发（Build Now）→ 总是部署
-                    if (currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')) {
-                        return true
-                    }
-                    // 自动触发 → 只有影响发布产物的路径有变化才部署。
-                    //
-                    // 这里刻意不用声明式的 changeset 条件：它的通配语义不是 Ant 风格，
-                    // 'wms-server/**' 匹配不到 'wms-server/wms-common/...' 这类深层文件，
-                    // 实测构建 #28 对本应部署的后端改动也跳过了（静默漏部署，比多部署更糟）。
-                    // 自己比对路径语义明确，且拿不到变更信息时按「需要部署」处理（失败偏安全）。
-                    def prefixes = ['wms-server/', 'wms-web/', 'deploy/']
-                    def changed = []
-                    try {
-                        currentBuild.changeSets.each { set ->
-                            set.items.each { item ->
-                                item.affectedFiles.each { f ->
-                                    changed << ('/' + f.path.replace('\\', '/'))
-                                }
-                            }
-                        }
-                    } catch (Throwable ignored) {
-                        return true
-                    }
-                    // 拿不到变更信息（例如首次构建）时保守处理：照常部署
-                    if (changed.isEmpty()) {
-                        return true
-                    }
-                    return changed.any { path -> prefixes.any { prefix -> path.contains('/' + prefix) } }
-                }
+                // 判断逻辑（部署目标是否配置、变更路径是否涉及发布产物）在 Stage 1 里完成，
+                // 结论通过 env.WMS_SHOULD_DEPLOY 带过来，与打包步骤共用同一份结果。
+                expression { env.WMS_SHOULD_DEPLOY == 'true' }
             }
             options {
                 timeout(time: 15, unit: 'MINUTES')
             }
             steps {
-                echo "🚀 发布到 ${DEPLOY_HOST} (build #${env.BUILD_NUMBER})"
+                echo "🚀 发布到 ${DEPLOY_HOST} (build #${env.BUILD_NUMBER}, release ${env.WMS_RELEASE_ID}, 重建 ${env.WMS_DEPLOY_COMPONENTS})"
 
                 // 1) 在工作区组装发布包。
                 //    只传一个 tar 包，规避 Publish over SSH 的目录语义：
                 //      - 主机的 Remote Directory 留空时，所有路径都相对 SSH 用户家目录（/root）
                 //      - remoteDirectory 的前导 "/" 会被剥掉
                 //      - sourceFiles 带目录时，会在远端重现该目录层级
+                //    只放「本次真正重建的服务」的产物：纯前端改动不必再传 ~100MB 的 fat jar。
                 sh '''
                     rm -rf .deploy-staging
                     mkdir -p .deploy-staging/server .deploy-staging/web
 
                     cp deploy/docker-compose.yml .deploy-staging/
                     cp deploy/deploy.sh           .deploy-staging/
+                    cp deploy/rollback.sh         .deploy-staging/
+                    cp deploy/lib.sh              .deploy-staging/
                     cp deploy/.env.example        .deploy-staging/
                     cp wms-server/wms-web/src/main/resources/db/init.sql .deploy-staging/
 
                     cp deploy/server/Dockerfile .deploy-staging/server/
-                    NEWEST_JAR=$(ls -1t wms-server/wms-web/target/wms-web-*.jar | head -1)
-                    cp "$NEWEST_JAR" .deploy-staging/server/
+                    cp deploy/web/Dockerfile    .deploy-staging/web/
+                    cp deploy/web/nginx.conf    .deploy-staging/web/
+                '''
+                script {
+                    def components = (env.WMS_DEPLOY_COMPONENTS ?: 'server,web').split(',') as List
 
-                    cp deploy/web/Dockerfile .deploy-staging/web/
-                    cp deploy/web/nginx.conf .deploy-staging/web/
-                    cp -r wms-web/dist       .deploy-staging/web/dist
+                    if (components.contains('server')) {
+                        sh 'cp "$(ls -1t wms-server/wms-web/target/wms-web-*.jar | head -1)" .deploy-staging/server/'
+                    } else {
+                        echo '本次不重建后端：跳过 jar 传输'
+                    }
+                    if (components.contains('web')) {
+                        sh 'cp -r wms-web/dist .deploy-staging/web/dist'
+                    } else {
+                        echo '本次不重建前端：跳过 dist 传输'
+                    }
 
+                    // 远端 deploy.sh 会把它记进发布状态，方便回滚时看清是哪个 commit
+                    writeFile file: '.deploy-staging/release.env', text: """WMS_RELEASE=${env.WMS_RELEASE_ID}
+WMS_GIT_SHA=${env.GIT_COMMIT ?: ''}
+WMS_BUILD_NUMBER=${env.BUILD_NUMBER}
+WMS_COMPONENTS=${components.join(',')}
+"""
+                }
+                sh '''
                     tar czf wms-deploy.tar.gz -C .deploy-staging .
                     echo "发布包内容:"
                     tar tzf wms-deploy.tar.gz | head -20
@@ -306,7 +330,7 @@ pipeline {
                                     sourceFiles: 'wms-deploy.tar.gz',
                                     remoteDirectory: "${DEPLOY_HOME}",
                                     flatten: true,
-                                    execCommand: "mkdir -p ${DEPLOY_HOME} && (tar xzf ${DEPLOY_HOME}/wms-deploy.tar.gz -C ${DEPLOY_HOME} || tar xzf /root${DEPLOY_HOME}/wms-deploy.tar.gz -C ${DEPLOY_HOME} || tar xzf /root/wms-deploy.tar.gz -C ${DEPLOY_HOME}) && sh ${DEPLOY_HOME}/deploy.sh"
+                                    execCommand: "mkdir -p ${DEPLOY_HOME} && (tar xzf ${DEPLOY_HOME}/wms-deploy.tar.gz -C ${DEPLOY_HOME} || tar xzf /root${DEPLOY_HOME}/wms-deploy.tar.gz -C ${DEPLOY_HOME} || tar xzf /root/wms-deploy.tar.gz -C ${DEPLOY_HOME}) && sh ${DEPLOY_HOME}/deploy.sh --release ${env.WMS_RELEASE_ID} --components ${env.WMS_DEPLOY_COMPONENTS}"
                                 )
                             ]
                         )
@@ -341,4 +365,47 @@ pipeline {
             )
         }
     }
+}
+
+// ──────────────────────────────────────
+// 辅助方法（供 Stage 1 与 Deploy 阶段共用）
+// ──────────────────────────────────────
+
+// 本次构建涉及的文件路径，统一成带前导 '/' 的形式，便于用 contains 匹配目录段。
+// 返回 null 表示拿不到变更信息（调用方按「全部重建」处理）。
+def wmsChangedPaths() {
+    try {
+        def changed = []
+        currentBuild.changeSets.each { set ->
+            set.items.each { item ->
+                item.affectedFiles.each { f ->
+                    changed << ('/' + f.path.replace('\\', '/'))
+                }
+            }
+        }
+        return changed
+    } catch (Throwable ignored) {
+        return null
+    }
+}
+
+// 由变更路径推出需要重建的服务（server / web）。
+//
+// 这里刻意不用声明式的 changeset 条件：它的通配语义不是 Ant 风格，
+// 'wms-server/**' 匹配不到 'wms-server/wms-common/...' 这类深层文件，
+// 实测构建 #28 对本应部署的后端改动也跳过了（静默漏部署，比多部署更糟）。
+// 自己比对路径语义明确，且拿不到变更信息时按「全部重建」处理（失败偏安全）。
+def wmsDeployComponents(List paths) {
+    def comps = []
+    if (paths.any { it.contains('/wms-server/') }) {
+        comps << 'server'
+    }
+    if (paths.any { it.contains('/wms-web/') }) {
+        comps << 'web'
+    }
+    // deploy/ 下是编排文件、Dockerfile、nginx 配置与部署脚本：两个服务都可能受影响
+    if (paths.any { it.contains('/deploy/') }) {
+        ['server', 'web'].each { svc -> if (!comps.contains(svc)) { comps << svc } }
+    }
+    return comps
 }

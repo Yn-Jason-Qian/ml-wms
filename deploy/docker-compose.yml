@@ -6,15 +6,22 @@
 #   WMS_REDIS_HOST / WMS_REDIS_PORT              默认 redis7 / 6379
 #   MYSQL_USER / MYSQL_PASSWORD                  默认 root / root
 #   WMS_NET                                      Docker 网络名，deploy.sh 会自动探测并导出
+#   WMS_SERVER_TAG / WMS_WEB_TAG                 镜像 tag，由 deploy.sh / rollback.sh 注入
+#                                                （每次发布一个独立 tag，未注入时用 latest）
 #
-# 手工执行（不经 deploy.sh）时须自行设置 WMS_NET：
+# 手工执行（不经 deploy.sh）时须自行设置 WMS_NET；tag 留空则使用 latest 别名
+# （deploy.sh 每次发布会把当前镜像额外打上 latest，所以 latest 一直是当前版本）：
 #   WMS_NET=<已有网络名> docker compose -p wms -f docker-compose.yml up -d --build
+#
+# 回滚不要手工改 tag，用 deploy/rollback.sh（它会同步维护发布顺序）。
 services:
   server:
     build:
       context: ./server
       dockerfile: Dockerfile
-    image: wms-server:latest
+    # 镜像 tag 由 deploy.sh / rollback.sh 注入（每次发布一个独立 tag，未重建的服务沿用上一版），
+    # 旧镜像保留在本地 ⇒ 回滚只是换 tag 重启，不重新构建。未注入时回落到 latest。
+    image: wms-server:${WMS_SERVER_TAG:-latest}
     container_name: wms-server
     restart: unless-stopped
     environment:
@@ -25,6 +32,15 @@ services:
       SPRING_DATA_REDIS_HOST: ${WMS_REDIS_HOST:-redis7}
       SPRING_DATA_REDIS_PORT: "${WMS_REDIS_PORT:-6379}"
       TZ: Asia/Shanghai
+    # 健康状态用于 docker ps / docker compose ps 的可读性，也方便后续改用 `up -d --wait`。
+    # 发布的成败判定在 deploy.sh 里做（宿主机侧探测发布端口），这里失败不会误判发布失败。
+    # 若镜像里没有 wget（或想换成别的探针），在 .env 里设置 WMS_SERVER_HEALTH_CMD 覆盖。
+    healthcheck:
+      test: ["CMD-SHELL", "${WMS_SERVER_HEALTH_CMD:-wget -q -O /dev/null http://127.0.0.1:8080/doc.html || exit 1}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
     ports:
       - "8080:8080"
     networks:
@@ -34,11 +50,17 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
-    image: wms-web:latest
+    image: wms-web:${WMS_WEB_TAG:-latest}
     container_name: wms-web
     restart: unless-stopped
     depends_on:
       - server
+    healthcheck:
+      test: ["CMD-SHELL", "${WMS_WEB_HEALTH_CMD:-wget -q -O /dev/null http://127.0.0.1/ || exit 1}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
     ports:
       - "80:80"
     networks:
