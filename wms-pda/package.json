@@ -28,6 +28,6 @@
     "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5020620260914001",
     "sass": "^1.104.0",
     "typescript": "~5.4.5",
-    "vite": "5.2.8"
+    "vite": "8.3.0"
   }
 }
