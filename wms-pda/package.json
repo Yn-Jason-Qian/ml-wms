@@ -26,7 +26,7 @@
     "@dcloudio/types": "^3.4.32",
     "@dcloudio/uni-cli-shared": "3.0.0-alpha-5020620260914001",
     "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5020620260914001",
-    "sass": "^1.104.0",
+    "sass": "^1.104.1",
     "typescript": "~5.4.5",
     "vite": "5.2.8"
   }
